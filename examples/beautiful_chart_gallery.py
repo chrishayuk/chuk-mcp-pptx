@@ -16,9 +16,9 @@ from pptx.util import Inches
 from chuk_mcp_pptx.components.charts import (
     ColumnChart, BarChart, WaterfallChart,
     LineChart, AreaChart, SparklineChart,
-    PieChart, DoughnutChart,
+    PieChart, DoughnutChart, SunburstChart,
     ScatterChart, BubbleChart,
-    RadarChart, ComboChart, GaugeChart
+    RadarChart, ComboChart
 )
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 
@@ -178,7 +178,7 @@ async def create_beautiful_chart_gallery():
     pie_chart = PieChart(
         categories=["Enterprise", "SMB", "Startups", "Government", "Education"],
         values=[42, 28, 18, 8, 4],
-        explode=0,  # Explode Enterprise slice
+        explode_slice=0,  # Explode Enterprise slice
         title="Customer Segments",
         theme=theme.__dict__,
         options={
@@ -287,27 +287,15 @@ async def create_beautiful_chart_gallery():
     )
     await radar_chart.render(slide6, left=0.5, top=2.0, width=4.0, height=3.5)
     
-    # Gauge charts for KPIs
-    gauges = [
-        {"value": 87, "title": "Customer Satisfaction", "left": 5.0, "top": 2.0},
-        {"value": 92, "title": "System Uptime", "left": 7.0, "top": 2.0},
-        {"value": 74, "title": "Performance Score", "left": 5.0, "top": 4.0},
-        {"value": 95, "title": "Security Rating", "left": 7.0, "top": 4.0}
-    ]
-    
-    for gauge_config in gauges:
-        gauge = GaugeChart(
-            value=gauge_config["value"],
-            min_value=0,
-            max_value=100,
-            title=gauge_config["title"],
-            theme=theme.__dict__
-        )
-        await gauge.render(slide6, 
-                          left=gauge_config["left"], 
-                          top=gauge_config["top"], 
-                          width=1.5, 
-                          height=1.5)
+    # Add a combo chart instead of gauges for KPIs
+    combo_chart = ComboChart(
+        categories=["Q1", "Q2", "Q3", "Q4"],
+        column_series={"Sales": [120, 140, 165, 190]},
+        line_series={"Growth %": [8, 12, 18, 15]},
+        title="Performance Metrics",
+        theme=theme.__dict__
+    )
+    await combo_chart.render(slide6, left=5.0, top=2.0, width=4.0, height=3.5)
     
     # ==========================================================================
     # SLIDE 7: COMBO & BAR CHARTS - Light Theme
@@ -352,14 +340,79 @@ async def create_beautiful_chart_gallery():
     await combo_chart.render(slide7, left=5.0, top=2.0, width=4.0, height=4.0)
     
     # ==========================================================================
-    # SLIDE 8: SUMMARY & FEATURES
+    # SLIDE 8: ADVANCED CHARTS - Dark Purple Theme
     # ==========================================================================
-    print("8. Creating summary slide...")
+    print("8. Creating advanced chart types...")
     slide8 = prs.slides.add_slide(prs.slide_layouts[5])
     theme = theme_manager.get_theme("dark-purple")
     theme.apply_to_slide(slide8)
     
     title_shape = slide8.shapes.title
+    title_shape.text = "Advanced Chart Types"
+    title_shape.text_frame.paragraphs[0].font.color.rgb = theme.get_color("foreground.DEFAULT")
+    
+    # Sunburst chart for hierarchical data
+    sunburst_chart = SunburstChart(
+        data={
+            "name": "Total",
+            "value": 1000,
+            "children": [
+                {
+                    "name": "North America",
+                    "value": 400,
+                    "children": [
+                        {"name": "USA", "value": 300},
+                        {"name": "Canada", "value": 100}
+                    ]
+                },
+                {
+                    "name": "Europe",
+                    "value": 350,
+                    "children": [
+                        {"name": "UK", "value": 150},
+                        {"name": "Germany", "value": 120},
+                        {"name": "France", "value": 80}
+                    ]
+                },
+                {
+                    "name": "Asia",
+                    "value": 250,
+                    "children": [
+                        {"name": "China", "value": 150},
+                        {"name": "Japan", "value": 100}
+                    ]
+                }
+            ]
+        },
+        title="Revenue Distribution",
+        theme=theme.__dict__
+    )
+    await sunburst_chart.render(slide8, left=0.5, top=2.0, width=4.0, height=3.5)
+    
+    # Additional area chart for trend visualization
+    area_chart = AreaChart(
+        categories=["2020", "2021", "2022", "2023", "2024"],
+        series={
+            "North America": [250, 280, 320, 380, 450],
+            "Europe": [200, 230, 260, 300, 350],
+            "Asia": [150, 180, 220, 270, 330]
+        },
+        variant="stacked",
+        title="Regional Growth Trends",
+        theme=theme.__dict__,
+        options={"transparency": 20}
+    )
+    await area_chart.render(slide8, left=5.0, top=2.0, width=4.0, height=3.5)
+    
+    # ==========================================================================
+    # SLIDE 9: SUMMARY & FEATURES
+    # ==========================================================================
+    print("9. Creating summary slide...")
+    slide9 = prs.slides.add_slide(prs.slide_layouts[5])
+    theme = theme_manager.get_theme("dark")
+    theme.apply_to_slide(slide9)
+    
+    title_shape = slide9.shapes.title
     title_shape.text = "Chart Component Features"
     title_shape.text_frame.paragraphs[0].font.color.rgb = theme.get_color("foreground.DEFAULT")
     
@@ -372,7 +425,7 @@ async def create_beautiful_chart_gallery():
         variant="bordered",
         theme=theme.__dict__
     )
-    features_card.render(slide8, left=1.0, top=2.0, width=3.5, height=4.0)
+    features_card.render(slide9, left=1.0, top=2.0, width=3.5, height=4.0)
     
     capabilities_card = Card(
         title="📊 Chart Capabilities",
@@ -380,7 +433,7 @@ async def create_beautiful_chart_gallery():
         variant="elevated",
         theme=theme.__dict__
     )
-    capabilities_card.render(slide8, left=5.0, top=2.0, width=3.5, height=4.0)
+    capabilities_card.render(slide9, left=5.0, top=2.0, width=3.5, height=4.0)
     
     # Add text content to cards manually
     # (In a real implementation, you'd extend Card to support rich content)
@@ -389,7 +442,7 @@ async def create_beautiful_chart_gallery():
     # SAVE PRESENTATION
     # ==========================================================================
     
-    print("\n9. Saving presentation...")
+    print("\n10. Saving presentation...")
     output_dir = os.path.join(os.path.dirname(__file__), "..", "outputs")
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, "beautiful_chart_gallery.pptx")
@@ -411,7 +464,7 @@ async def create_beautiful_chart_gallery():
     print("  • Pie & Doughnut (exploded, modern)")
     print("  • Scatter & Bubble (correlations, 3D data)")
     print("  • Radar (multi-criteria comparison)")
-    print("  • Gauge (KPI visualization)")
+    print("  • Sunburst (hierarchical data)")
     print("  • Combo (mixed chart types)")
     
     print("\n💡 This is our 'shadcn for PowerPoint' - reusable,")

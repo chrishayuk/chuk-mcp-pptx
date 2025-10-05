@@ -27,10 +27,25 @@ class Component:
         Args:
             theme: Theme configuration or None for default
         """
-        self.theme = theme or self.get_default_theme()
+        self._internal_theme = theme or self.get_default_theme()
         self.tokens = get_semantic_tokens(
-            self.theme.get("primary_hue", "blue"),
-            self.theme.get("mode", "dark")
+            self._internal_theme.get("primary_hue", "blue"),
+            self._internal_theme.get("mode", "dark")
+        )
+    
+    @property
+    def theme(self) -> Optional[Dict[str, Any]]:
+        """Get theme."""
+        return self._internal_theme
+    
+    @theme.setter
+    def theme(self, value: Optional[Dict[str, Any]]):
+        """Set theme."""
+        self._internal_theme = value or self.get_default_theme()
+        # Update tokens when theme changes
+        self.tokens = get_semantic_tokens(
+            self._internal_theme.get("primary_hue", "blue"),
+            self._internal_theme.get("mode", "dark")
         )
     
     @staticmethod
@@ -97,6 +112,22 @@ class Component:
         """Get text style configuration."""
         return get_text_style(variant)
     
+    @property
+    def options(self) -> Optional[Dict[str, Any]]:
+        """Get options."""
+        # For charts, return computed options if available
+        if hasattr(self, '_computed_options'):
+            return self._computed_options
+        return getattr(self, '_options', {})
+    
+    @options.setter
+    def options(self, value: Optional[Dict[str, Any]]):
+        """Set options."""
+        self._options = value
+        # Update computed options if this is a chart
+        if hasattr(self, '_computed_options'):
+            self._computed_options = value or {}
+
     def apply_text_style(self, text_frame, variant: str = "body"):
         """
         Apply text style to a text frame.

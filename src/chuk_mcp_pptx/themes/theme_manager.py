@@ -110,6 +110,31 @@ class Theme:
         self.font_family = font_family
         self.tokens = get_semantic_tokens(primary_hue, mode)
     
+    # Properties to expose tokens as direct attributes for compatibility
+    @property
+    def background(self):
+        return self.tokens.get("background", {})
+    
+    @property
+    def foreground(self):
+        return self.tokens.get("foreground", {})
+    
+    @property
+    def primary(self):
+        return self.tokens.get("primary", {})
+    
+    @property
+    def secondary(self):
+        return self.tokens.get("secondary", {})
+    
+    @property
+    def accent(self):
+        return self.tokens.get("accent", {})
+    
+    @property
+    def chart(self):
+        return self.tokens.get("chart", [])
+    
     def hex_to_rgb(self, hex_color: str) -> tuple:
         """Convert hex to RGB."""
         hex_color = hex_color.lstrip('#')

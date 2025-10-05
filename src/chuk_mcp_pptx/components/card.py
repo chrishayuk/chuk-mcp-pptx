@@ -223,6 +223,7 @@ class FeatureCard(Card):
     def __init__(self,
                  icon: Optional[str] = None,
                  title: str = "",
+                 description: Optional[str] = None,
                  features: List[str] = None,
                  theme: Optional[Dict[str, Any]] = None):
         """
@@ -231,10 +232,11 @@ class FeatureCard(Card):
         Args:
             icon: Optional icon character
             title: Feature title
+            description: Optional description text
             features: List of feature points
             theme: Theme configuration
         """
-        super().__init__(title=title, theme=theme)
+        super().__init__(title=title, description=description, theme=theme)
         self.icon = icon
         self.features = features or []
     

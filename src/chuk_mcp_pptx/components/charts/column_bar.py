@@ -40,12 +40,17 @@ class ColumnChart(ChartComponent):
         self.series = series
         self.variant = variant
         
+        # Validate data during initialization
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
+        
         # Set chart type based on variant
         variant_map = {
             "clustered": XL_CHART_TYPE.COLUMN_CLUSTERED,
             "stacked": XL_CHART_TYPE.COLUMN_STACKED,
             "stacked100": XL_CHART_TYPE.COLUMN_STACKED_100,
-            "3d": XL_CHART_TYPE.COLUMN_CLUSTERED,  # Fallback to regular clustered
+            "3d": XL_CHART_TYPE.THREE_D_COLUMN,
         }
         self.chart_type = variant_map.get(variant, XL_CHART_TYPE.COLUMN_CLUSTERED)
     
@@ -80,7 +85,8 @@ class ColumnChart(ChartComponent):
         chart = super()._render_sync(slide, **kwargs)
         
         # Add data labels if requested
-        if self.options.get("show_values", False):
+        opts = self._computed_options if hasattr(self, '_computed_options') else {}
+        if opts.get("show_values", False):
             plot = chart.plots[0]
             plot.has_data_labels = True
             data_labels = plot.data_labels
@@ -96,7 +102,7 @@ class ColumnChart(ChartComponent):
         
         # Configure gap width
         if hasattr(chart.plots[0], 'gap_width'):
-            chart.plots[0].gap_width = self.options.get("gap_width", 150)
+            chart.plots[0].gap_width = opts.get("gap_width", 150)
         
         # Configure overlap for stacked charts
         if "stacked" in self.variant and hasattr(chart.plots[0], 'overlap'):
@@ -127,7 +133,7 @@ class BarChart(ColumnChart):
             "clustered": XL_CHART_TYPE.BAR_CLUSTERED,
             "stacked": XL_CHART_TYPE.BAR_STACKED,
             "stacked100": XL_CHART_TYPE.BAR_STACKED_100,
-            "3d": XL_CHART_TYPE.BAR_CLUSTERED,  # Fallback to regular clustered
+            "3d": XL_CHART_TYPE.THREE_D_BAR_CLUSTERED,
         }
         self.chart_type = variant_map.get(variant, XL_CHART_TYPE.BAR_CLUSTERED)
 
@@ -143,6 +149,7 @@ class WaterfallChart(ChartComponent):
     def __init__(self,
                  categories: List[str],
                  values: List[float],
+                 show_connectors: bool = False,
                  **kwargs):
         """
         Initialize waterfall chart.
@@ -150,12 +157,19 @@ class WaterfallChart(ChartComponent):
         Args:
             categories: Category labels (e.g., ["Start", "Q1", "Q2", "End"])
             values: Values showing changes (positive/negative)
+            show_connectors: Whether to show connector lines
             **kwargs: Additional chart parameters
         """
         super().__init__(**kwargs)
         self.categories = categories
         self.values = values
+        self.show_connectors = show_connectors
         self.chart_type = XL_CHART_TYPE.COLUMN_STACKED
+        
+        # Validate data during initialization
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
     
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """Validate waterfall data."""

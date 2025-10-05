@@ -44,6 +44,11 @@ class ScatterChart(ChartComponent):
         self.marker_size = marker_size
         self.variant = variant
         
+        # Validate data during initialization
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
+        
         # Set chart type based on variant
         variant_map = {
             "default": XL_CHART_TYPE.XY_SCATTER,
@@ -185,6 +190,11 @@ class BubbleChart(ChartComponent):
         self.size_scale = size_scale
         self.transparency = max(0, min(100, transparency))
         self.chart_type = XL_CHART_TYPE.BUBBLE
+        
+        # Validate data during initialization
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
     
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """Validate bubble chart data."""

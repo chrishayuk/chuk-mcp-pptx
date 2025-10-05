@@ -1,175 +1,132 @@
 # PowerPoint MCP Server Examples
 
-This folder contains example scripts demonstrating the PowerPoint MCP Server capabilities.
-All generated presentations are saved to the `../outputs/` folder.
+This directory contains examples demonstrating the PowerPoint MCP Server's capabilities, organized by category.
 
-## Available Examples
+## 🎨 Beautiful Design System Examples
 
-### 1. simple_example.py
-**Basic presentation creation example**
-- Creates a simple presentation with title and content slides
-- Demonstrates basic text slides and bullet points
-- Shows how to save presentations
-- Output: `outputs/simple_demo.pptx`
+Our "shadcn for PowerPoint" design system - component-based charts with multiple themes:
 
-### 2. chart_demo.py
-**Sales analytics dashboard demo**
-- Creates a professional sales presentation
-- Includes metrics dashboard with KPIs
-- Demonstrates column and pie charts using unified API
-- Shows template usage and color schemes
-- Output: `outputs/sales_analytics_2024.pptx`
+### Core Galleries
+- **`beautiful_chart_gallery.py`** - Comprehensive showcase of all chart types with modern themes
+- **`theme_showcase_by_domain.py`** - Business domain-specific charts across all themes (48 presentations!)
+- **`beautiful_themes_demo.py`** - Interactive theme demonstration
 
-### 3. chart_gallery.py
-**Comprehensive chart showcase**
-- Demonstrates all 15 supported chart types
-- Uses the unified `pptx_add_chart()` API for all charts
-- Includes examples of:
-  - Column & Bar charts (regular and stacked)
-  - Line & Area charts (with variants)
-  - Pie & Doughnut charts
-  - Scatter (XY) plots for correlations
-  - Bubble charts for 3D data visualization
-  - Radar charts for multi-criteria comparison
-  - Waterfall charts for financial analysis
-- Shows proper data structure for each chart type
-- Output: `outputs/chart_gallery.pptx`
+### Component Showcases
+- **`component_showcase.py`** - All UI components (cards, badges, buttons)
+- **`shapes_gallery.py`** - Shape components with theme variations
+- **`table_gallery.py`** - Table and data grid components
+- **`smartart_gallery.py`** - SmartArt and diagram components
+- **`image_gallery.py`** - Image handling and layouts
 
-### 4. image_demo.py
-**Basic image handling demonstration**
-- Creates a simple presentation with various image features
-- Demonstrates basic image operations:
-  - Adding image slides with titles
-  - Images with captions
-  - Logo positioning in standard locations
-  - Multiple images on a single slide
-- Uses base64 data URLs for demo (no external files needed)
-- Shows how to work with both file paths and base64 images
-- Output: `outputs/image_demo.pptx`
+## 📊 Chart Examples
 
-### 5. table_gallery.py
-**Comprehensive table showcase**
-- Complete demonstration of data table capabilities
-- Table types demonstrated:
-  - Basic data tables with headers and rows
-  - Financial reports with formatting
-  - Product comparison matrices
-  - Project timelines and schedules
-  - Performance metrics and KPIs
-  - Budget allocation tables
-  - Risk assessment matrices
-  - Employee rosters
-  - Pricing tiers
-  - Inventory status reports
-- Features:
-  - Three table styles (light, medium, dark)
-  - Custom positioning and sizing
-  - Support for emojis and status indicators
-  - Professional business formatting
-- Output: `outputs/table_gallery.pptx`
+### Basic Charts
+- **`chart_demo.py`** - Simple chart creation examples
+- **`chart_gallery.py`** - Basic chart types demonstration
 
-### 6. image_gallery.py
-**Comprehensive image gallery showcase**
-- Complete demonstration of all image handling capabilities
-- Features demonstrated:
-  - Basic image slides
-  - Custom positioning and sizing with layout validation
-  - Automatic gallery grids with smart spacing
-  - Images with captions
-  - Logo positioning (9 standard positions)
-  - Background images for slides
-  - Image replacement with position retention
-  - Mixed layouts with featured and supporting images
-- Includes automatic layout helpers for proper positioning
-- Uses generated colored rectangles for demo purposes
-- Supports both file paths and base64 data URLs
-- Output: `outputs/image_gallery.pptx`
+### Advanced Charts
+- **`comprehensive_chart_showcase.py`** - Advanced chart features
+- **`theme_chart_galleries.py`** - Charts with theme variations
 
-## Unified APIs
+## 🚀 Quick Start Examples
 
-### Chart API
+- **`simple_example.py`** - Minimal working example
+- **`code_examples.py`** - Code syntax highlighting in slides
 
-All chart examples use the simplified unified chart API:
+## 🔧 Technical Demos
 
-```python
-await pptx_add_chart(
-    slide_index=0,
-    chart_type="column",  # or "pie", "scatter", "bubble", etc.
-    data={
-        # Structure depends on chart_type
-        "categories": ["Q1", "Q2", "Q3", "Q4"],
-        "series": {"Revenue": [100, 120, 140, 160]}
-    },
-    title="Chart Title"
-)
+- **`connector_proof.py`** - Shape connector functionality
+- **`image_demo.py`** - Image manipulation examples
+- **`layout_inspection_demo.py`** - Layout analysis tools
+
+## 📁 Output Structure
+
+Running these examples will create presentations in the `../outputs/` directory:
+
+```
+outputs/
+├── beautiful_chart_gallery.pptx      # Main chart gallery
+├── theme_galleries/                  # Domain-specific themed charts
+│   ├── general_business_*.pptx      # Business analytics (8 themes)
+│   ├── tech_teams_*.pptx            # Engineering metrics (8 themes)
+│   ├── finance_*.pptx               # Financial dashboards (8 themes)
+│   ├── hr_*.pptx                    # People analytics (8 themes)
+│   ├── project_mgmt_*.pptx          # Project management (8 themes)
+│   └── stock_market_*.pptx          # Trading analytics (8 themes)
+└── [other output files]
 ```
 
-### Image API
+## 🎯 Recommended Examples to Start
 
-Image handling uses specialized tools for different purposes:
+1. **For Charts**: Run `beautiful_chart_gallery.py` to see all chart types
+2. **For Themes**: Run `theme_showcase_by_domain.py` to generate business-specific galleries
+3. **For Components**: Run `component_showcase.py` to see UI components
+4. **For Quick Demo**: Run `simple_example.py` for a minimal example
 
-```python
-# Add image to slide with precise positioning
-await pptx_add_image(
-    slide_index=1,
-    image_path="/path/to/image.png",  # or base64 data URL
-    left=2.0,
-    top=1.5,
-    width=4.0,
-    height=3.0
-)
+## 💡 Design System Philosophy
 
-# Create image gallery grid
-await pptx_add_image_gallery(
-    slide_index=2,
-    image_paths=[img1, img2, img3, img4],
-    columns=2,
-    spacing=0.2
-)
+Our examples demonstrate:
+- **Component-based architecture** - Reusable chart and UI components
+- **Theme consistency** - Same components, different visual styles
+- **Business-appropriate** - Charts selected for specific business domains
+- **Beautiful defaults** - Great looking presentations out of the box
 
-# Add logo in standard position
-await pptx_add_logo(
-    slide_index=0,
-    logo_path="/path/to/logo.png",
-    position="top-right",
-    size=1.5
-)
-```
+## 🛠️ Running Examples
 
-### 6. layout_inspection_demo.py
-**Layout inspection and automatic fixes**
-- Demonstrates slide inspection capabilities
-- Features:
-  - Detailed slide content inspection
-  - Overlap detection between elements
-  - Out-of-bounds element detection
-  - Automatic layout fixes
-  - Presentation-wide analysis
-- Shows AI workflow for quality assurance
-- Output: `outputs/layout_demo.pptx`
-
-## Layout and Positioning
-
-All examples now include automatic layout validation to ensure:
-- Images and charts fit within slide boundaries
-- Proper spacing and margins are maintained
-- Overlapping placeholders are automatically removed
-- Content stays within safe areas (accounting for titles)
-
-The layout helpers use standard PowerPoint dimensions:
-- Slide width: 10.0 inches
-- Slide height: 5.625 inches (16:9 aspect ratio)
-- Safe content margins from edges
-
-## Running Examples
-
-All examples use async/await and can be run with:
+All examples can be run using uv:
 
 ```bash
-cd examples
-uv run python example_name.py
+# Run any example
+uv run python examples/[example_name].py
+
+# Generate all theme galleries (48 presentations!)
+uv run python examples/theme_showcase_by_domain.py
+
+# Create the beautiful chart gallery
+uv run python examples/beautiful_chart_gallery.py
 ```
 
-## Output Location
+## 📊 Business Domain Charts
 
-All generated PowerPoint files are saved to the `../outputs/` folder to keep the examples directory clean.
+The `theme_showcase_by_domain.py` creates specialized charts for each business domain:
+
+### General Business / Strategy
+- Column/Bar Charts for revenue comparisons
+- Waterfall Charts for profit analysis
+- Line Charts for market trends
+- Sunburst Charts for portfolio visualization
+- Funnel Charts for sales pipeline
+
+### Tech Teams / Engineering
+- Burndown Charts for sprint tracking
+- Velocity Charts for team performance
+- Cumulative Flow Diagrams for workflow
+- Stacked Bars for feature tracking
+
+### Finance / CFO
+- Waterfall Charts for EBITDA bridges
+- Combo Charts for revenue & margins
+- Stacked Columns for regional revenue
+- Pie Charts for expense allocation
+
+### HR / People Analytics
+- Bar Charts for headcount analysis
+- Radar Charts for engagement scores
+- Line Charts for attrition trends
+- Stacked Bars for diversity metrics
+
+### Project Management
+- Timeline Charts for milestones
+- Resource Histograms for allocation
+- Risk Matrices for assessment
+- Progress Bars for phase tracking
+
+### Stock Market / Trading
+- Line Charts for index performance
+- Column Charts for trading volumes
+- Bubble Charts for risk/return analysis
+- Waterfall Charts for P&L breakdown
+
+## 📚 Archive
+
+Test and debug scripts have been moved to the `archive/` folder for reference.

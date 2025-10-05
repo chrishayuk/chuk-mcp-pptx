@@ -1,7 +1,7 @@
 [project]
 name = "chuk-mcp-pptx"
 version = "0.1.0"
-description = "MCP server for PowerPoint operations using python-pptx"
+description = "PowerPoint MCP Server - A shadcn-inspired design system for presentations"
 authors = [{ name = "Chris Hay" }]
 readme = "README.md"
 requires-python = ">=3.11"
@@ -9,6 +9,22 @@ dependencies = [
     "mcp>=0.9.1",
     "python-pptx>=1.0.2",
     "chuk-mcp-server @ git+https://github.com/chrishayuk/chuk-mcp-server.git",
+    "Pillow>=10.0.0",
+    "aiofiles>=23.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.10.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+    "flake8>=6.0.0",
+    "pylint>=2.17.0",
 ]
 
 [project.scripts]
@@ -23,3 +39,46 @@ packages = ["src/chuk_mcp_pptx"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--tb=short",
+    "--asyncio-mode=auto",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/chuk_mcp_pptx"]
+omit = [
+    "*/tests/*",
+    "*/examples/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

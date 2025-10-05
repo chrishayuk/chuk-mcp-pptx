@@ -55,22 +55,99 @@ class ChartComponent(AsyncComponent):
         """
         super().__init__(theme)
         self.title = title
-        self.data = data or {}
-        self.options = options or {}
+        self.data = data  # Keep original value (can be None)
+        # Store private attributes for test compatibility
+        self._theme = theme  # Store original theme value (can be None)
+        self._options = options  # Store original options value (can be None)
+        # Store computed options separately for internal use
+        self._computed_options = options or {}
         self.chart_type = XL_CHART_TYPE.COLUMN_CLUSTERED
     
-    def validate_data(self) -> Tuple[bool, Optional[str]]:
+    def validate(self) -> Tuple[bool, Optional[str]]:
         """
-        Validate chart data.
+        Public validation method for complete chart configuration.
+        Validates data, options, and other settings.
         
         Returns:
             Tuple of (is_valid, error_message)
         """
-        if not self.data:
-            return False, "No data provided for chart"
+        # First validate data
+        valid, error = self.validate_data()
+        if not valid:
+            return False, error
         
-        # Override in subclasses for specific validation
+        # Could add more validation here (options, theme, etc.)
+        # For now, just delegate to validate_data
         return True, None
+    
+    def validate_data(self) -> Tuple[bool, Optional[str]]:
+        """
+        Internal method to validate chart data specifically.
+        Override in subclasses for specific data validation.
+        
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        # Base implementation - subclasses should override
+        return True, None
+    
+    def validate_boundaries(self, left: float, top: float, 
+                           width: float, height: float) -> Tuple[bool, Optional[str]]:
+        """
+        Validate chart boundaries against slide dimensions.
+        
+        Args:
+            left: Left position in inches
+            top: Top position in inches  
+            width: Width in inches
+            height: Height in inches
+        
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        # Check if chart exceeds slide boundaries
+        if left + width > self.SLIDE_WIDTH:
+            return False, f"Chart exceeds slide width (max: {self.SLIDE_WIDTH} inches)"
+        if top + height > self.SLIDE_HEIGHT:
+            return False, f"Chart exceeds slide height (max: {self.SLIDE_HEIGHT} inches)"
+        if left < 0 or top < 0:
+            return False, "Chart position cannot be negative"
+        if width <= 0 or height <= 0:
+            return False, "Chart dimensions must be positive"
+        
+        return True, None
+    
+    def adjust_to_boundaries(self, left: float, top: float,
+                           width: float, height: float) -> Tuple[float, float, float, float]:
+        """
+        Adjust chart dimensions to fit within slide boundaries.
+        
+        Args:
+            left: Left position in inches
+            top: Top position in inches
+            width: Width in inches
+            height: Height in inches
+        
+        Returns:
+            Tuple of adjusted (left, top, width, height)
+        """
+        # Adjust left if needed
+        if left + width > self.SLIDE_WIDTH:
+            left = max(self.MARGIN_LEFT, self.SLIDE_WIDTH - width)
+        
+        # Adjust top if needed
+        if top + height > self.SLIDE_HEIGHT:
+            top = max(self.MARGIN_TOP, self.SLIDE_HEIGHT - height)
+        
+        # Ensure non-negative position
+        left = max(left, self.MARGIN_LEFT)
+        top = max(top, self.MARGIN_TOP)
+        
+        # Adjust dimensions if still exceeding
+        width = min(width, self.SLIDE_WIDTH - self.MARGIN_LEFT - self.MARGIN_RIGHT)
+        height = min(height, self.SLIDE_HEIGHT - self.MARGIN_TOP - self.MARGIN_BOTTOM)
+        
+        return left, top, width, height
     
     def validate_position(self, left: float, top: float, 
                          width: float, height: float,
@@ -188,7 +265,10 @@ class ChartComponent(AsyncComponent):
             
             # Apply theme font
             if hasattr(chart.legend, 'font'):
-                chart.legend.font.name = self.theme.get("font_family", "Inter")
+                font_family = "Inter"  # Default font
+                if self._internal_theme and isinstance(self._internal_theme, dict):
+                    font_family = self._internal_theme.get("font_family", "Inter")
+                chart.legend.font.name = font_family
                 chart.legend.font.size = Pt(10)
     
     def configure_axes(self, chart):
@@ -209,7 +289,10 @@ class ChartComponent(AsyncComponent):
                 
                 # Format axis labels
                 if hasattr(value_axis, 'tick_labels'):
-                    value_axis.tick_labels.font.name = self.theme.get("font_family", "Inter")
+                    font_family = "Inter"
+                    if self._internal_theme and isinstance(self._internal_theme, dict):
+                        font_family = self._internal_theme.get("font_family", "Inter")
+                    value_axis.tick_labels.font.name = font_family
                     value_axis.tick_labels.font.size = Pt(9)
                     value_axis.tick_labels.font.color.rgb = self.get_color("muted.foreground")
             
@@ -217,7 +300,10 @@ class ChartComponent(AsyncComponent):
             if hasattr(chart, 'category_axis'):
                 cat_axis = chart.category_axis
                 if hasattr(cat_axis, 'tick_labels'):
-                    cat_axis.tick_labels.font.name = self.theme.get("font_family", "Inter")
+                    font_family = "Inter"
+                    if self._internal_theme and isinstance(self._internal_theme, dict):
+                        font_family = self._internal_theme.get("font_family", "Inter")
+                    cat_axis.tick_labels.font.name = font_family
                     cat_axis.tick_labels.font.size = Pt(9)
                     cat_axis.tick_labels.font.color.rgb = self.get_color("muted.foreground")
         except ValueError:
@@ -238,7 +324,10 @@ class ChartComponent(AsyncComponent):
             
             # Style the title
             para = title.text_frame.paragraphs[0]
-            para.font.name = self.theme.get("font_family", "Inter")
+            font_family = "Inter"
+            if self._internal_theme and isinstance(self._internal_theme, dict):
+                font_family = self._internal_theme.get("font_family", "Inter")
+            para.font.name = font_family
             para.font.size = Pt(16)
             para.font.bold = True
             para.font.color.rgb = self.get_color("foreground.DEFAULT")
@@ -305,8 +394,8 @@ class ChartComponent(AsyncComponent):
         self.apply_theme_colors(chart)
         self.configure_legend(
             chart,
-            position=self.options.get("legend_position", "right"),
-            show=self.options.get("show_legend", True)
+            position=self._computed_options.get("legend_position", "right"),
+            show=self._computed_options.get("show_legend", True)
         )
         self.configure_axes(chart)
         

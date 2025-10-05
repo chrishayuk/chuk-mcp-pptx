@@ -44,6 +44,11 @@ class RadarChart(ChartComponent):
         self.variant = variant
         self.max_value = max_value
         
+        # Validate data during initialization
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
+        
         # Set chart type based on variant
         variant_map = {
             "filled": XL_CHART_TYPE.RADAR_FILLED,
@@ -174,6 +179,11 @@ class ComboChart(ChartComponent):
         self.column_series = column_series
         self.line_series = line_series
         self.secondary_axis = secondary_axis or []
+        
+        # Validate data during initialization
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
         
         # Start with column chart type
         self.chart_type = XL_CHART_TYPE.COLUMN_CLUSTERED
@@ -308,6 +318,11 @@ class GaugeChart(ChartComponent):
         
         # Calculate gauge segments
         self._calculate_segments()
+        
+        # Validate data after calculation
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
     
     def _calculate_segments(self):
         """Calculate gauge segments for visualization."""

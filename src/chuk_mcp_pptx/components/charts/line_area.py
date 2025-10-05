@@ -25,7 +25,7 @@ class LineChart(ChartComponent):
     def __init__(self,
                  categories: List[str],
                  series: Dict[str, List[float]],
-                 smooth: bool = True,
+                 smooth: bool = False,
                  markers: bool = True,
                  variant: str = "default",
                  **kwargs):
@@ -47,8 +47,15 @@ class LineChart(ChartComponent):
         self.markers = markers
         self.variant = variant
         
+        # Validate data during initialization
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
+        
         # Set chart type based on options
-        if variant == "stacked":
+        if variant == "3d":
+            self.chart_type = XL_CHART_TYPE.THREE_D_LINE
+        elif variant == "stacked":
             self.chart_type = XL_CHART_TYPE.LINE_STACKED
         elif markers:
             self.chart_type = XL_CHART_TYPE.LINE_MARKERS
@@ -173,12 +180,17 @@ class AreaChart(ChartComponent):
         self.variant = variant
         self.transparency = max(0, min(100, transparency))
         
+        # Validate data during initialization
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
+        
         # Set chart type based on variant
         variant_map = {
             "default": XL_CHART_TYPE.AREA,
             "stacked": XL_CHART_TYPE.AREA_STACKED,
             "stacked100": XL_CHART_TYPE.AREA_STACKED_100,
-            "3d": XL_CHART_TYPE.AREA,  # Fallback to regular area
+            "3d": XL_CHART_TYPE.THREE_D_AREA,
         }
         self.chart_type = variant_map.get(variant, XL_CHART_TYPE.AREA)
     
@@ -260,6 +272,8 @@ class SparklineChart(LineChart):
     def __init__(self,
                  values: List[float],
                  color: Optional[str] = None,
+                 show_markers: bool = False,
+                 highlight_minmax: bool = False,
                  **kwargs):
         """
         Initialize sparkline chart.
@@ -267,20 +281,40 @@ class SparklineChart(LineChart):
         Args:
             values: Data values
             color: Line color (hex)
+            show_markers: Whether to show data point markers
+            highlight_minmax: Whether to highlight min/max values
             **kwargs: Additional parameters
         """
-        # Create minimal categories
-        categories = list(range(len(values)))
-        series = {"": values}  # Single unnamed series
+        # Store values and options before calling parent
+        self.values = values
+        self.show_markers = show_markers
+        self.highlight_minmax = highlight_minmax
+        
+        # Remove 'categories' from kwargs if present (avoid double argument)
+        provided_categories = kwargs.pop('categories', None)
+        
+        # Handle empty values
+        if not values:
+            # Create dummy data for empty sparkline
+            categories = provided_categories or [0]
+            series = {"": [0]}
+        else:
+            # Use provided categories or create minimal categories
+            categories = provided_categories or list(range(len(values)))
+            series = {"": values}  # Single unnamed series
         
         super().__init__(
             categories=categories,
             series=series,
             smooth=True,
-            markers=False,
+            markers=show_markers,
             **kwargs
         )
         self.color = color
+        
+        # Store sparkline-specific attributes
+        self.show_axes = False
+        self.show_gridlines = False
         
         # Override defaults for sparklines
         self.DEFAULT_WIDTH = 2.0

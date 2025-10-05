@@ -9,6 +9,7 @@ from .line_area import LineChart, AreaChart, SparklineChart
 from .pie_doughnut import PieChart, DoughnutChart, SunburstChart
 from .scatter_bubble import ScatterChart, BubbleChart, Matrix3DChart
 from .radar_combo import RadarChart, ComboChart
+from .funnel import FunnelChart, GanttChart, HeatmapChart
 
 # Legacy chart component (for backward compatibility)
 try:
@@ -47,6 +48,11 @@ __all__ = [
     # Specialized Charts
     'RadarChart',
     'ComboChart',
+    
+    # Business Charts
+    'FunnelChart',
+    'GanttChart',
+    'HeatmapChart',
     
     # Legacy (backward compatibility)
     'Chart',

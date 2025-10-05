@@ -25,8 +25,9 @@ class PieChart(ChartComponent):
     def __init__(self,
                  categories: List[str],
                  values: List[float],
-                 explode: Optional[int] = None,
+                 explode_slice: Optional[int] = None,
                  variant: str = "default",
+                 show_percentages: bool = True,
                  **kwargs):
         """
         Initialize pie chart.
@@ -34,21 +35,28 @@ class PieChart(ChartComponent):
         Args:
             categories: Category labels
             values: Data values
-            explode: Index of slice to explode (optional)
+            explode_slice: Index of slice to explode (optional)
             variant: Chart variant (default, 3d, exploded)
+            show_percentages: Whether to show percentages
             **kwargs: Additional chart parameters
         """
         super().__init__(**kwargs)
         self.categories = categories
         self.values = values
-        self.explode = explode
+        self.explode_slice = explode_slice
         self.variant = variant
+        self.show_percentages = show_percentages
+        
+        # Validate data during initialization
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
         
         # Set chart type based on variant
         if variant == "3d":
-            self.chart_type = XL_CHART_TYPE.PIE  # Fallback to regular pie
+            self.chart_type = XL_CHART_TYPE.THREE_D_PIE
         elif variant == "exploded":
-            self.chart_type = XL_CHART_TYPE.PIE  # Fallback to regular pie
+            self.chart_type = XL_CHART_TYPE.PIE_EXPLODED
         else:
             self.chart_type = XL_CHART_TYPE.PIE
     
@@ -106,10 +114,10 @@ class PieChart(ChartComponent):
                 line.width = Pt(0.5)
         
         # Explode slice if specified
-        if self.explode is not None and len(chart.series) > 0:
+        if self.explode_slice is not None and len(chart.series) > 0:
             series = chart.series[0]
-            if 0 <= self.explode < len(series.points):
-                series.points[self.explode].explosion = 10
+            if 0 <= self.explode_slice < len(series.points):
+                series.points[self.explode_slice].explosion = 10
         
         # Add data labels
         plot = chart.plots[0]
@@ -117,13 +125,14 @@ class PieChart(ChartComponent):
         data_labels = plot.data_labels
         
         # Show percentages and categories
-        if self.options.get("show_percentages", True):
+        opts = self._computed_options if hasattr(self, '_computed_options') else {}
+        if opts.get("show_percentages", self.show_percentages):
             data_labels.show_percentage = True
         
-        if self.options.get("show_categories", True):
+        if opts.get("show_categories", True):
             data_labels.show_category_name = True
         
-        if self.options.get("show_values", False):
+        if opts.get("show_values", False):
             data_labels.show_value = True
         
         # Configure label appearance
@@ -132,7 +141,7 @@ class PieChart(ChartComponent):
         data_labels.position = XL_DATA_LABEL_POSITION.CENTER
         
         # Add leader lines for outside labels
-        if self.options.get("labels_outside", False):
+        if opts.get("labels_outside", False):
             data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
             data_labels.font.color.rgb = self.get_color("foreground.DEFAULT")
             if hasattr(data_labels, 'show_leader_lines'):
@@ -153,6 +162,7 @@ class DoughnutChart(PieChart):
     
     def __init__(self,
                  hole_size: int = 50,
+                 center_text: Optional[str] = None,
                  variant: str = "default",
                  **kwargs):
         """
@@ -160,15 +170,17 @@ class DoughnutChart(PieChart):
         
         Args:
             hole_size: Size of center hole (0-90)
+            center_text: Text to display in the center
             variant: Chart variant (default, exploded)
             **kwargs: Additional chart parameters
         """
         super().__init__(variant=variant, **kwargs)
         self.hole_size = max(10, min(90, hole_size))
+        self.center_text = center_text
         
         # Set chart type
         if variant == "exploded":
-            self.chart_type = XL_CHART_TYPE.DOUGHNUT  # Fallback to regular doughnut
+            self.chart_type = XL_CHART_TYPE.DOUGHNUT_EXPLODED
         else:
             self.chart_type = XL_CHART_TYPE.DOUGHNUT
     
@@ -186,7 +198,8 @@ class DoughnutChart(PieChart):
             data_labels = plot.data_labels
             
             # Position labels outside for doughnut
-            if not self.options.get("labels_inside", False):
+            opts = self._computed_options if hasattr(self, '_computed_options') else {}
+            if not opts.get("labels_inside", False):
                 data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
                 data_labels.font.color.rgb = self.get_color("foreground.DEFAULT")
                 if hasattr(data_labels, 'show_leader_lines'):
@@ -205,20 +218,31 @@ class SunburstChart(ChartComponent):
     
     def __init__(self,
                  data: Dict[str, Any],
+                 max_levels: Optional[int] = None,
+                 color_scheme: Optional[str] = None,
                  **kwargs):
         """
         Initialize sunburst chart.
         
         Args:
             data: Hierarchical data structure
+            max_levels: Maximum depth levels to display
+            color_scheme: Color scheme for the chart
             **kwargs: Additional chart parameters
         """
         super().__init__(**kwargs)
-        self.hierarchical_data = data
+        self.data = data  # Store as data for test compatibility
+        self.max_levels = max_levels
+        self.color_scheme = color_scheme
         self.chart_type = XL_CHART_TYPE.DOUGHNUT
         
         # Convert hierarchical data to flat structure
         self._flatten_data()
+        
+        # Validate data after flattening
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Invalid chart data: {error}")
     
     def _flatten_data(self):
         """Flatten hierarchical data for doughnut representation."""
@@ -228,15 +252,29 @@ class SunburstChart(ChartComponent):
         self.values = []
         
         def traverse(node, level=0):
+            # Skip if max_levels is set and we're too deep
+            if self.max_levels and level >= self.max_levels:
+                return
+                
             if isinstance(node, dict):
-                for key, value in node.items():
-                    if isinstance(value, (int, float)):
-                        self.categories.append(key)
-                        self.values.append(value)
-                    else:
-                        traverse(value, level + 1)
+                # Handle both 'name'/'value' structure and generic dict
+                if 'name' in node and 'value' in node:
+                    self.categories.append(node['name'])
+                    self.values.append(node['value'])
+                    # Traverse children if present
+                    if 'children' in node:
+                        for child in node['children']:
+                            traverse(child, level + 1)
+                else:
+                    # Generic dict traversal
+                    for key, value in node.items():
+                        if isinstance(value, (int, float)):
+                            self.categories.append(key)
+                            self.values.append(value)
+                        else:
+                            traverse(value, level + 1)
         
-        traverse(self.hierarchical_data)
+        traverse(self.data)
     
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """Validate sunburst data."""
