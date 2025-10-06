@@ -14,7 +14,7 @@ from pptx.enum.text import PP_ALIGN
 def register_inspection_tools(mcp, manager):
     """Register slide inspection and layout adjustment tools."""
     
-    from .layout_helpers import (
+    from .layout.helpers import (
         validate_position, get_safe_content_area,
         SLIDE_WIDTH, SLIDE_HEIGHT, MARGIN_TOP
     )

@@ -1,9 +1,34 @@
 """
 Theme manager for PowerPoint presentations.
 Central system for managing and applying themes.
+
+The theme system provides:
+- Built-in themes (dark/light variants, special themes)
+- Custom theme creation
+- Theme registration and discovery
+- Application to slides and components
+- Export/import for sharing
+
+Usage:
+    from chuk_mcp_pptx.themes import ThemeManager
+
+    # Get theme manager
+    mgr = ThemeManager()
+
+    # List available themes
+    themes = mgr.list_themes()
+
+    # Get and apply a theme
+    theme = mgr.get_theme("dark-violet")
+    theme.apply_to_slide(slide)
+
+    # Create custom theme
+    custom = Theme("my-theme", primary_hue="emerald", mode="dark")
+    mgr.register_theme(custom)
 """
 
 from typing import Dict, Any, Optional, List
+import json
 from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
@@ -72,11 +97,70 @@ class ThemeManager:
     def list_themes(self) -> List[str]:
         """List all available theme names."""
         return list(self.themes.keys())
-    
+
+    def list_themes_by_mode(self, mode: str) -> List[str]:
+        """List themes filtered by mode (dark/light)."""
+        return [
+            name for name, theme in self.themes.items()
+            if theme.mode == mode
+        ]
+
+    def get_theme_info(self, name: str) -> Optional[Dict[str, Any]]:
+        """
+        Get theme information as a dictionary.
+
+        Args:
+            name: Theme name
+
+        Returns:
+            Dictionary with theme info or None
+        """
+        theme = self.get_theme(name)
+        if not theme:
+            return None
+
+        return {
+            "name": theme.name,
+            "mode": theme.mode,
+            "primary_hue": theme.primary_hue,
+            "font_family": theme.font_family,
+            "colors": {
+                "background": theme.background,
+                "foreground": theme.foreground,
+                "primary": theme.primary,
+                "secondary": theme.secondary,
+                "accent": theme.accent,
+                "chart": theme.chart,
+            }
+        }
+
+    def export_theme(self, name: str) -> Optional[str]:
+        """
+        Export theme as JSON string.
+
+        Args:
+            name: Theme name
+
+        Returns:
+            JSON string or None
+        """
+        info = self.get_theme_info(name)
+        if info:
+            return json.dumps(info, indent=2)
+        return None
+
+    def export_all_themes(self) -> str:
+        """Export all themes as JSON."""
+        all_themes = {
+            name: self.get_theme_info(name)
+            for name in self.list_themes()
+        }
+        return json.dumps(all_themes, indent=2)
+
     def apply_to_slide(self, slide, theme_name: Optional[str] = None):
         """
         Apply theme to a slide.
-        
+
         Args:
             slide: PowerPoint slide object
             theme_name: Theme name or None for current theme
@@ -84,7 +168,7 @@ class ThemeManager:
         theme = self.get_theme(theme_name) if theme_name else self.current_theme
         if not theme:
             theme = self.get_theme("dark")  # Default
-        
+
         theme.apply_to_slide(slide)
 
 
@@ -196,6 +280,47 @@ class Theme:
         """Get chart colors for data visualization."""
         chart_colors = self.tokens.get("chart", [])
         return [RGBColor(*self.hex_to_rgb(color)) for color in chart_colors]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert theme to dictionary representation.
+
+        Returns:
+            Dictionary with theme configuration
+        """
+        return {
+            "name": self.name,
+            "mode": self.mode,
+            "primary_hue": self.primary_hue,
+            "font_family": self.font_family,
+        }
+
+    def export_json(self) -> str:
+        """
+        Export theme as JSON string.
+
+        Returns:
+            JSON representation of theme
+        """
+        return json.dumps(self.to_dict(), indent=2)
+
+    @classmethod
+    def from_dict(cls, config: Dict[str, Any]) -> 'Theme':
+        """
+        Create theme from dictionary.
+
+        Args:
+            config: Theme configuration dictionary
+
+        Returns:
+            Theme instance
+        """
+        return cls(
+            name=config.get("name", "custom"),
+            primary_hue=config.get("primary_hue", "blue"),
+            mode=config.get("mode", "dark"),
+            font_family=config.get("font_family", "Inter")
+        )
 
 
 class CyberpunkTheme(Theme):

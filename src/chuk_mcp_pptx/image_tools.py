@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import List, Dict, Optional, Union
 from pptx.util import Inches
 from pptx.enum.shapes import MSO_SHAPE_TYPE
-from .layout_helpers import (
+from .layout.helpers import (
     validate_position, calculate_grid_layout, get_logo_position,
     get_safe_content_area, CONTENT_LEFT, CONTENT_TOP, SLIDE_HEIGHT
 )

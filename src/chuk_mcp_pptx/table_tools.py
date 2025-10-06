@@ -14,7 +14,7 @@ from pptx.dml.color import RGBColor
 def register_table_tools(mcp, manager):
     """Register all table-related tools with the MCP server."""
     
-    from .layout_helpers import (
+    from .layout.helpers import (
         validate_position, get_safe_content_area,
         SLIDE_WIDTH, SLIDE_HEIGHT
     )

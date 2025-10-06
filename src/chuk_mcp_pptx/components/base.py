@@ -28,10 +28,18 @@ class Component:
             theme: Theme configuration or None for default
         """
         self._internal_theme = theme or self.get_default_theme()
-        self.tokens = get_semantic_tokens(
-            self._internal_theme.get("primary_hue", "blue"),
-            self._internal_theme.get("mode", "dark")
-        )
+
+        # Handle both Theme objects and dict themes
+        if hasattr(self._internal_theme, 'mode'):
+            # Theme object from new theme system
+            mode = self._internal_theme.mode
+            primary_hue = "blue"  # Default for new themes
+        else:
+            # Legacy dict theme
+            mode = self._internal_theme.get("mode", "dark")
+            primary_hue = self._internal_theme.get("primary_hue", "blue")
+
+        self.tokens = get_semantic_tokens(primary_hue, mode)
     
     @property
     def theme(self) -> Optional[Dict[str, Any]]:
@@ -42,11 +50,19 @@ class Component:
     def theme(self, value: Optional[Dict[str, Any]]):
         """Set theme."""
         self._internal_theme = value or self.get_default_theme()
+
+        # Handle both Theme objects and dict themes
+        if hasattr(self._internal_theme, 'mode'):
+            # Theme object from new theme system
+            mode = self._internal_theme.mode
+            primary_hue = "blue"  # Default for new themes
+        else:
+            # Legacy dict theme
+            mode = self._internal_theme.get("mode", "dark")
+            primary_hue = self._internal_theme.get("primary_hue", "blue")
+
         # Update tokens when theme changes
-        self.tokens = get_semantic_tokens(
-            self._internal_theme.get("primary_hue", "blue"),
-            self._internal_theme.get("mode", "dark")
-        )
+        self.tokens = get_semantic_tokens(primary_hue, mode)
     
     @staticmethod
     def get_default_theme() -> Dict[str, Any]:

@@ -13,8 +13,9 @@ def register_shape_tools(mcp, manager):
     """Register all shape and SmartArt tools with the MCP server."""
     
     from .shape_utils import add_shape, add_connector, add_smart_art
-    from .layout_helpers import validate_position
-    from .legacy_themes import create_code_block, apply_theme, THEMES
+    from .layout.helpers import validate_position
+    from .components.code import CodeBlock
+    from .themes.theme_manager import ThemeManager
     
     @mcp.tool
     async def pptx_add_shape(
@@ -425,17 +426,27 @@ def register_shape_tools(mcp, manager):
                     sp = shape.element
                     sp.getparent().remove(sp)
                 
-                # Add code block
-                code_shape = create_code_block(
-                    slide, code, language,
-                    left, top, width, height,
-                    theme_name=theme
+                # Add code block using CodeBlock component
+                theme_manager = ThemeManager()
+                theme_obj = theme_manager.get_theme(theme) if theme else None
+
+                code_component = CodeBlock(
+                    code_text=code,
+                    language=language,
+                    theme=theme_obj
                 )
-                
+                code_shape = code_component.render(
+                    slide,
+                    left=left,
+                    top=top,
+                    width=width,
+                    height=height
+                )
+
                 # Update in VFS if enabled
                 manager.update(presentation)
-                
-                return f"Added {language} code block to slide {slide_index} with {theme} theme"
+
+                return f"Added {language} code block to slide {slide_index}"
                 
             except Exception as e:
                 return f"Error adding code block: {str(e)}"
@@ -445,27 +456,19 @@ def register_shape_tools(mcp, manager):
     @mcp.tool
     async def pptx_apply_theme(
         slide_index: Optional[int] = None,
-        theme: str = "dark_modern",
+        theme: str = "default-light",
         presentation: Optional[str] = None
     ) -> str:
         """
         Apply a beautiful theme to slides.
-        
-        Available themes:
-        - dark_modern: Dark with orange accents
-        - dark_blue: Dark with blue accents  
-        - dark_purple: Dark with purple accents
-        - dark_green: Dark with green accents
-        - light_minimal: Clean light theme
-        - light_warm: Warm light theme
-        - cyberpunk: Neon cyberpunk style
-        - gradient_sunset: Gradient sunset colors
-        
+
+        Available themes: Use pptx_list_themes() to see all available themes.
+
         Args:
             slide_index: Index of slide to theme (None for all slides)
-            theme: Name of theme to apply
+            theme: Name of theme to apply (e.g., "default-light", "ocean-dark", etc.)
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message confirming theme application
         """
@@ -473,44 +476,68 @@ def register_shape_tools(mcp, manager):
             prs = manager.get(presentation)
             if not prs:
                 return "Error: No presentation found"
-            
-            if theme not in THEMES:
-                return f"Error: Unknown theme '{theme}'. Available: {', '.join(THEMES.keys())}"
-            
+
+            theme_manager = ThemeManager()
+            available_themes = theme_manager.list_themes()
+
+            if theme not in available_themes:
+                return f"Error: Unknown theme '{theme}'. Available: {', '.join(available_themes[:10])}"
+
             try:
+                theme_obj = theme_manager.get_theme(theme)
+
                 if slide_index is not None:
                     if slide_index >= len(prs.slides):
                         return f"Error: Slide index {slide_index} out of range"
                     slides = [prs.slides[slide_index]]
                 else:
                     slides = prs.slides
-                
+
+                # Apply background color from theme
                 for slide in slides:
-                    apply_theme(slide, theme)
-                
+                    background = slide.background
+                    fill = background.fill
+                    fill.solid()
+                    # Get background color from theme
+                    bg_color_hex = theme_obj.colors.get("background", {}).get("DEFAULT", "#FFFFFF")
+                    if bg_color_hex.startswith("#"):
+                        bg_color_hex = bg_color_hex[1:]
+                    from pptx.dml.color import RGBColor
+                    fill.fore_color.rgb = RGBColor(
+                        int(bg_color_hex[0:2], 16),
+                        int(bg_color_hex[2:4], 16),
+                        int(bg_color_hex[4:6], 16)
+                    )
+
                 # Update in VFS if enabled
                 manager.update(presentation)
-                
+
                 slide_msg = f"slide {slide_index}" if slide_index is not None else "all slides"
                 return f"Applied {theme} theme to {slide_msg}"
-                
+
             except Exception as e:
                 return f"Error applying theme: {str(e)}"
-        
+
         return await asyncio.get_event_loop().run_in_executor(None, _apply_theme)
     
     @mcp.tool
     async def pptx_list_themes() -> str:
         """
         List all available themes with descriptions.
-        
+
         Returns:
             List of available themes and their characteristics
         """
+        theme_manager = ThemeManager()
+        themes = theme_manager.list_themes()
+
         theme_list = []
-        for key, theme in THEMES.items():
-            theme_list.append(f"• {key}: {theme['name']} - Primary: {theme['primary']}, Fonts: {theme['font_body']}")
-        
+        for theme_name in themes:
+            theme_obj = theme_manager.get_theme(theme_name)
+            mode = theme_obj.mode
+            primary = theme_obj.colors.get("primary", {}).get("DEFAULT", "N/A")
+            theme_list.append(f"• {theme_name} ({mode}): Primary: {primary}")
+
         return "Available themes:\n" + "\n".join(theme_list)
     
     # Return tools for external access

@@ -39,7 +39,7 @@ from .chart_tools import register_chart_tools
 from .image_tools import register_image_tools
 from .inspection_tools import register_inspection_tools
 from .table_tools import register_table_tools
-from .layout_tools import register_layout_tools
+from .tools.layout import register_layout_tools
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

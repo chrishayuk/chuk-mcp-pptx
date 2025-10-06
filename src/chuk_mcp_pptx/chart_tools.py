@@ -14,7 +14,7 @@ def register_chart_tools(mcp, manager):
     """Register the unified chart tool with the MCP server."""
     
     from .chart_utils import add_chart, add_pie_chart, add_scatter_chart
-    from .layout_helpers import validate_position, get_safe_content_area
+    from .layout.helpers import validate_position, get_safe_content_area
     
     @mcp.tool
     async def pptx_add_chart(
