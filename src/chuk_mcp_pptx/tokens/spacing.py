@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/tokens/spacing.py
 """
 Spacing design tokens for consistent layout.
 """

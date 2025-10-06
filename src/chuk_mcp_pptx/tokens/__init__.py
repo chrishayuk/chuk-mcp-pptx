@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/tokens/__init__.py
 """
 Design tokens for PowerPoint presentations.
 

@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/layout/helpers.py
 """
 Layout Helpers for PowerPoint MCP Server
 

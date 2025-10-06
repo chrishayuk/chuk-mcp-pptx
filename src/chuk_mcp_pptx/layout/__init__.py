@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/layout/__init__.py
 """
 Layout system for PowerPoint presentations.
 

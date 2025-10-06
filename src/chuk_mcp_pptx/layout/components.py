@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/layout/components.py
 """
 Layout components for PowerPoint presentations.
 Grid system, containers, stacks - inspired by modern UI frameworks.

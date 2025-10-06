@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/tokens/typography.py
 """
 Typography design tokens for consistent text styling.
 """

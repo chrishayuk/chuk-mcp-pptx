@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/tokens/colors.py
 """
 Design tokens for colors - the foundation of our theme system.
 Similar to CSS variables in shadcn/ui.
