@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/components/core/badge.py
 """
 Badge component for PowerPoint presentations.
 Small status indicators and labels.
@@ -8,9 +9,9 @@ from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 
-from .base import Component
-from ..variants import BADGE_VARIANTS
-from ..registry import component, ComponentCategory, prop, example
+from ..base import Component
+from ...variants import BADGE_VARIANTS
+from ...registry import component, ComponentCategory, prop, example
 
 
 @component(

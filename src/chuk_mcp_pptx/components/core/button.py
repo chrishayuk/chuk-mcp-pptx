@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/components/core/button.py
 """
 Enhanced Button component with variants and composition support.
 Uses the variant system and component registry.
@@ -8,9 +9,9 @@ from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
 
-from ..composition import ComposableComponent
-from ..variants import BUTTON_VARIANTS
-from ..registry import component, ComponentCategory, prop, example
+from ...composition import ComposableComponent
+from ...variants import BUTTON_VARIANTS
+from ...registry import component, ComponentCategory, prop, example
 
 
 @component(

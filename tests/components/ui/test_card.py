@@ -5,7 +5,7 @@ Tests for Card components.
 import pytest
 from unittest.mock import MagicMock
 
-from chuk_mcp_pptx.components.card import Card, MetricCard
+from chuk_mcp_pptx.components.core.card import Card, MetricCard
 
 
 class TestCard:

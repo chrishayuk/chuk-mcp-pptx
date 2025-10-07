@@ -18,8 +18,8 @@ from pptx import Presentation
 from pptx.util import Inches
 
 from chuk_mcp_pptx.components.chat import ChatMessage, ChatConversation
-from chuk_mcp_pptx.components.avatar import Avatar, AvatarWithLabel
-from chuk_mcp_pptx.components.card import Card
+from chuk_mcp_pptx.components.core.avatar import Avatar, AvatarWithLabel
+from chuk_mcp_pptx.components.core.card import Card
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 
 

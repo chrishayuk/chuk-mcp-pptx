@@ -8,7 +8,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 
-from chuk_mcp_pptx.components.button import Button, IconButton, ButtonGroup
+from chuk_mcp_pptx.components.core.button import Button, IconButton, ButtonGroup
 from chuk_mcp_pptx.themes import Theme, ThemeManager
 from chuk_mcp_pptx.registry import get_component_schema, list_components
 

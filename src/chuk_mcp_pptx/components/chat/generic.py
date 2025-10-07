@@ -12,7 +12,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ..avatar import Avatar
+from ..core.avatar import Avatar
 from ...tokens.typography import get_text_style
 
 

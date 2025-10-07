@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/components/core/icon.py
 """
 Icon components for PowerPoint presentations.
 
@@ -10,7 +11,7 @@ from pptx.util import Pt
 from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
 
-from .base import Component
+from ..base import Component
 
 
 # Icon mappings using Unicode symbols
@@ -288,7 +289,7 @@ class IconList(Component):
             List of rendered shapes
         """
         from pptx.util import Inches
-        from ..tokens.typography import get_text_style
+        from ...tokens.typography import get_text_style
 
         shapes = []
         current_top = top

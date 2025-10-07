@@ -2,17 +2,22 @@
 
 This directory contains examples demonstrating the PowerPoint MCP Server's capabilities, organized by category.
 
-## 🎨 Beautiful Design System Examples
+## 🎨 Design System Showcases (Start Here!)
 
-Our "shadcn for PowerPoint" design system - component-based charts with multiple themes:
+Our "shadcn for PowerPoint" design system - comprehensive demonstrations of the design system:
 
-### Core Galleries
+### Core Design System
+- **`tokens_showcase.py`** - Design tokens: colors, typography, spacing, semantic colors
+- **`layout_system_showcase.py`** - Grid system, containers, stacks, spacing scale
+- **`themes_showcase.py`** - All available themes with components and charts
+- **`core_components_showcase.py`** - Buttons, badges, alerts, cards, progress, icons, tiles, avatars
+
+### Business-Focused Galleries
 - **`beautiful_chart_gallery.py`** - Comprehensive showcase of all chart types with modern themes
 - **`theme_showcase_by_domain.py`** - Business domain-specific charts across all themes (48 presentations!)
-- **`beautiful_themes_demo.py`** - Interactive theme demonstration
 
-### Component Showcases
-- **`component_showcase.py`** - All UI components (cards, badges, buttons)
+### Additional Component Galleries
+- **`component_showcase.py`** - UI components overview
 - **`shapes_gallery.py`** - Shape components with theme variations
 - **`table_gallery.py`** - Table and data grid components
 - **`smartart_gallery.py`** - SmartArt and diagram components
@@ -58,10 +63,12 @@ outputs/
 
 ## 🎯 Recommended Examples to Start
 
-1. **For Charts**: Run `beautiful_chart_gallery.py` to see all chart types
-2. **For Themes**: Run `theme_showcase_by_domain.py` to generate business-specific galleries
-3. **For Components**: Run `component_showcase.py` to see UI components
-4. **For Quick Demo**: Run `simple_example.py` for a minimal example
+1. **Design System Basics**: Run `tokens_showcase.py` to see design tokens in action
+2. **Layout System**: Run `layout_system_showcase.py` to see grid and layout capabilities
+3. **Themes**: Run `themes_showcase.py` to explore all available themes
+4. **Components**: Run `core_components_showcase.py` to see all UI components
+5. **Charts**: Run `beautiful_chart_gallery.py` to see all chart types
+6. **Business Focus**: Run `theme_showcase_by_domain.py` for domain-specific galleries (48 presentations!)
 
 ## 💡 Design System Philosophy
 
@@ -76,14 +83,18 @@ Our examples demonstrate:
 All examples can be run using uv:
 
 ```bash
-# Run any example
-uv run python examples/[example_name].py
+# Design System showcases (recommended starting point)
+uv run python examples/tokens_showcase.py
+uv run python examples/layout_system_showcase.py
+uv run python examples/themes_showcase.py
+uv run python examples/core_components_showcase.py
 
-# Generate all theme galleries (48 presentations!)
-uv run python examples/theme_showcase_by_domain.py
-
-# Create the beautiful chart gallery
+# Business-focused galleries
 uv run python examples/beautiful_chart_gallery.py
+uv run python examples/theme_showcase_by_domain.py  # Creates 48 presentations!
+
+# Run any other example
+uv run python examples/[example_name].py
 ```
 
 ## 📊 Business Domain Charts
@@ -130,3 +141,10 @@ The `theme_showcase_by_domain.py` creates specialized charts for each business d
 ## 📚 Archive
 
 Test and debug scripts have been moved to the `archive/` folder for reference.
+
+**Archived Duplicates** (consolidated into new showcases):
+- `beautiful_themes_demo.py` → Consolidated into `themes_showcase.py`
+- `theme_gallery.py` → Consolidated into `themes_showcase.py`
+- `theme_focused_showcase.py` → Consolidated into `themes_showcase.py`
+- `demo_single_theme.py` → Consolidated into `themes_showcase.py`
+- `enhanced_components_demo.py` → Consolidated into `tokens_showcase.py` and `core_components_showcase.py`

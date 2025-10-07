@@ -8,7 +8,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 
-from chuk_mcp_pptx.components.badge import Badge, DotBadge, CountBadge
+from chuk_mcp_pptx.components.core.badge import Badge, DotBadge, CountBadge
 from chuk_mcp_pptx.themes import Theme, ThemeManager
 from chuk_mcp_pptx.registry import get_component_schema, list_components
 

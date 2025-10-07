@@ -11,13 +11,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from pptx import Presentation
 from pptx.util import Inches
 
-from chuk_mcp_pptx.components.button import Button, IconButton, ButtonGroup
-from chuk_mcp_pptx.components.badge import Badge, DotBadge, CountBadge
-from chuk_mcp_pptx.components.alert import Alert
-from chuk_mcp_pptx.components.card import Card, MetricCard
+from chuk_mcp_pptx.components.core.button import Button, IconButton, ButtonGroup
+from chuk_mcp_pptx.components.core.badge import Badge, DotBadge, CountBadge
+from chuk_mcp_pptx.components.core.alert import Alert
+from chuk_mcp_pptx.components.core.card import Card, MetricCard
 from chuk_mcp_pptx.components import ProgressBar, Icon, IconList, Timeline
-from chuk_mcp_pptx.components.tile import Tile, IconTile, ValueTile
-from chuk_mcp_pptx.components.avatar import Avatar, AvatarWithLabel, AvatarGroup
+from chuk_mcp_pptx.components.core.tile import Tile, IconTile, ValueTile
+from chuk_mcp_pptx.components.core.avatar import Avatar, AvatarWithLabel, AvatarGroup
 from chuk_mcp_pptx.layout import Container, Grid, Stack
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 

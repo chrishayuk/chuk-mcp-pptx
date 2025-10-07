@@ -7,7 +7,7 @@ import pytest
 from pptx import Presentation
 from pptx.util import Inches, Pt
 
-from chuk_mcp_pptx.components.alert import Alert
+from chuk_mcp_pptx.components.core.alert import Alert
 from chuk_mcp_pptx.themes import ThemeManager
 from chuk_mcp_pptx.registry import get_component_schema, list_components
 

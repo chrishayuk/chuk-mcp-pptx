@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/components/core/tile.py
 """
 Tile components for PowerPoint presentations.
 
@@ -11,8 +12,8 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
-from .base import Component
-from ..tokens.typography import get_text_style
+from ..base import Component
+from ...tokens.typography import get_text_style
 
 
 class Tile(Component):

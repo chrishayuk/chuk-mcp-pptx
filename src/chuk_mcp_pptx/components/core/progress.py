@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/components/core/progress.py
 """
 Progress bar components for PowerPoint presentations.
 
@@ -10,8 +11,8 @@ from pptx.util import Pt
 from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
 
-from .base import Component
-from ..tokens.typography import get_text_style
+from ..base import Component
+from ...tokens.typography import get_text_style
 
 
 class ProgressBar(Component):

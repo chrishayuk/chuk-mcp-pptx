@@ -4,16 +4,20 @@ Provides reusable, theme-aware components for presentations.
 """
 
 from .base import Component, AsyncComponent
-from .button import Button, IconButton, ButtonGroup
-from .card import Card, MetricCard
-from .badge import Badge, DotBadge, CountBadge
-from .alert import Alert
 from .code import CodeBlock, InlineCode, Terminal
-from .progress import ProgressBar
-from .icon import Icon, IconList
-from .timeline import Timeline
-from .tile import Tile, IconTile, ValueTile
-from .avatar import Avatar, AvatarWithLabel, AvatarGroup
+
+# Core UI components
+from .core import (
+    Alert,
+    Avatar, AvatarWithLabel, AvatarGroup,
+    Badge, DotBadge, CountBadge,
+    Button, IconButton, ButtonGroup,
+    Card, MetricCard,
+    Icon, IconList,
+    ProgressBar,
+    Tile, IconTile, ValueTile,
+    Timeline,
+)
 from .chat import (
     ChatMessage,
     ChatConversation,

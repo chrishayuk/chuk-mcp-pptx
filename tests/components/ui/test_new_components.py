@@ -5,11 +5,11 @@ Tests for new PowerPoint-specific components: ProgressBar, Icon, Timeline, Tile,
 import pytest
 from unittest.mock import MagicMock
 
-from chuk_mcp_pptx.components.progress import ProgressBar
-from chuk_mcp_pptx.components.icon import Icon, IconList, ICON_SYMBOLS
-from chuk_mcp_pptx.components.timeline import Timeline
-from chuk_mcp_pptx.components.tile import Tile, IconTile, ValueTile
-from chuk_mcp_pptx.components.avatar import Avatar, AvatarWithLabel, AvatarGroup
+from chuk_mcp_pptx.components.core.progress import ProgressBar
+from chuk_mcp_pptx.components.core.icon import Icon, IconList, ICON_SYMBOLS
+from chuk_mcp_pptx.components.core.timeline import Timeline
+from chuk_mcp_pptx.components.core.tile import Tile, IconTile, ValueTile
+from chuk_mcp_pptx.components.core.avatar import Avatar, AvatarWithLabel, AvatarGroup
 from chuk_mcp_pptx.components.chat import ChatMessage, ChatConversation
 
 

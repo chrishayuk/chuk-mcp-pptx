@@ -254,6 +254,36 @@ class TestStack:
         # Should be centered
         assert positions[0]['left'] > 2.0
 
+    def test_stack_alignment_end_vertical(self):
+        """Test vertical stack with end alignment."""
+        stack = Stack(direction="vertical", gap="sm", align="end")
+        positions = stack.distribute(
+            num_items=2,
+            item_width=4.0,
+            item_height=1.0,
+            top=2.0,
+            left=1.0
+        )
+
+        # Should align to right edge (end)
+        # Items should be near the right edge of slide
+        assert positions[0]['left'] > 5.0
+
+    def test_stack_alignment_end_horizontal(self):
+        """Test horizontal stack with end alignment."""
+        stack = Stack(direction="horizontal", gap="sm", align="end")
+        positions = stack.distribute(
+            num_items=2,
+            item_width=2.0,
+            item_height=1.0,
+            top=2.0,
+            left=1.0
+        )
+
+        # Should align to bottom edge (end)
+        # Items should be near the bottom edge of slide (SLIDE_HEIGHT - height - margin)
+        assert positions[0]['top'] > 4.0
+
     def test_stack_gap_consistency(self):
         """Test gap consistency between items."""
         stack = Stack(direction="vertical", gap="lg")
@@ -475,6 +505,24 @@ class TestSpacer:
         result = spacer.render(mock_slide, left=0, top=0)
 
         assert 'height' in result or 'width' in result
+
+    def test_spacer_render_vertical(self, mock_slide):
+        """Test vertical spacer returns height."""
+        spacer = Spacer(size="lg", direction="vertical")
+        result = spacer.render(mock_slide, left=0, top=0)
+
+        assert 'height' in result
+        assert result['height'] > 0
+        assert result['width'] == 0
+
+    def test_spacer_render_horizontal(self, mock_slide):
+        """Test horizontal spacer returns width."""
+        spacer = Spacer(size="xl", direction="horizontal")
+        result = spacer.render(mock_slide, left=0, top=0)
+
+        assert 'width' in result
+        assert result['width'] > 0
+        assert result['height'] == 0
 
 
 class TestDivider:

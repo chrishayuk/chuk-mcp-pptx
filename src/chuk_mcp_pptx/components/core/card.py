@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/components/core/card.py
 """
 Enhanced Card component with variants and composition support.
 Uses the new variant system and compositional API.
@@ -8,12 +9,12 @@ from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 
-from ..composition import (
+from ...composition import (
     ComposableComponent, CardHeader, CardContent, CardFooter,
     CardTitle, CardDescription, CompositionBuilder
 )
-from ..variants import CARD_VARIANTS
-from ..registry import component, ComponentCategory, prop, example
+from ...variants import CARD_VARIANTS
+from ...registry import component, ComponentCategory, prop, example
 
 
 @component(
