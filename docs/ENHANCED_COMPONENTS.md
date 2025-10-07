@@ -362,17 +362,350 @@ card = Card(variant="elevated", padding="lg")  # More options!
 
 ---
 
+## Text Components
+
+The Text components provide formatted text boxes and bullet lists with theme integration.
+
+### TextBox Component
+
+Create formatted text boxes with custom styling:
+
+```python
+from chuk_mcp_pptx.components.core import TextBox
+
+# Simple text box
+text = TextBox(text="Hello World")
+text.render(slide, left=2, top=2, width=4, height=1)
+
+# Formatted text
+text = TextBox(
+    text="Important Notice",
+    font_size=24,
+    bold=True,
+    alignment="center",
+    color="primary.DEFAULT"
+)
+text.render(slide, left=1, top=3, width=8, height=1.5)
+
+# Auto-fit text
+text = TextBox(
+    text="This text will auto-fit to the shape",
+    auto_fit=True
+)
+text.render(slide, left=2, top=2, width=4, height=1)
+```
+
+**Features:**
+- Custom font family, size, and styling (bold, italic)
+- Text alignment (left, center, right, justify)
+- Semantic or hex color support
+- Auto-fit text option
+- Word wrapping
+
+**Parameters:**
+- `text` (required): Text content
+- `font_name`: Font family (default: "Calibri")
+- `font_size`: Font size in points (default: 18)
+- `bold`: Bold text (default: False)
+- `italic`: Italic text (default: False)
+- `color`: Text color - semantic ("primary.DEFAULT") or hex ("#FF0000")
+- `alignment`: "left", "center", "right", or "justify"
+- `auto_fit`: Auto-fit text to shape (default: False)
+
+### BulletList Component
+
+Create formatted bullet lists:
+
+```python
+from chuk_mcp_pptx.components.core import BulletList
+
+# Simple bullet list
+bullets = BulletList(items=["Item 1", "Item 2", "Item 3"])
+bullets.render(slide, left=1, top=2, width=8, height=4)
+
+# Styled bullet list
+bullets = BulletList(
+    items=["Increase revenue", "Reduce costs", "Improve quality"],
+    font_size=18,
+    color="primary.DEFAULT",
+    bullet_char="→"
+)
+bullets.render(slide, left=1, top=2, width=8, height=3)
+
+# Custom bullet characters
+bullets = BulletList(
+    items=["Complete", "In Progress", "Pending"],
+    bullet_char="✓"
+)
+bullets.render(slide, left=1, top=2, width=8, height=3)
+```
+
+**Features:**
+- Custom bullet characters (•, →, ✓, etc.)
+- Font size and color control
+- Adjustable item spacing
+- Semantic color support
+- Word wrapping
+
+**Parameters:**
+- `items` (required): List of items to display
+- `font_size`: Font size in points (default: 16)
+- `color`: Text color - semantic or hex
+- `bullet_char`: Bullet character (default: "•")
+- `spacing`: Space after each item in points (default: 6)
+
+---
+
+## Image Component with Filters
+
+The Image component supports advanced image processing filters using PIL (Pillow).
+
+### Basic Usage
+
+```python
+from chuk_mcp_pptx.components.core import Image
+
+# Simple image
+image = Image(image_source="photo.jpg")
+image.render(slide, left=2, top=2, width=4)
+
+# With shadow effect
+image = Image(image_source="photo.jpg", shadow=True)
+image.render(slide, left=2, top=2, width=4)
+```
+
+### Available Filters
+
+#### Blur
+Apply Gaussian blur with adjustable radius:
+```python
+image = Image(image_source="photo.jpg", blur_radius=10)
+image.render(slide, left=2, top=2, width=4)
+```
+
+#### Grayscale
+Convert image to grayscale:
+```python
+image = Image(image_source="photo.jpg", grayscale=True)
+image.render(slide, left=2, top=2, width=4)
+```
+
+#### Sepia
+Apply vintage sepia tone effect:
+```python
+image = Image(image_source="photo.jpg", sepia=True)
+image.render(slide, left=2, top=2, width=4)
+```
+
+#### Brightness
+Adjust brightness (1.0 = normal, <1 = darker, >1 = brighter):
+```python
+# Brighten image by 50%
+image = Image(image_source="photo.jpg", brightness=1.5)
+
+# Darken image by 30%
+image = Image(image_source="photo.jpg", brightness=0.7)
+```
+
+#### Contrast
+Adjust contrast (1.0 = normal, <1 = less, >1 = more):
+```python
+image = Image(image_source="photo.jpg", contrast=1.8)
+```
+
+#### Saturation
+Adjust color saturation (1.0 = normal, 0 = grayscale, >1 = vibrant):
+```python
+# Increase saturation
+image = Image(image_source="photo.jpg", saturation=2.0)
+
+# Decrease saturation
+image = Image(image_source="photo.jpg", saturation=0.3)
+```
+
+#### Sharpen
+Apply sharpening filter:
+```python
+image = Image(image_source="photo.jpg", sharpen=True)
+```
+
+#### Invert
+Invert colors (negative effect):
+```python
+image = Image(image_source="photo.jpg", invert=True)
+```
+
+### Combining Filters
+
+Multiple filters can be applied simultaneously:
+
+```python
+image = Image(
+    image_source="photo.jpg",
+    blur_radius=3,
+    brightness=1.2,
+    contrast=1.3,
+    saturation=1.5,
+    shadow=True
+)
+image.render(slide, left=1, top=1, width=5, height=3)
+```
+
+### Filter Processing Order
+
+Filters are applied in the following order:
+1. Blur
+2. Sharpen
+3. Brightness
+4. Contrast
+5. Saturation
+6. Grayscale (overrides saturation)
+7. Sepia
+8. Invert
+
+### Performance Note
+
+When filters are applied, the image is processed using PIL before being added to the slide. This happens once during rendering. Images without filters are added directly without processing for optimal performance.
+
+---
+
+## Layout System Integration
+
+Text and Image components work seamlessly with the Grid and Stack layout systems.
+
+### Text Components with Grid Layout
+
+```python
+from chuk_mcp_pptx.layout import Grid
+from chuk_mcp_pptx.components.core import TextBox, BulletList
+
+# Use 12-column grid
+grid = Grid(columns=12, gap="md")
+
+# Full-width header (12 cols)
+pos_header = grid.get_span(col_span=12, col_start=0, left=0.5, top=1.8, width=9.0, height=0.8)
+header = TextBox(text="Title", font_size=24, bold=True, alignment="center")
+header.render(slide, **pos_header)
+
+# Two-column layout (6 + 6 cols) - bullet lists side by side
+pos_left = grid.get_span(col_span=6, col_start=0, left=0.5, top=2.8, width=9.0, height=2.0)
+bullets_left = BulletList(items=["Item 1", "Item 2"], bullet_char="→")
+bullets_left.render(slide, **pos_left)
+
+pos_right = grid.get_span(col_span=6, col_start=6, left=0.5, top=2.8, width=9.0, height=2.0)
+bullets_right = BulletList(items=["Item 3", "Item 4"])
+bullets_right.render(slide, **pos_right)
+```
+
+### Text Components with Stack Layout
+
+```python
+from chuk_mcp_pptx.layout import Stack
+from chuk_mcp_pptx.components.core import TextBox
+
+# Vertical stack of text boxes
+text_boxes = [
+    TextBox(text="Section 1", bold=True),
+    TextBox(text="Section 2", bold=True),
+    TextBox(text="Section 3", bold=True)
+]
+
+v_stack = Stack(direction="vertical", gap="md")
+v_stack.render_children(slide, text_boxes, left=0.5, top=2.0, item_width=4.0, item_height=0.8)
+
+# Horizontal stack of bullet lists
+bullet_lists = [
+    BulletList(items=["Q1", "Q2", "Q3"]),
+    BulletList(items=["Jan", "Feb", "Mar"])
+]
+
+h_stack = Stack(direction="horizontal", gap="lg")
+h_stack.render_children(slide, bullet_lists, left=5.0, top=2.0, item_width=2.0, item_height=2.0)
+```
+
+### Image Components with Grid Layout
+
+```python
+from chuk_mcp_pptx.layout import Grid
+from chuk_mcp_pptx.components.core import Image
+
+grid = Grid(columns=12, gap="sm")
+
+# Two large images (6 + 6 columns)
+for i in range(2):
+    pos = grid.get_span(col_span=6, col_start=i*6, left=0.5, top=1.8, width=9.0, height=2.0)
+    img = Image(image_source=f"photo{i}.jpg", shadow=True)
+    img.render(slide, **pos)
+
+# Four small images (3 + 3 + 3 + 3 columns)
+for i in range(4):
+    pos = grid.get_span(col_span=3, col_start=i*3, left=0.5, top=4.0, width=9.0, height=1.5)
+    img = Image(image_source=f"photo{i+2}.jpg", grayscale=True)
+    img.render(slide, **pos)
+```
+
+### Image Components with Stack Layout
+
+```python
+from chuk_mcp_pptx.layout import Stack
+from chuk_mcp_pptx.components.core import Image
+
+# Vertical stack of images
+images = [
+    Image(image_source="photo1.jpg", shadow=True),
+    Image(image_source="photo2.jpg", shadow=True),
+    Image(image_source="photo3.jpg", shadow=True)
+]
+
+v_stack = Stack(direction="vertical", gap="sm")
+v_stack.render_children(slide, images, left=0.5, top=2.0, item_width=4.0, item_height=1.5)
+
+# Horizontal stack with filters
+filtered_images = [
+    Image(image_source="photo.jpg", brightness=1.4),
+    Image(image_source="photo.jpg", contrast=1.6),
+    Image(image_source="photo.jpg", saturation=1.8)
+]
+
+h_stack = Stack(direction="horizontal", gap="sm")
+h_stack.render_children(slide, filtered_images, left=5.0, top=2.5, item_width=1.4, item_height=1.8)
+```
+
+### Benefits of Layout Integration
+
+- **Responsive Layouts**: 12-column grid system adapts to different content widths
+- **Consistent Spacing**: Stack layouts maintain uniform gaps between components
+- **Easy Alignment**: Grid and Stack handle positioning automatically
+- **Flexible Composition**: Mix and match text, images, and other components
+
+---
+
 ## Examples
 
-See `examples/enhanced_components_demo.py` for a complete demonstration.
+See `examples/core_components_showcase.py` for a complete demonstration including:
+- All component variants
+- Composition patterns
+- Shape and connector components
+- Image filters showcase
+- SmartArt diagrams
+- **Text + Layout Integration** (Grid and Stack)
+- **Images + Layout Integration** (Grid and Stack)
 
-Run the demo:
+See also:
+- `examples/layout_system_showcase.py` - Dedicated layout system examples
+- `examples/enhanced_components_demo.py` - Variant system examples
+
+Run the demos:
 ```bash
+python examples/core_components_showcase.py
+python examples/layout_system_showcase.py
 python examples/enhanced_components_demo.py
 ```
 
-This creates a presentation showcasing:
+This creates presentations showcasing:
 - All variant combinations
 - Composition patterns
 - Metric cards with trends
 - Component registry usage
+- Image filters and effects
+- Layout system integration with text and images

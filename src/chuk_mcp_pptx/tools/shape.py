@@ -11,11 +11,11 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 def register_shape_tools(mcp, manager):
     """Register all shape and SmartArt tools with the MCP server."""
-    
-    from .shape_utils import add_shape, add_connector, add_smart_art
-    from .layout.helpers import validate_position
-    from .components.code import CodeBlock
-    from .themes.theme_manager import ThemeManager
+
+    from ..components.core import Shape, Connector, ProcessFlow, CycleDiagram, HierarchyDiagram
+    from ..layout.helpers import validate_position
+    from ..components.code import CodeBlock
+    from ..themes.theme_manager import ThemeManager
     
     @mcp.tool
     async def pptx_add_shape(
@@ -102,39 +102,27 @@ def register_shape_tools(mcp, manager):
             validated_left, validated_top, validated_width, validated_height = validate_position(
                 left, top, width, height
             )
-            
-            # Convert hex colors to RGB tuples
-            fill_rgb = None
-            if fill_color:
-                color_str = fill_color
-                if color_str.startswith("#"):
-                    color_str = color_str[1:]
-                fill_rgb = (
-                    int(color_str[0:2], 16),
-                    int(color_str[2:4], 16),
-                    int(color_str[4:6], 16)
-                )
-            
-            line_rgb = None
-            if line_color:
-                color_str = line_color
-                if color_str.startswith("#"):
-                    color_str = color_str[1:]
-                line_rgb = (
-                    int(color_str[0:2], 16),
-                    int(color_str[2:4], 16),
-                    int(color_str[4:6], 16)
-                )
-            
+
             try:
-                shape = add_shape(
-                    slide, shape_type,
-                    validated_left, validated_top,
-                    validated_width, validated_height,
+                # Get theme for shape
+                theme_manager = ThemeManager()
+                theme_obj = theme_manager.get_default_theme()
+
+                # Create shape using component
+                shape_comp = Shape(
+                    shape_type=shape_type,
                     text=text,
-                    fill_color=fill_rgb,
-                    line_color=line_rgb,
-                    line_width=line_width
+                    fill_color=fill_color,  # Component handles hex colors
+                    line_color=line_color,
+                    line_width=line_width,
+                    theme=theme_obj
+                )
+                shape = shape_comp.render(
+                    slide,
+                    validated_left,
+                    validated_top,
+                    validated_width,
+                    validated_height
                 )
                 
                 # Update in VFS if enabled
@@ -209,27 +197,25 @@ def register_shape_tools(mcp, manager):
             
             slide = prs.slides[slide_index]
             
-            # Convert hex color to RGB
-            line_rgb = (0, 0, 0)
-            if line_color and line_color.startswith("#"):
-                color = line_color[1:]
-                line_rgb = (
-                    int(color[0:2], 16),
-                    int(color[2:4], 16),
-                    int(color[4:6], 16)
-                )
-            
             try:
-                connector = add_connector(
-                    slide,
-                    start_x, start_y,
-                    end_x, end_y,
+                # Get theme for connector
+                theme_manager = ThemeManager()
+                theme_obj = theme_manager.get_default_theme()
+
+                # Create connector using component
+                connector_comp = Connector(
+                    start_x=start_x,
+                    start_y=start_y,
+                    end_x=end_x,
+                    end_y=end_y,
                     connector_type=connector_type,
-                    line_color=line_rgb,
+                    line_color=line_color,  # Component handles hex colors
                     line_width=line_width,
                     arrow_start=arrow_start,
-                    arrow_end=arrow_end
+                    arrow_end=arrow_end,
+                    theme=theme_obj
                 )
+                connector = connector_comp.render(slide)
                 
                 # Update in VFS if enabled
                 manager.update(presentation)
@@ -324,25 +310,54 @@ def register_shape_tools(mcp, manager):
             
             # Add title if provided
             if title:
-                from .shape_utils import add_shape
-                title_shape = add_shape(
-                    slide, "rectangle",
-                    validated_left, validated_top - 0.5,
-                    validated_width, 0.4,
+                theme_manager = ThemeManager()
+                theme_obj = theme_manager.get_default_theme()
+
+                title_comp = Shape(
+                    shape_type="rectangle",
                     text=title,
-                    fill_color=None,
-                    line_color=None
+                    fill_color="transparent",
+                    line_color="transparent",
+                    theme=theme_obj
+                )
+                title_shape = title_comp.render(
+                    slide,
+                    validated_left,
+                    validated_top - 0.5,
+                    validated_width,
+                    0.4
                 )
                 # Adjust top position for the SmartArt
                 validated_top += 0.2
                 validated_height -= 0.7
             
             try:
-                shapes = add_smart_art(
-                    slide, art_type, items,
-                    validated_left, validated_top,
-                    validated_width, validated_height,
-                    color_scheme=color_scheme
+                # Get theme for SmartArt
+                theme_manager = ThemeManager()
+                theme_obj = theme_manager.get_default_theme()
+
+                # Map art_type to component
+                art_components = {
+                    "process": ProcessFlow,
+                    "cycle": CycleDiagram,
+                    "hierarchy": HierarchyDiagram,
+                }
+
+                component_class = art_components.get(art_type)
+                if not component_class:
+                    return f"Error: Unsupported art type '{art_type}'. Supported: {', '.join(art_components.keys())}"
+
+                # Create SmartArt using component
+                smart_art_comp = component_class(
+                    items=items,
+                    theme=theme_obj
+                )
+                shapes = smart_art_comp.render(
+                    slide,
+                    validated_left,
+                    validated_top,
+                    validated_width,
+                    validated_height
                 )
                 
                 # Update in VFS if enabled

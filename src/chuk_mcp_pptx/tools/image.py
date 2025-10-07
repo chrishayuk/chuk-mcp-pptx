@@ -11,16 +11,143 @@ from pathlib import Path
 from typing import List, Dict, Optional, Union
 from pptx.util import Inches
 from pptx.enum.shapes import MSO_SHAPE_TYPE
-from .layout.helpers import (
+from ..layout.helpers import (
     validate_position, calculate_grid_layout, get_logo_position,
     get_safe_content_area, CONTENT_LEFT, CONTENT_TOP, SLIDE_HEIGHT
 )
 
 
+def add_image(slide, image_source: str, left: float, top: float,
+             width: float = None, height: float = None,
+             maintain_ratio: bool = True):
+    """
+    Add an image to a slide.
+
+    Helper function for image tools.
+
+    Args:
+        slide: Slide to add image to
+        image_source: Path to image file or base64 data
+        left: Left position in inches
+        top: Top position in inches
+        width: Width in inches (optional, maintains ratio if not specified)
+        height: Height in inches (optional, maintains ratio if not specified)
+        maintain_ratio: Whether to maintain aspect ratio
+
+    Returns:
+        The created picture shape
+    """
+    # Handle base64 image data
+    if image_source.startswith("data:image/"):
+        header, encoded = image_source.split(",", 1)
+        image_data = base64.b64decode(encoded)
+        image_stream = io.BytesIO(image_data)
+
+        if width and height:
+            pic = slide.shapes.add_picture(
+                image_stream,
+                Inches(left), Inches(top),
+                width=Inches(width), height=Inches(height)
+            )
+        elif width:
+            pic = slide.shapes.add_picture(
+                image_stream,
+                Inches(left), Inches(top),
+                width=Inches(width)
+            )
+        elif height:
+            pic = slide.shapes.add_picture(
+                image_stream,
+                Inches(left), Inches(top),
+                height=Inches(height)
+            )
+        else:
+            pic = slide.shapes.add_picture(
+                image_stream,
+                Inches(left), Inches(top)
+            )
+    # Handle file path
+    elif Path(image_source).exists():
+        if width and height:
+            pic = slide.shapes.add_picture(
+                str(image_source),
+                Inches(left), Inches(top),
+                width=Inches(width), height=Inches(height)
+            )
+        elif width:
+            pic = slide.shapes.add_picture(
+                str(image_source),
+                Inches(left), Inches(top),
+                width=Inches(width)
+            )
+        elif height:
+            pic = slide.shapes.add_picture(
+                str(image_source),
+                Inches(left), Inches(top),
+                height=Inches(height)
+            )
+        else:
+            pic = slide.shapes.add_picture(
+                str(image_source),
+                Inches(left), Inches(top)
+            )
+    else:
+        raise FileNotFoundError(f"Image file not found: {image_source}")
+
+    return pic
+
+
+def add_text_box_with_style(slide, left: float, top: float, width: float, height: float,
+                            text: str, style_preset: str = "body"):
+    """
+    Add a text box with a style preset.
+
+    Helper function for adding styled text boxes.
+
+    Args:
+        slide: Slide to add text box to
+        left: Left position in inches
+        top: Top position in inches
+        width: Width in inches
+        height: Height in inches
+        text: Text content
+        style_preset: Style preset ("caption", "body", "title", etc.)
+
+    Returns:
+        The created text box shape
+    """
+    from pptx.util import Pt
+    from pptx.enum.text import PP_ALIGN
+
+    textbox = slide.shapes.add_textbox(
+        Inches(left), Inches(top),
+        Inches(width), Inches(height)
+    )
+
+    text_frame = textbox.text_frame
+    text_frame.text = text
+
+    # Apply style based on preset
+    if style_preset == "caption":
+        for paragraph in text_frame.paragraphs:
+            paragraph.font.size = Pt(10)
+            paragraph.font.italic = True
+            paragraph.alignment = PP_ALIGN.CENTER
+    elif style_preset == "title":
+        for paragraph in text_frame.paragraphs:
+            paragraph.font.size = Pt(24)
+            paragraph.font.bold = True
+    else:  # body or default
+        for paragraph in text_frame.paragraphs:
+            paragraph.font.size = Pt(12)
+
+    return textbox
+
+
 def register_image_tools(mcp, manager):
     """Register all image tools with the MCP server."""
-    
-    from .shape_utils import add_image
+
+    from ..components.core import Image
     
     @mcp.tool
     async def pptx_add_image_slide(
@@ -476,8 +603,7 @@ def register_image_tools(mcp, manager):
                 
                 # Add caption text box below the image
                 caption_top = validated_top + img_height + 0.1  # Small gap between image and caption
-                
-                from .shape_utils import add_text_box_with_style
+
                 text_box = add_text_box_with_style(
                     slide, validated_left, caption_top, validated_width, caption_height,
                     caption, style_preset="caption"

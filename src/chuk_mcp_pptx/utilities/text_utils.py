@@ -2,10 +2,13 @@
 Text Utilities for PowerPoint MCP Server
 
 Provides text extraction, formatting, and validation utilities.
+
+Note: Text creation functions have been moved to components.core.text (TextBox, BulletList).
+This module contains only extraction and utility functions.
 """
 from typing import Dict, List, Any, Optional, Tuple
-from pptx.util import Pt
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR, MSO_AUTO_SIZE
+from pptx.util import Pt, Inches
+from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 from pptx.dml.color import RGBColor
 
 
@@ -241,7 +244,7 @@ def validate_text_fit(shape, text: str = None, font_size: int = None) -> Dict[st
 def auto_fit_text(shape, min_font_size: int = 10, max_font_size: int = 44):
     """
     Automatically adjust font size to fit text within shape.
-    
+
     Args:
         shape: Shape containing the text
         min_font_size: Minimum allowed font size
@@ -249,126 +252,37 @@ def auto_fit_text(shape, min_font_size: int = 10, max_font_size: int = 44):
     """
     if not shape.has_text_frame:
         return
-        
+
     text_frame = shape.text_frame
-    
+
     # Enable auto-fit
     text_frame.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
-    
+
     # Set margins
     text_frame.margin_left = Inches(0.1)
     text_frame.margin_right = Inches(0.1)
     text_frame.margin_top = Inches(0.05)
     text_frame.margin_bottom = Inches(0.05)
-    
+
     # Try to validate and adjust font size
     current_text = text_frame.text
     if not current_text:
         return
-        
+
     # Binary search for optimal font size
     left, right = min_font_size, max_font_size
     optimal_size = max_font_size
-    
+
     while left <= right:
         mid = (left + right) // 2
         validation = validate_text_fit(shape, font_size=mid)
-        
+
         if validation["fits"]:
             optimal_size = mid
             left = mid + 1
         else:
             right = mid - 1
-    
+
     # Apply optimal font size
     for paragraph in text_frame.paragraphs:
         paragraph.font.size = Pt(optimal_size)
-
-
-def add_formatted_text(slide, left: float, top: float, width: float, height: float,
-                      text: str, font_name: str = "Calibri", font_size: int = 18,
-                      bold: bool = False, italic: bool = False,
-                      color: Tuple[int, int, int] = (0, 0, 0),
-                      alignment: str = "left", auto_fit: bool = False):
-    """
-    Add a formatted text box to a slide.
-    
-    Args:
-        slide: Slide to add text to
-        left: Left position in inches
-        top: Top position in inches
-        width: Width in inches
-        height: Height in inches
-        text: Text content
-        font_name: Font family name
-        font_size: Font size in points
-        bold: Whether text should be bold
-        italic: Whether text should be italic
-        color: RGB color tuple
-        alignment: Text alignment
-        auto_fit: Whether to auto-fit text to shape
-        
-    Returns:
-        The created text shape
-    """
-    text_box = slide.shapes.add_textbox(
-        Inches(left), Inches(top), Inches(width), Inches(height)
-    )
-    
-    text_frame = text_box.text_frame
-    text_frame.text = text
-    text_frame.word_wrap = True
-    
-    # Format the text
-    format_text_frame(text_frame, font_name, font_size, bold, italic, color, alignment)
-    
-    # Apply auto-fit if requested
-    if auto_fit:
-        auto_fit_text(text_box)
-    
-    return text_box
-
-
-def add_bullet_list(slide, left: float, top: float, width: float, height: float,
-                   items: List[str], font_size: int = 16, 
-                   color: Tuple[int, int, int] = (0, 0, 0),
-                   bullet_char: str = "•"):
-    """
-    Add a bulleted list to a slide.
-    
-    Args:
-        slide: Slide to add list to
-        left: Left position in inches
-        top: Top position in inches
-        width: Width in inches
-        height: Height in inches
-        items: List of items
-        font_size: Font size for items
-        color: RGB color tuple
-        bullet_char: Character to use for bullets
-        
-    Returns:
-        The created text shape
-    """
-    text_box = slide.shapes.add_textbox(
-        Inches(left), Inches(top), Inches(width), Inches(height)
-    )
-    
-    text_frame = text_box.text_frame
-    text_frame.word_wrap = True
-    
-    # Add items
-    for idx, item in enumerate(items):
-        if idx == 0:
-            p = text_frame.paragraphs[0]
-        else:
-            p = text_frame.add_paragraph()
-        
-        p.text = f"{bullet_char} {item}"
-        p.font.size = Pt(font_size)
-        if color:
-            r, g, b = color
-            p.font.color.rgb = RGBColor(r, g, b)
-        p.space_after = Pt(6)
-    
-    return text_box

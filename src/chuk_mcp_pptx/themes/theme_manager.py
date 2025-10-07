@@ -247,6 +247,18 @@ class Theme:
         fill = background.fill
         fill.solid()
         fill.fore_color.rgb = self.get_color("background.DEFAULT")
+
+        # Set default text color for all existing text shapes
+        foreground_color = self.get_color("foreground.DEFAULT")
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                # Set color for existing text
+                for paragraph in shape.text_frame.paragraphs:
+                    # Set default font for paragraph
+                    paragraph.font.color.rgb = foreground_color
+                    # Also set for any existing runs
+                    for run in paragraph.runs:
+                        run.font.color.rgb = foreground_color
     
     def apply_to_shape(self, shape, style: str = "card"):
         """Apply theme to shape."""

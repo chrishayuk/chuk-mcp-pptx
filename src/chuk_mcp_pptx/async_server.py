@@ -22,23 +22,18 @@ from .slide_templates import (
     create_title_slide, create_content_slide, create_comparison_slide,
     create_key_metrics_slide, list_templates, list_color_schemes
 )
-from .text_utils import (
-    extract_slide_text, extract_presentation_text, add_formatted_text,
-    validate_text_fit, auto_fit_text
-)
+# Text utilities now handled by tools/text.py via register_text_tools()
 from .chart_utils import (
     add_chart, add_pie_chart, add_scatter_chart, add_data_table
 )
-from .shape_utils import (
-    add_shape, add_connector, add_image, add_smart_art,
-    add_text_box_with_style
-)
+# Shape utilities now available as components in components.core
 
 # Import modular tools modules
 from .chart_tools import register_chart_tools
-from .image_tools import register_image_tools
+from .tools.image import register_image_tools
+from .tools.text import register_text_tools
 from .inspection_tools import register_inspection_tools
-from .table_tools import register_table_tools
+from .tools.table import register_table_tools
 from .tools.layout import register_layout_tools
 
 logging.basicConfig(level=logging.INFO)
@@ -58,10 +53,11 @@ manager = PresentationManager(use_vfs=USE_VFS, vfs_base_path=VFS_BASE_PATH)
 # Register all modular tools
 chart_tools = register_chart_tools(mcp, manager)
 image_tools = register_image_tools(mcp, manager)
+text_tools = register_text_tools(mcp, manager)
 inspection_tools = register_inspection_tools(mcp, manager)
 table_tools = register_table_tools(mcp, manager)
 layout_tools = register_layout_tools(mcp, manager)
-from .shape_tools import register_shape_tools
+from .tools.shape import register_shape_tools
 shape_tools = register_shape_tools(mcp, manager)
 
 # Make tools available at module level for easier imports
@@ -256,54 +252,8 @@ async def pptx_add_slide(
     return await asyncio.get_event_loop().run_in_executor(None, _add_slide)
 
 
-@mcp.tool
-async def pptx_add_text_slide(
-    title: str,
-    text: str,
-    presentation: Optional[str] = None
-) -> str:
-    """
-    Add a slide with title and text content.
-    
-    Creates a slide with a title and paragraph text. Suitable for
-    descriptions, summaries, or any narrative content.
-    
-    Args:
-        title: Title text for the slide
-        text: Paragraph text content for the slide body
-        presentation: Name of presentation to add slide to (uses current if not specified)
-        
-    Returns:
-        Success message confirming slide addition
-        
-    Example:
-        await pptx_add_text_slide(
-            title="Executive Summary",
-            text="This quarter demonstrated exceptional growth across all business units. "
-                 "Revenue increased by 25% year-over-year, driven primarily by our cloud "
-                 "services division."
-        )
-    """
-    def _add_text_slide():
-        prs = manager.get(presentation)
-        if not prs:
-            return "Error: No presentation found. Create one first with pptx_create()"
-        
-        slide_layout = prs.slide_layouts[1]  # Title and content layout
-        slide = prs.slides.add_slide(slide_layout)
-        
-        slide.shapes.title.text = title
-        
-        if len(slide.placeholders) > 1:
-            slide.placeholders[1].text_frame.text = text
-        
-        # Update in VFS if enabled
-        manager.update(presentation)
-        
-        pres_name = presentation or manager.get_current_name()
-        return f"Added text slide to '{pres_name}'"
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _add_text_slide)
+# Note: pptx_add_text_slide is now provided by text_tools.py
+# The function is registered via register_text_tools()
 
 
 @mcp.tool
@@ -720,33 +670,8 @@ async def pptx_create_metrics_slide(
 
 # Additional async tools for shapes, text extraction, etc.
 
-@mcp.tool
-async def pptx_extract_all_text(presentation: Optional[str] = None) -> str:
-    """
-    Extract all text from a presentation.
-    
-    Extracts all text content from all slides in the presentation,
-    including titles, body text, and text from shapes.
-    
-    Args:
-        presentation: Name of presentation to extract from (uses current if not specified)
-        
-    Returns:
-        JSON object with extracted text organized by slide
-        
-    Example:
-        text = await pptx_extract_all_text()
-        # Returns JSON with all text content from the presentation
-    """
-    def _extract():
-        prs = manager.get(presentation)
-        if not prs:
-            return json.dumps({"error": "No presentation found"})
-        
-        return extract_presentation_text(prs)
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _extract)
-
+# Note: pptx_extract_all_text is now provided by text_tools.py
+# The function is registered via register_text_tools()
 
 # Note: pptx_add_data_table is now provided by table_tools.py with layout validation
 # The function is registered via register_table_tools()

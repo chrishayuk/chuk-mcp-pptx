@@ -112,7 +112,7 @@ class CodeBlock(Component):
         
         # Apply dark background for code
         container.fill.solid()
-        if self.theme.get("mode") == "light":
+        if self.get_theme_attr("mode") == "light":
             # Use a dark background even in light mode
             container.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb("#1e1e1e"))
         else:
@@ -146,7 +146,7 @@ class CodeBlock(Component):
             p.font.size = Pt(11)
             
             # Use light text on dark background
-            if self.theme.get("mode") == "light":
+            if self.get_theme_attr("mode") == "light":
                 p.font.color.rgb = RGBColor(*self.hex_to_rgb("#e0e0e0"))
             else:
                 p.font.color.rgb = self.get_color("foreground.DEFAULT")

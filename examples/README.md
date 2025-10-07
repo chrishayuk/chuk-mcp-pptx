@@ -10,18 +10,24 @@ Our "shadcn for PowerPoint" design system - comprehensive demonstrations of the 
 - **`tokens_showcase.py`** - Design tokens: colors, typography, spacing, semantic colors
 - **`layout_system_showcase.py`** - Grid system, containers, stacks, spacing scale
 - **`themes_showcase.py`** - All available themes with components and charts
-- **`core_components_showcase.py`** - Buttons, badges, alerts, cards, progress, icons, tiles, avatars
+- **`core_components_showcase.py`** - Complete UI component library:
+  - Buttons, badges, alerts, cards
+  - Progress bars, icons, timeline
+  - Tiles, avatars
+  - **Shapes** (25+ geometric shapes)
+  - **Connectors & Arrows** (straight, elbow, curved)
+  - **SmartArt Diagrams** (process, cycle, hierarchy)
+  - **Text** (text boxes, bullet lists, formatting)
+  - **Text + Layout** (text with grid/stack layouts)
+  - **Images** (layouts, effects, aspect ratios, filters)
+  - **Images + Layout** (images with grid/stack layouts)
 
 ### Business-Focused Galleries
 - **`beautiful_chart_gallery.py`** - Comprehensive showcase of all chart types with modern themes
 - **`theme_showcase_by_domain.py`** - Business domain-specific charts across all themes (48 presentations!)
 
 ### Additional Component Galleries
-- **`component_showcase.py`** - UI components overview
-- **`shapes_gallery.py`** - Shape components with theme variations
 - **`table_gallery.py`** - Table and data grid components
-- **`smartart_gallery.py`** - SmartArt and diagram components
-- **`image_gallery.py`** - Image handling and layouts
 
 ## 📊 Chart Examples
 
@@ -37,12 +43,6 @@ Our "shadcn for PowerPoint" design system - comprehensive demonstrations of the 
 
 - **`simple_example.py`** - Minimal working example
 - **`code_examples.py`** - Code syntax highlighting in slides
-
-## 🔧 Technical Demos
-
-- **`connector_proof.py`** - Shape connector functionality
-- **`image_demo.py`** - Image manipulation examples
-- **`layout_inspection_demo.py`** - Layout analysis tools
 
 ## 📁 Output Structure
 
@@ -140,7 +140,7 @@ The `theme_showcase_by_domain.py` creates specialized charts for each business d
 
 ## 📚 Archive
 
-Test and debug scripts have been moved to the `archive/` folder for reference.
+Old examples and test scripts have been moved to the `archive/` folder for reference.
 
 **Archived Duplicates** (consolidated into new showcases):
 - `beautiful_themes_demo.py` → Consolidated into `themes_showcase.py`
@@ -148,3 +148,24 @@ Test and debug scripts have been moved to the `archive/` folder for reference.
 - `theme_focused_showcase.py` → Consolidated into `themes_showcase.py`
 - `demo_single_theme.py` → Consolidated into `themes_showcase.py`
 - `enhanced_components_demo.py` → Consolidated into `tokens_showcase.py` and `core_components_showcase.py`
+
+**Shape & Image Components** (now in `core_components_showcase.py`):
+- `shapes_gallery.py` → Shapes now in core components
+- `smartart_gallery.py` → SmartArt diagrams now in core components
+- `connector_proof.py` → Connectors now in core components
+- `final_connector_report.py` → Replaced by component-based connectors
+- `verify_connectors.py` → Replaced by component tests
+- `image_demo.py` → Images now in core components
+- `image_gallery.py` → Image layouts and filters now in core components
+
+**Old Showcase Iterations** (superseded):
+- `component_showcase.py` → Replaced by `core_components_showcase.py`
+- `domain_focused_showcase.py` → Replaced by `theme_showcase_by_domain.py`
+- `fixed_comprehensive_showcase.py` → Old iteration
+- `robust_showcase.py` → Old iteration
+- `safe_showcase.py` → Old iteration
+
+**Debug/Inspection Tools** (in `archive/debug/`):
+- `direct_inspect.py`
+- `full_inspection.py`
+- `layout_inspection_demo.py`

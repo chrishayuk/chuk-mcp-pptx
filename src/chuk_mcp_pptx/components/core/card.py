@@ -401,7 +401,7 @@ class MetricCard(Card):
         p.alignment = PP_ALIGN.CENTER
         p.font.size = Pt(12)
         p.font.color.rgb = self.get_color("muted.foreground")
-        p.font.name = self.theme.get("font_family", "Inter")
+        p.font.name = self.get_theme_attr("font_family", "Inter")
 
         # Value
         p = text_frame.add_paragraph()
@@ -411,7 +411,7 @@ class MetricCard(Card):
         p.font.size = Pt(20)  # Reduced to 20pt for cleaner single-line display
         p.font.bold = True
         p.font.color.rgb = self.get_color(self.variant_props.get("fg_color", "card.foreground"))
-        p.font.name = self.theme.get("font_family", "Inter")
+        p.font.name = self.get_theme_attr("font_family", "Inter")
 
         # Change with trend
         if self.change:
@@ -422,6 +422,6 @@ class MetricCard(Card):
             p.space_before = Pt(4)
             p.font.size = Pt(12)
             p.font.color.rgb = self.get_trend_color()
-            p.font.name = self.theme.get("font_family", "Inter")
+            p.font.name = self.get_theme_attr("font_family", "Inter")
 
         return card_shape

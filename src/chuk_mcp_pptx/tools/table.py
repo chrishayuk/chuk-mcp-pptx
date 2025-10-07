@@ -13,12 +13,13 @@ from pptx.dml.color import RGBColor
 
 def register_table_tools(mcp, manager):
     """Register all table-related tools with the MCP server."""
-    
-    from .layout.helpers import (
+
+    from ..layout.helpers import (
         validate_position, get_safe_content_area,
         SLIDE_WIDTH, SLIDE_HEIGHT
     )
-    from .chart_utils import add_data_table
+    from ..components.core import Table
+    from ..themes.theme_manager import ThemeManager
     
     @mcp.tool
     async def pptx_add_data_table(
@@ -121,18 +122,35 @@ def register_table_tools(mcp, manager):
                 slide.shapes._spTree.remove(placeholder.element)
             
             try:
-                # Add the table with validated dimensions
-                table_shape = add_data_table(
-                    slide, 
-                    validated_left, 
-                    validated_top, 
-                    validated_width, 
-                    validated_height,
-                    headers, 
-                    data, 
-                    style
+                # Get current theme
+                theme_manager = ThemeManager()
+                theme = theme_manager.get_theme(manager.current_theme) if hasattr(manager, 'current_theme') else None
+
+                # Map style to variant
+                variant_map = {
+                    "light": "minimal",
+                    "medium": "default",
+                    "dark": "bordered"
+                }
+                variant = variant_map.get(style, "default")
+
+                # Create and render table using new Table component
+                table_comp = Table(
+                    headers=headers,
+                    data=data,
+                    variant=variant,
+                    size="md",
+                    theme=theme
                 )
-                
+
+                table_shape = table_comp.render(
+                    slide,
+                    left=validated_left,
+                    top=validated_top,
+                    width=validated_width,
+                    height=validated_height
+                )
+
                 # Update in VFS if enabled
                 manager.update(presentation)
                 
@@ -258,18 +276,35 @@ def register_table_tools(mcp, manager):
                 slide.shapes._spTree.remove(placeholder.element)
             
             try:
-                # Add the comparison table
-                table_shape = add_data_table(
-                    slide,
-                    validated_left,
-                    validated_top,
-                    validated_width,
-                    validated_height,
-                    headers,
-                    data,
-                    style
+                # Get current theme
+                theme_manager = ThemeManager()
+                theme = theme_manager.get_theme(manager.current_theme) if hasattr(manager, 'current_theme') else None
+
+                # Map style to variant
+                variant_map = {
+                    "light": "minimal",
+                    "medium": "default",
+                    "dark": "bordered"
+                }
+                variant = variant_map.get(style, "default")
+
+                # Create and render table using new Table component
+                table_comp = Table(
+                    headers=headers,
+                    data=data,
+                    variant=variant,
+                    size="md",
+                    theme=theme
                 )
-                
+
+                table_shape = table_comp.render(
+                    slide,
+                    left=validated_left,
+                    top=validated_top,
+                    width=validated_width,
+                    height=validated_height
+                )
+
                 # Update in VFS if enabled
                 manager.update(presentation)
                 

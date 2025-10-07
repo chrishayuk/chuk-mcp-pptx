@@ -81,25 +81,78 @@ class Component:
         hex_color = hex_color.lstrip('#')
         return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     
+    def get_theme_attr(self, attr: str, default: Any = None) -> Any:
+        """
+        Get attribute from theme, handling both Theme objects and dicts.
+
+        Args:
+            attr: Attribute name
+            default: Default value if not found
+
+        Returns:
+            Attribute value or default
+        """
+        if hasattr(self._internal_theme, attr):
+            # Theme object
+            return getattr(self._internal_theme, attr)
+        elif isinstance(self._internal_theme, dict):
+            # Dict theme
+            return self._internal_theme.get(attr, default)
+        return default
+
+    def get_theme_color_hex(self, color_path: str) -> Optional[str]:
+        """
+        Get color hex from theme, handling both Theme objects and dicts.
+        For nested paths like 'colors.background.DEFAULT' or 'background.DEFAULT'.
+
+        Args:
+            color_path: Dot-separated path to color
+
+        Returns:
+            Hex color string or None
+        """
+        # For Theme objects, use the tokens
+        if hasattr(self._internal_theme, 'tokens'):
+            # Theme object - use get_color and convert back to hex
+            try:
+                rgb = self.get_color(color_path)
+                return "#{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2])
+            except:
+                return None
+
+        # For dict themes with nested structure like {'colors': {'background': {'DEFAULT': '#xxx'}}}
+        if isinstance(self._internal_theme, dict):
+            # Try accessing through 'colors' key first
+            parts = color_path.split('.')
+            value = self._internal_theme.get('colors', {})
+            for part in parts:
+                if isinstance(value, dict):
+                    value = value.get(part)
+                else:
+                    return None
+            return value if isinstance(value, str) else None
+
+        return None
+
     def get_color(self, color_path: str) -> RGBColor:
         """
         Get color from theme tokens.
-        
+
         Args:
             color_path: Dot-separated path to color (e.g., "primary.DEFAULT")
-        
+
         Returns:
             RGBColor object
         """
         parts = color_path.split('.')
         value = self.tokens
-        
+
         for part in parts:
             if isinstance(value, dict):
                 value = value.get(part, "#000000")
             else:
                 break
-        
+
         if isinstance(value, str):
             return RGBColor(*self.hex_to_rgb(value))
         return RGBColor(0, 0, 0)
