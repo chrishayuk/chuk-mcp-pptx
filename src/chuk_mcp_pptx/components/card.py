@@ -138,7 +138,11 @@ class Card(ComposableComponent):
         return 3.0
 
     def _calculate_min_height(self) -> float:
-        """Calculate minimum height needed for content."""
+        """
+        Calculate minimum height needed for content.
+
+        Uses actual font sizes and padding to ensure text fits properly.
+        """
         if not self._children:
             return 1.5
 
@@ -151,18 +155,23 @@ class Card(ComposableComponent):
             if hasattr(child, 'text') and hasattr(child, '__class__'):
                 class_name = child.__class__.__name__
                 if 'Title' in class_name:
-                    # h5 font is 16pt, plus space before = ~0.35"
+                    # h5 font is 16pt = ~0.22" + space before (6pt = ~0.08") + line spacing
                     total_height += 0.35
                 elif 'Description' in class_name:
                     # body font is 14pt with 6pt space before
-                    # Estimate lines based on character count (rough: 50 chars per line)
-                    lines = max(1, len(child.text) // 50)
-                    total_height += 0.25 * lines  # ~14pt per line + spacing
-                    total_height += 0.1  # Space before description
+                    # More accurate: account for character width based on card width
+                    text_len = len(child.text)
+                    # Assume ~70 chars per line for typical card widths
+                    lines = max(1, (text_len + 69) // 70)  # Ceiling division
+                    # 14pt = ~0.19" per line, plus 6pt = ~0.08" space before
+                    total_height += 0.08 + (lines * 0.22)  # More generous spacing
                 else:
                     total_height += 0.3  # Default content height
 
-        return max(1.5, min(total_height, 4.0))  # Cap between 1.5 and 4.0 inches
+        # Add a small buffer for rendering
+        total_height += 0.1
+
+        return max(1.5, min(total_height, 4.5))  # Cap between 1.5 and 4.5 inches
 
     def render(self, slide, left: float, top: float,
                width: Optional[float] = None, height: Optional[float] = None) -> Any:
@@ -173,15 +182,28 @@ class Card(ComposableComponent):
             slide: PowerPoint slide object
             left: Left position in inches
             top: Top position in inches
-            width: Card width in inches
-            height: Card height in inches
+            width: Card width in inches (optional, auto-calculated if None)
+            height: Card height in inches (optional, auto-calculated if None)
 
         Returns:
             Shape object representing the card
+
+        Note:
+            For cards with text content, omit height parameter to use auto-calculation
+            which ensures all content fits properly.
         """
         # Use calculated width and height if not provided
         card_width = width if width is not None else self._calculate_min_width()
-        card_height = height if height is not None else self._calculate_min_height()
+
+        # Calculate minimum height needed
+        calculated_height = self._calculate_min_height()
+
+        # Use the larger of provided height or calculated minimum
+        # This ensures content always fits
+        if height is not None:
+            card_height = max(height, calculated_height)
+        else:
+            card_height = calculated_height
 
         # Create card shape
         card = slide.shapes.add_shape(
@@ -375,6 +397,7 @@ class MetricCard(Card):
         # Label
         p = text_frame.paragraphs[0]
         p.text = self.label
+        p.alignment = PP_ALIGN.CENTER
         p.font.size = Pt(12)
         p.font.color.rgb = self.get_color("muted.foreground")
         p.font.name = self.theme.get("font_family", "Inter")
@@ -382,6 +405,7 @@ class MetricCard(Card):
         # Value
         p = text_frame.add_paragraph()
         p.text = self.value
+        p.alignment = PP_ALIGN.CENTER
         p.space_before = Pt(4)
         p.font.size = Pt(20)  # Reduced to 20pt for cleaner single-line display
         p.font.bold = True
@@ -393,6 +417,7 @@ class MetricCard(Card):
             p = text_frame.add_paragraph()
             symbol = self.get_trend_symbol()
             p.text = f"{symbol} {self.change}" if symbol else self.change
+            p.alignment = PP_ALIGN.CENTER
             p.space_before = Pt(4)
             p.font.size = Pt(12)
             p.font.color.rgb = self.get_trend_color()

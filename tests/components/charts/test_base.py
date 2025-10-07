@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from pptx.util import Inches
 from chuk_mcp_pptx.components.charts.base import ChartComponent
+from chuk_mcp_pptx.layout.boundaries import validate_boundaries, adjust_to_boundaries
 
 
 class TestChartComponent:
@@ -32,25 +33,25 @@ class TestChartComponent:
         assert result == (True, None)
     
     def test_validate_boundaries(self, chart_component):
-        """Test boundary validation."""
+        """Test boundary validation using layout.boundaries module."""
         # Test valid boundaries
-        result = chart_component.validate_boundaries(2.0, 2.0, 5.0, 3.0)
+        result = validate_boundaries(2.0, 2.0, 5.0, 3.0)
         assert result == (True, None)
-        
+
         # Test exceeding width
-        result = chart_component.validate_boundaries(1.0, 1.0, 15.0, 3.0)
+        result = validate_boundaries(1.0, 1.0, 15.0, 3.0)
         is_valid, error = result
         assert is_valid is False
-        assert "exceeds" in error
-    
+        assert "exceeds" in error.lower()
+
     def test_adjust_to_boundaries(self, chart_component):
-        """Test boundary adjustment."""
+        """Test boundary adjustment using layout.boundaries module."""
         # Test normal case - no adjustment needed
-        adjusted = chart_component.adjust_to_boundaries(2.0, 2.0, 5.0, 3.0)
+        adjusted = adjust_to_boundaries(2.0, 2.0, 5.0, 3.0)
         assert adjusted == (2.0, 2.0, 5.0, 3.0)
-        
+
         # Test adjustment needed
-        adjusted = chart_component.adjust_to_boundaries(8.0, 2.0, 5.0, 3.0)
+        adjusted = adjust_to_boundaries(8.0, 2.0, 5.0, 3.0)
         left, top, width, height = adjusted
         assert left < 8.0  # Should be adjusted
     

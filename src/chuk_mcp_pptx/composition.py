@@ -173,6 +173,7 @@ class CardTitle(SubComponent):
 
         p = text_frame.paragraphs[0] if not text_frame.paragraphs[0].text else text_frame.add_paragraph()
         p.text = self.text
+        p.alignment = PP_ALIGN.CENTER
         style = self.get_text_style("h5")  # Use h5 for smaller, more compact titles
         p.font.name = style["font_family"]
         p.font.size = Pt(style["font_size"])
@@ -195,6 +196,7 @@ class CardDescription(SubComponent):
 
         p = text_frame.add_paragraph()
         p.text = self.text
+        p.alignment = PP_ALIGN.CENTER
         p.space_before = Pt(6)
         style = self.get_text_style("body")
         p.font.name = style["font_family"]

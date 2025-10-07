@@ -23,8 +23,6 @@ from .helpers import (
     calculate_grid_layout,
     get_logo_position,
     get_safe_content_area,
-    distribute_horizontally,
-    center_element,
 )
 
 __all__ = [
@@ -48,6 +46,4 @@ __all__ = [
     "calculate_grid_layout",
     "get_logo_position",
     "get_safe_content_area",
-    "distribute_horizontally",
-    "center_element",
 ]

@@ -5,24 +5,68 @@ The layout system provides a comprehensive grid and spacing framework for buildi
 ## Overview
 
 The layout system consists of:
-- **12-Column Grid** - Flexible grid system for responsive layouts
+- **12-Column Grid** - Flexible grid system for responsive layouts with boundary management
 - **Container** - Centered content containers with preset widths
 - **Stack** - Vertical/horizontal layout with consistent spacing
 - **Spacer** - Invisible spacing elements
 - **Divider** - Visual separator lines
+- **Boundary System** - Automatic boundary validation and positioning
+
+## Design Philosophy
+
+The layout system follows a clear hierarchy:
+
+```
+Container → Grid → Components
+```
+
+1. **Container** establishes safe content boundaries
+2. **Grid** subdivides space and manages positioning
+3. **Components** auto-size within grid cells
+
+This approach eliminates manual calculations and ensures consistent, responsive layouts.
 
 ## Grid System
 
-### Basic Grid
+### Modern Grid Pattern (Recommended)
 
-The `Grid` component provides a 12-column grid system similar to Bootstrap/Tailwind:
+The modern approach uses Container + Grid with stored bounds:
 
 ```python
-from chuk_mcp_pptx.layout import Grid
+from chuk_mcp_pptx.layout import Container, Grid
+from chuk_mcp_pptx.components import Card
 
+# 1. Container establishes boundaries
+container = Container(size="lg", padding="sm", center=True)
+bounds = container.render(slide, top=1.8)
+
+# 2. Grid uses container bounds - no repetition needed
+grid = Grid(columns=12, rows=2, gap="md", bounds=bounds)
+
+# 3. Get cells - grid remembers its bounds
+metrics_pos = grid.get_cell(col_span=4, col_start=0, row_start=0)
+main_pos = grid.get_cell(col_span=8, col_start=0, row_start=1)
+sidebar_pos = grid.get_cell(col_span=4, col_start=8, row_start=1)
+
+# 4. Components auto-size within cells
+MetricCard(...).render(slide, **metrics_pos)  # Only left, top, width
+Card(...).render(slide, **main_pos)  # Height auto-calculated
+```
+
+**Key Benefits:**
+- ✅ No manual boundary calculations
+- ✅ No repetitive bound parameters
+- ✅ Components auto-size based on content
+- ✅ Grid handles all spacing
+
+### Legacy Grid Pattern
+
+The original approach still works for simple cases:
+
+```python
 # Create a 3-column grid
 grid = Grid(columns=3, gap="md")
-cells = grid.get_cell_positions(slide, top=2.0, height=3.0)
+cells = grid.get_cell_positions(slide, left=0.5, top=2.0, width=9.0, height=3.0)
 
 # Render content in each cell
 for i, cell in enumerate(cells):
@@ -31,22 +75,18 @@ for i, cell in enumerate(cells):
     card.render(slide, **cell)
 ```
 
-### Column Spanning
+### Grid with Auto-Height Components
 
-Elements can span multiple columns:
+Use `get_cell()` for components that calculate their own height:
 
 ```python
-# Span 6 columns (half width)
-pos = grid.get_span(
-    col_span=6,
-    col_start=0,
-    left=0.5,
-    top=2.0,
-    width=9.0,
-    height=2.0
-)
+# Auto-height (default) - component calculates height based on content
+pos = grid.get_cell(col_span=8, col_start=0, row_start=1)  # No height in result
+card.render(slide, **pos)  # Card auto-sizes
 
-card.render(slide, **pos)
+# Fixed-height - when you need explicit dimensions
+pos = grid.get_cell(col_span=4, col_start=0, auto_height=False)  # Includes height
+chart.render(slide, **pos)  # Chart uses grid height
 ```
 
 ### Grid Parameters
@@ -174,6 +214,35 @@ for pos in positions:
     button = Button(text="Action", variant="default")
     button.render(slide, **pos)
 ```
+
+### Stack with Auto-Rendering (New)
+
+Use `render_children()` for automatic positioning:
+
+```python
+# Create components
+buttons = [
+    Button("Export", variant="outline", size="sm"),
+    Button("Refresh", variant="secondary", size="sm"),
+    Button("Settings", variant="ghost", size="sm")
+]
+
+# Stack handles positioning automatically
+stack = Stack(direction="vertical", gap="sm")
+stack.render_children(
+    slide,
+    buttons,
+    left=sidebar_pos['left'] + 0.1,
+    top=sidebar_pos['top'] + 0.5,
+    item_width=sidebar_pos['width'] - 0.2,
+    item_height=0.4
+)
+```
+
+**When to use:**
+- ✅ Fixed-height components (buttons, badges)
+- ✅ Known dimensions
+- ❌ Auto-height components (cards with variable content) - use `distribute()` instead
 
 ### Stack Alignment
 
@@ -381,21 +450,53 @@ for pos in positions:
 
 ## Responsive Patterns
 
-### Dashboard Layout
+### Dashboard Layout (Modern Pattern)
 
 ```python
-# Main grid
-grid = Grid(columns=12, gap="md")
+# 1. Container establishes boundaries
+container = Container(size="lg", padding="sm", center=True)
+bounds = container.render(slide, top=1.8)
 
-# Metric cards (4 columns each)
-for i in range(3):
-    pos = grid.get_span(col_span=4, col_start=i*4, left=0.5, top=2.0, width=9.0)
-    MetricCard(...).render(slide, **pos)
+# 2. Grid with bounds - 2 rows for metrics + content
+grid = Grid(columns=12, rows=2, gap="md", bounds=bounds)
 
-# Main content (8 cols) + Sidebar (4 cols)
-main = grid.get_span(col_span=8, col_start=0, left=0.5, top=4.0, width=9.0)
-sidebar = grid.get_span(col_span=4, col_start=8, left=0.5, top=4.0, width=9.0)
+# 3. Row 0: Metric cards (3 × 4 columns = 12 total)
+metrics = [
+    ("Revenue", "$1.2M", "+15%", "up", 0),
+    ("Users", "45K", "+8%", "up", 4),
+    ("Growth", "23%", "+3%", "up", 8),
+]
+
+for label, value, change, trend, col_start in metrics:
+    pos = grid.get_cell(col_span=4, col_start=col_start, row_start=0)
+    MetricCard(label, value, change, trend).render(slide, **pos)
+
+# 4. Row 1: Main content (8 cols) + Sidebar (4 cols)
+main_pos = grid.get_cell(col_span=8, col_start=0, row_start=1)
+sidebar_pos = grid.get_cell(col_span=4, col_start=8, row_start=1)
+
+# Main card auto-sizes
+card = Card(variant="elevated")
+card.add_child(Card.Title("Main Content (8/12 cols)"))
+card.add_child(Card.Description("Primary content area"))
+card.render(slide, **main_pos)
+
+# Sidebar with stacked buttons
+buttons = [Button("Export"), Button("Refresh"), Button("Settings")]
+stack = Stack(direction="vertical", gap="sm")
+stack.render_children(slide, buttons,
+                      left=sidebar_pos['left'] + 0.1,
+                      top=sidebar_pos['top'] + 0.5,
+                      item_width=sidebar_pos['width'] - 0.2,
+                      item_height=0.4)
 ```
+
+**Key Points:**
+- Container defines safe boundaries once
+- Grid stores bounds, no repetition in get_cell() calls
+- Components auto-size (metrics, cards)
+- Stack handles button positioning
+- No manual calculations!
 
 ### Card Grid
 
@@ -508,13 +609,34 @@ Grid(
     columns: int = 12,
     gap: Literal["none", "xs", "sm", "md", "lg", "xl"] = "md",
     rows: int = 1,
+    bounds: Optional[Dict[str, float]] = None,  # NEW!
     theme: Optional[Dict] = None
 )
 ```
 
 **Methods:**
+- `get_cell()` - **NEW**: Get position with optional auto-height (recommended)
 - `get_cell_positions()` - Get all cell positions
 - `get_span()` - Get position for spanning cells
+
+**New `get_cell()` Method:**
+```python
+grid.get_cell(
+    col_span: int = 1,
+    row_span: int = 1,
+    col_start: int = 0,
+    row_start: int = 0,
+    left: Optional[float] = None,        # Uses bounds if not provided
+    top: Optional[float] = None,         # Uses bounds if not provided
+    width: Optional[float] = None,       # Uses bounds if not provided
+    height: Optional[float] = None,      # Uses bounds if not provided
+    auto_height: bool = True             # NEW: Omit height for auto-sizing
+) -> Dict[str, float]
+```
+
+**Returns:**
+- If `auto_height=True` (default): `{'left': ..., 'top': ..., 'width': ...}`
+- If `auto_height=False`: `{'left': ..., 'top': ..., 'width': ..., 'height': ...}`
 
 ### Container
 
@@ -542,7 +664,8 @@ Stack(
 ```
 
 **Methods:**
-- `distribute()` - Distribute items with spacing
+- `distribute()` - Distribute items with spacing and return positions
+- `render_children()` - **NEW**: Automatically render list of components with spacing
 
 ### Spacer
 

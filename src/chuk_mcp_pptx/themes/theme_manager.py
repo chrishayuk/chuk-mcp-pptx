@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/themes/theme_manager.py
 """
 Theme manager for PowerPoint presentations.
 Central system for managing and applying themes.

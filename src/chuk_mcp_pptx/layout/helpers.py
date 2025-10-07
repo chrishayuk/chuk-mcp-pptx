@@ -9,19 +9,13 @@ from typing import Tuple, Optional, List, Dict
 from pptx.util import Inches
 
 
-# Standard PowerPoint slide dimensions (16:9 aspect ratio)
-SLIDE_WIDTH = 10.0  # inches
-SLIDE_HEIGHT = 5.625  # inches (16:9 ratio)
-
-# Alternative 4:3 dimensions
-SLIDE_WIDTH_4_3 = 10.0  # inches  
-SLIDE_HEIGHT_4_3 = 7.5  # inches
-
-# Safe margins from edges
-MARGIN_TOP = 1.0  # inches - accounts for typical title area
-MARGIN_BOTTOM = 0.5  # inches
-MARGIN_LEFT = 0.5  # inches  
-MARGIN_RIGHT = 0.5  # inches
+# Import boundary constants and utilities
+from .boundaries import (
+    SLIDE_WIDTH, SLIDE_HEIGHT,
+    SLIDE_WIDTH_4_3, SLIDE_HEIGHT_4_3,
+    MARGIN_TOP, MARGIN_BOTTOM, MARGIN_LEFT, MARGIN_RIGHT,
+    validate_boundaries, adjust_to_boundaries
+)
 
 # Content area (safe zone)
 CONTENT_WIDTH = SLIDE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT  # 9.0 inches
@@ -31,50 +25,71 @@ CONTENT_TOP = MARGIN_TOP
 
 
 def validate_position(
-    left: float, 
-    top: float, 
-    width: float, 
+    left: float,
+    top: float,
+    width: float,
     height: float,
-    aspect_ratio: str = "16:9"
+    aspect_ratio: str = "16:9",
+    auto_adjust: bool = True
 ) -> Tuple[float, float, float, float]:
     """
-    Validate and adjust position to ensure element fits within slide.
-    
+    Validate and optionally adjust position to ensure element fits within slide.
+
+    This is the main boundary handler that layout containers use.
+    Individual components should generally not call this directly -
+    instead, they should be placed within layout containers that
+    handle boundaries automatically.
+
     Args:
         left: Left position in inches
         top: Top position in inches
         width: Width in inches
         height: Height in inches
         aspect_ratio: Slide aspect ratio ("16:9" or "4:3")
-        
+        auto_adjust: If True, automatically adjusts to fit. If False, just validates.
+
     Returns:
         Tuple of adjusted (left, top, width, height)
+
+    Example:
+        >>> # Layout container handles boundaries for all children
+        >>> container = Container(size="lg")
+        >>> bounds = container.render(slide, top=2.0)
+        >>> # All components placed in container are auto-validated
     """
     slide_width = SLIDE_WIDTH
     slide_height = SLIDE_HEIGHT if aspect_ratio == "16:9" else SLIDE_HEIGHT_4_3
-    
+
+    if not auto_adjust:
+        # Just validate without adjusting
+        is_valid, error = validate_boundaries(left, top, width, height, aspect_ratio)
+        if not is_valid:
+            raise ValueError(f"Element doesn't fit: {error}")
+        return left, top, width, height
+
+    # Auto-adjust to fit
     # Ensure minimum size
     width = max(0.5, width)
     height = max(0.5, height)
-    
+
     # Adjust if element goes beyond right edge
     if left + width > slide_width:
         if width <= slide_width:
             left = slide_width - width
         else:
             width = slide_width - left
-            
-    # Adjust if element goes beyond bottom edge  
+
+    # Adjust if element goes beyond bottom edge
     if top + height > slide_height:
         if height <= slide_height:
             top = slide_height - height
         else:
             height = slide_height - top
-            
+
     # Ensure element starts within slide
     left = max(0, min(left, slide_width - 0.5))
     top = max(0, min(top, slide_height - 0.5))
-    
+
     return left, top, width, height
 
 
@@ -222,92 +237,4 @@ def get_safe_content_area(
     }
 
 
-def distribute_horizontally(
-    num_items: int,
-    item_width: float,
-    item_height: float,
-    top: float = CONTENT_TOP,
-    container_width: float = CONTENT_WIDTH,
-    container_left: float = CONTENT_LEFT,
-    min_spacing: float = 0.2
-) -> List[Dict[str, float]]:
-    """
-    Distribute items horizontally with equal spacing.
-    
-    Args:
-        num_items: Number of items
-        item_width: Width of each item
-        item_height: Height of each item
-        top: Top position for all items
-        container_width: Width of container area
-        container_left: Left position of container
-        min_spacing: Minimum spacing between items
-        
-    Returns:
-        List of position dictionaries
-    """
-    if num_items == 0:
-        return []
-        
-    total_items_width = num_items * item_width
-    available_space = container_width - total_items_width
-    
-    if available_space < 0:
-        # Items don't fit - scale them down
-        item_width = (container_width - min_spacing * (num_items - 1)) / num_items
-        spacing = min_spacing
-    else:
-        spacing = max(min_spacing, available_space / (num_items + 1))
-        
-    positions = []
-    for i in range(num_items):
-        left = container_left + spacing + i * (item_width + spacing)
-        
-        # Validate position
-        left, top_adj, width, height = validate_position(left, top, item_width, item_height)
-        
-        positions.append({
-            'left': left,
-            'top': top_adj,
-            'width': width,
-            'height': height
-        })
-        
-    return positions
 
-
-def center_element(
-    width: float,
-    height: float,
-    horizontal: bool = True,
-    vertical: bool = True,
-    aspect_ratio: str = "16:9"
-) -> Dict[str, float]:
-    """
-    Center an element on the slide.
-    
-    Args:
-        width: Element width
-        height: Element height
-        horizontal: Center horizontally
-        vertical: Center vertically
-        aspect_ratio: Slide aspect ratio
-        
-    Returns:
-        Dictionary with 'left', 'top', 'width', 'height'
-    """
-    slide_width = SLIDE_WIDTH
-    slide_height = SLIDE_HEIGHT if aspect_ratio == "16:9" else SLIDE_HEIGHT_4_3
-    
-    left = ((slide_width - width) / 2) if horizontal else CONTENT_LEFT
-    top = ((slide_height - height) / 2) if vertical else CONTENT_TOP
-    
-    # Validate position
-    left, top, width, height = validate_position(left, top, width, height, aspect_ratio)
-    
-    return {
-        'left': left,
-        'top': top,
-        'width': width,
-        'height': height
-    }

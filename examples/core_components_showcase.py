@@ -15,6 +15,10 @@ from chuk_mcp_pptx.components.button import Button, IconButton, ButtonGroup
 from chuk_mcp_pptx.components.badge import Badge, DotBadge, CountBadge
 from chuk_mcp_pptx.components.alert import Alert
 from chuk_mcp_pptx.components.card import Card, MetricCard
+from chuk_mcp_pptx.components import ProgressBar, Icon, IconList, Timeline
+from chuk_mcp_pptx.components.tile import Tile, IconTile, ValueTile
+from chuk_mcp_pptx.components.avatar import Avatar, AvatarWithLabel, AvatarGroup
+from chuk_mcp_pptx.layout import Container, Grid, Stack
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 
 
@@ -207,43 +211,147 @@ def create_card_showcase(prs, theme):
         title_shape.text = "Card Components"
         title_shape.text_frame.paragraphs[0].font.color.rgb = theme.get_color("foreground.DEFAULT")
 
-    # Card variants - different styles with even spacing
+    # Use Container → Grid pattern for card variants
+    container = Container(size="lg", padding="sm", center=True)
+    bounds = container.render(slide, top=1.8)
+
+    # 12-column grid for card variants (4 cols each = 3 cards)
+    grid = Grid(columns=12, gap="md", bounds=bounds)
+
     card_variants = [
-        ("default", "Default Card"),
-        ("outlined", "Outlined Card"),
-        ("elevated", "Elevated Card"),
+        ("default", "Default Card", 0),
+        ("outlined", "Outlined Card", 4),
+        ("elevated", "Elevated Card", 8),
     ]
 
-    # Calculate even spacing for 3 cards across 9" width
-    card_spacing = 0.3
-    available_width = 9.0
-    num_cards = len(card_variants)
-    card_width = (available_width - (card_spacing * (num_cards + 1))) / num_cards
-
-    for i, (variant, title) in enumerate(card_variants):
-        left = card_spacing + (i * (card_width + card_spacing))
+    for variant, title, col_start in card_variants:
+        pos = grid.get_cell(col_span=4, col_start=col_start)
         card = Card(variant=variant, theme=theme.__dict__)
         card.add_child(Card.Title(title))
         card.add_child(Card.Description("Card with composition pattern"))
-        card.render(slide, left=left, top=2.0, width=card_width)
+        card.render(slide, **pos)
 
-    # Metric cards - business metrics with even spacing
+    # Metric cards using 12-column grid (3 cols each = 4 cards)
     metrics = [
-        ("Revenue", "$1.2M", "+12%", "up"),
-        ("Users", "45.2K", "+8%", "up"),
-        ("Retention", "92%", "-2%", "down"),
-        ("NPS", "4.8", "0%", "neutral"),
+        ("Revenue", "$1.2M", "+12%", "up", 0),
+        ("Users", "45.2K", "+8%", "up", 3),
+        ("Retention", "92%", "-2%", "down", 6),
+        ("NPS", "4.8", "0%", "neutral", 9),
     ]
 
-    # Calculate even spacing for 4 metric cards with tighter spacing
-    num_metrics = len(metrics)
-    metric_spacing = 0.25
-    metric_width = (available_width - (metric_spacing * (num_metrics + 1))) / num_metrics
-
-    for i, (label, value, change, trend) in enumerate(metrics):
-        left = metric_spacing + (i * (metric_width + metric_spacing))
+    for label, value, change, trend, col_start in metrics:
+        pos = grid.get_cell(col_span=3, col_start=col_start, row_start=1)
         metric = MetricCard(label=label, value=value, change=change, trend=trend, theme=theme.__dict__)
-        metric.render(slide, left=left, top=4.2, width=metric_width)
+        metric.render(slide, **pos)
+
+
+def create_progress_icon_timeline_showcase(prs, theme):
+    """Showcase ProgressBar, Icon, and Timeline components."""
+    print("  • Creating ProgressBar, Icon & Timeline showcase...")
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    theme.apply_to_slide(slide)
+
+    # Title
+    title_shape = slide.shapes.title
+    if title_shape:
+        title_shape.text = "Progress, Icons & Timeline"
+        title_shape.text_frame.paragraphs[0].font.color.rgb = theme.get_color("foreground.DEFAULT")
+
+    # Progress bars
+    ProgressBar(value=75, label="Project Progress", show_percentage=True, variant="success", theme=theme.__dict__).render(
+        slide, left=0.5, top=1.9, width=4.0
+    )
+
+    ProgressBar(value=60, segments=10, style="segmented", label="Milestones", theme=theme.__dict__).render(
+        slide, left=0.5, top=2.8, width=4.0
+    )
+
+    # Icons row
+    icons = [("check", "success"), ("star", "warning"), ("rocket", "primary"), ("target", "error")]
+    left = 5.0
+    for icon, variant in icons:
+        Icon(icon, variant=variant, size="lg", theme=theme.__dict__).render(slide, left=left, top=2.0)
+        left += 0.7
+
+    # Icon list
+    features = [
+        ("check", "Fast & Reliable"),
+        ("check", "Easy to Use"),
+        ("rocket", "High Performance")
+    ]
+    IconList(features, variant="success", icon_size="sm", theme=theme.__dict__).render(
+        slide, left=5.0, top=2.8, width=4.0
+    )
+
+    # Timeline
+    events = [
+        {"date": "Q1", "title": "Plan"},
+        {"date": "Q2", "title": "Build"},
+        {"date": "Q3", "title": "Launch", "highlight": True}
+    ]
+    Timeline(events, style="arrow", theme=theme.__dict__).render(
+        slide, left=0.5, top=4.5, width=8.5
+    )
+
+
+def create_tile_avatar_showcase(prs, theme):
+    """Showcase Tile and Avatar components."""
+    print("  • Creating Tile & Avatar showcase...")
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    theme.apply_to_slide(slide)
+
+    # Title
+    title_shape = slide.shapes.title
+    if title_shape:
+        title_shape.text = "Tiles & Avatars"
+        title_shape.text_frame.paragraphs[0].font.color.rgb = theme.get_color("foreground.DEFAULT")
+
+    # Tiles - different variants in a row
+    tiles = [
+        (IconTile("rocket", label="Fast", variant="filled", color_variant="primary"), 0.5),
+        (ValueTile("42", label="Tasks", variant="outlined"), 2.6),
+        (IconTile("check", label="Done", variant="filled", color_variant="success"), 4.7),
+        (ValueTile("98%", label="Score", variant="default"), 6.8),
+    ]
+
+    for tile, left in tiles:
+        tile.theme = theme.__dict__
+        tile.render(slide, left=left, top=2.0)
+
+    # Avatars - different sizes and variants
+    avatars = [
+        (Avatar(text="JD", variant="filled", color_variant="primary", size="sm"), 0.5, 4.2),
+        (Avatar(text="AS", variant="outlined", color_variant="success", size="md"), 1.5, 4.0),
+        (Avatar(icon="user", variant="default", size="lg"), 3.0, 3.8),
+        (Avatar(text="BM", variant="filled", color_variant="warning", size="md"), 5.0, 4.0),
+    ]
+
+    for avatar, left, top in avatars:
+        avatar.theme = theme.__dict__
+        avatar.render(slide, left=left, top=top)
+
+    # Avatar with label - horizontal
+    avatar_label = AvatarWithLabel(
+        text="JD",
+        label="John Doe",
+        sublabel="Product Designer",
+        variant="filled",
+        color_variant="primary",
+        orientation="horizontal",
+        theme=theme.__dict__
+    )
+    avatar_label.render(slide, left=0.5, top=5.5, width=3.5)
+
+    # Avatar group
+    members = [
+        {"text": "JD", "color_variant": "primary"},
+        {"text": "AS", "color_variant": "success"},
+        {"text": "BM", "color_variant": "warning"},
+        {"text": "KL", "color_variant": "destructive"},
+        {"text": "MN", "color_variant": "default"}
+    ]
+    group = AvatarGroup(members, max_display=3, overlap=True, size="sm", theme=theme.__dict__)
+    group.render(slide, left=5.0, top=5.6)
 
 
 def create_combined_dashboard(prs, theme):
@@ -261,31 +369,39 @@ def create_combined_dashboard(prs, theme):
     # Status badges at top
     Badge(text="Live", variant="success", theme=theme.__dict__).render(slide, left=8.5, top=0.3)
 
-    # Action buttons
-    Button(text="Refresh", variant="outline", size="sm", theme=theme.__dict__).render(slide, left=0.5, top=1.8)
-    Button(text="Export", variant="ghost", size="sm", theme=theme.__dict__).render(slide, left=1.8, top=1.8)
+    # Action buttons using Stack
+    buttons = [
+        Button(text="Refresh", variant="outline", size="sm", theme=theme.__dict__),
+        Button(text="Export", variant="ghost", size="sm", theme=theme.__dict__)
+    ]
+    stack = Stack(direction="horizontal", gap="sm")
+    stack.render_children(slide, buttons, left=0.5, top=1.8, item_width=1.2, item_height=0.4)
 
-    # Key metrics
-    MetricCard(label="Total Sales", value="$245K", change="+18%", trend="up", theme=theme.__dict__).render(
-        slide, left=0.5, top=2.5, width=2.2, height=1.2
-    )
-    MetricCard(label="Conversion", value="3.2%", change="+0.5%", trend="up", theme=theme.__dict__).render(
-        slide, left=3.0, top=2.5, width=2.2, height=1.2
-    )
-    MetricCard(label="Bounce Rate", value="42%", change="-5%", trend="down", theme=theme.__dict__).render(
-        slide, left=5.5, top=2.5, width=2.2, height=1.2
-    )
+    # Key metrics using Grid
+    container = Container(size="lg", padding="sm", center=True)
+    bounds = container.render(slide, top=2.3)
+    grid = Grid(columns=12, gap="md", bounds=bounds)
+
+    metrics = [
+        ("Total Sales", "$245K", "+18%", "up", 0),
+        ("Conversion", "3.2%", "+0.5%", "up", 4),
+        ("Bounce Rate", "42%", "-5%", "down", 8),
+    ]
+
+    for label, value, change, trend, col_start in metrics:
+        pos = grid.get_cell(col_span=4, col_start=col_start)
+        MetricCard(label=label, value=value, change=change, trend=trend, theme=theme.__dict__).render(slide, **pos)
 
     # Alert notification
     alert = Alert(variant="info", theme=theme.__dict__)
     alert.add_child(Alert.Title("New Features Available"))
     alert.add_child(Alert.Description("Check out the latest updates in the changelog."))
-    alert.render(slide, left=0.5, top=4.0, width=7.2, height=0.9)
+    alert.render(slide, left=0.5, top=4.5, width=9.0, height=0.9)
 
-    # Status indicators
-    DotBadge(variant="success", theme=theme.__dict__).render(slide, left=0.5, top=5.2)
-    DotBadge(variant="warning", theme=theme.__dict__).render(slide, left=1.0, top=5.2)
-    DotBadge(variant="destructive", theme=theme.__dict__).render(slide, left=1.5, top=5.2)
+    # Status indicators - simple horizontal placement
+    DotBadge(variant="success", theme=theme.__dict__).render(slide, left=0.5, top=5.8)
+    DotBadge(variant="warning", theme=theme.__dict__).render(slide, left=0.8, top=5.8)
+    DotBadge(variant="destructive", theme=theme.__dict__).render(slide, left=1.1, top=5.8)
 
 
 def main():
@@ -308,6 +424,8 @@ def main():
     create_alert_showcase(prs, theme)
     create_alert_composition_showcase(prs, theme)
     create_card_showcase(prs, theme)
+    create_progress_icon_timeline_showcase(prs, theme)
+    create_tile_avatar_showcase(prs, theme)
     create_combined_dashboard(prs, theme)
 
     # Save presentation
@@ -324,6 +442,8 @@ def main():
     print("  • Badge Components (all variants, dots, counts, tags)")
     print("  • Alert Components (all variants, composition patterns)")
     print("  • Card Components (variants, composition, metrics)")
+    print("  • Progress, Icons & Timeline (PowerPoint-specific components)")
+    print("  • Tiles & Avatars (dashboard elements)")
     print("  • Combined Dashboard (real-world usage)")
     print("\n💡 Demonstrates:")
     print("  • Component-based architecture")
@@ -331,6 +451,7 @@ def main():
     print("  • Composition patterns (shadcn-style)")
     print("  • Variant system (cva-inspired)")
     print("  • Design tokens and semantic colors")
+    print("  • PowerPoint-specific components (ProgressBar, Icon, Timeline, Tile, Avatar)")
 
 
 if __name__ == "__main__":

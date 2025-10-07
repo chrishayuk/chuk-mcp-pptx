@@ -142,6 +142,142 @@ class TestMetricCard:
             trend="up",
             theme=dark_theme
         )
-        
+
         assert card.value == "85.5%"
         assert card.change == "+2.3pp"
+
+
+class TestCardAutoSizing:
+    """Test Card auto-sizing functionality."""
+
+    def test_calculate_min_width_no_children(self, dark_theme):
+        """Test minimum width with no children."""
+        card = Card(variant="default", theme=dark_theme)
+        min_width = card._calculate_min_width()
+        assert min_width == 3.0
+
+    def test_calculate_min_width_with_title(self, dark_theme):
+        """Test minimum width based on title length."""
+        card = Card(variant="default", theme=dark_theme)
+        card.add_child(Card.Title("Short"))
+        min_width = card._calculate_min_width()
+        assert 2.5 <= min_width <= 6.0
+
+    def test_calculate_min_width_long_title(self, dark_theme):
+        """Test minimum width caps at maximum."""
+        card = Card(variant="default", theme=dark_theme)
+        card.add_child(Card.Title("This is a very long title that should be capped at maximum width"))
+        min_width = card._calculate_min_width()
+        assert min_width == 6.0  # Capped at maximum
+
+    def test_calculate_min_height_no_children(self, dark_theme):
+        """Test minimum height with no children."""
+        card = Card(variant="default", theme=dark_theme)
+        min_height = card._calculate_min_height()
+        assert min_height == 1.5
+
+    def test_calculate_min_height_with_title(self, dark_theme):
+        """Test height calculation with title."""
+        card = Card(variant="default", theme=dark_theme)
+        card.add_child(Card.Title("Revenue Summary"))
+        min_height = card._calculate_min_height()
+        assert min_height >= 1.5  # Minimum or calculated
+
+    def test_calculate_min_height_with_description(self, dark_theme):
+        """Test height calculation with description."""
+        card = Card(variant="default", theme=dark_theme)
+        card.add_child(Card.Description("This is a short description"))
+        min_height = card._calculate_min_height()
+        assert min_height >= 1.5
+
+    def test_calculate_min_height_long_description(self, dark_theme):
+        """Test height calculation with long description that wraps."""
+        card = Card(variant="default", theme=dark_theme)
+        long_desc = "This is a very long description that will definitely wrap across multiple lines and should result in a taller minimum height calculation based on the estimated line count."
+        card.add_child(Card.Description(long_desc))
+        min_height = card._calculate_min_height()
+        assert min_height >= 1.8  # Should account for multiple lines
+
+    def test_calculate_min_height_both_children(self, dark_theme):
+        """Test height calculation with both title and description."""
+        card = Card(variant="default", theme=dark_theme)
+        card.add_child(Card.Title("Q4 Revenue"))
+        card.add_child(Card.Description("Total revenue for Q4 2024 increased by 15%"))
+        min_height = card._calculate_min_height()
+        assert min_height >= 1.7  # Should account for both
+
+    def test_calculate_min_height_caps_at_maximum(self, dark_theme):
+        """Test height calculation caps at maximum."""
+        card = Card(variant="default", theme=dark_theme)
+        # Add many children to exceed maximum
+        for i in range(10):
+            card.add_child(Card.Description(f"Line {i}: " + "x" * 100))
+        min_height = card._calculate_min_height()
+        assert min_height == 4.5  # Capped at maximum
+
+    def test_render_with_auto_height(self, mock_slide, dark_theme):
+        """Test rendering uses calculated height when not provided."""
+        card = Card(variant="default", theme=dark_theme)
+        card.add_child(Card.Title("Auto Height"))
+        card.add_child(Card.Description("Should calculate height automatically"))
+
+        # Render without height parameter
+        card.render(mock_slide, left=1, top=1, width=3)
+        assert mock_slide.shapes.add_shape.called
+
+    def test_render_respects_provided_height(self, mock_slide, dark_theme):
+        """Test rendering respects explicitly provided height."""
+        card = Card(variant="default", theme=dark_theme)
+        card.add_child(Card.Title("Fixed Height"))
+
+        # Render with explicit height
+        card.render(mock_slide, left=1, top=1, width=3, height=5.0)
+        assert mock_slide.shapes.add_shape.called
+
+
+class TestMetricCardEdgeCases:
+    """Test MetricCard edge cases and special scenarios."""
+
+    def test_metric_card_neutral_trend_symbol(self, dark_theme):
+        """Test neutral trend shows correct symbol."""
+        card = MetricCard(
+            label="Stable",
+            value="100",
+            change="0%",
+            trend="neutral",
+            theme=dark_theme
+        )
+        assert card.trend == "neutral"
+
+    def test_metric_card_missing_change_and_trend(self, dark_theme):
+        """Test metric card works without change/trend."""
+        card = MetricCard(
+            label="Count",
+            value="5,000",
+            theme=dark_theme
+        )
+        assert card.change is None
+        assert card.trend is None
+
+    def test_metric_card_with_zero_change(self, dark_theme):
+        """Test metric card with zero change."""
+        card = MetricCard(
+            label="No Change",
+            value="100",
+            change="0%",
+            trend="neutral",
+            theme=dark_theme
+        )
+        assert card.change == "0%"
+
+    def test_metric_card_large_values(self, dark_theme):
+        """Test metric card with large formatted values."""
+        card = MetricCard(
+            label="Annual Revenue",
+            value="$1,234,567,890",
+            change="+123.45%",
+            trend="up",
+            theme=dark_theme
+        )
+        assert "$" in card.value
+        assert "%" in card.change

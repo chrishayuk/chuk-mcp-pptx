@@ -137,19 +137,16 @@ def create_stack_demo(prs, theme):
     # Vertical stack on left
     Badge(text="Vertical Stack", variant="outline", theme=theme.__dict__).render(slide, left=0.5, top=1.8)
 
-    v_stack = Stack(direction="vertical", gap="md", align="start")
-    positions = v_stack.distribute(
-        num_items=4,
-        item_width=4.0,
-        item_height=0.8,
-        left=0.5,
-        top=2.2
-    )
-
-    for i, pos in enumerate(positions):
+    # Create cards
+    v_cards = []
+    for i in range(4):
         card = Card(variant="default", theme=theme.__dict__)
         card.add_child(Card.Title(f"Item {i+1}"))
-        card.render(slide, **pos)
+        v_cards.append(card)
+
+    # Stack handles positioning automatically
+    v_stack = Stack(direction="vertical", gap="md", align="start")
+    v_stack.render_children(slide, v_cards, left=0.5, top=2.2, item_width=4.0)
 
     # Vertical divider
     Divider(orientation="vertical", thickness=1, theme=theme.__dict__).render(
@@ -159,19 +156,16 @@ def create_stack_demo(prs, theme):
     # Horizontal stack on right
     Badge(text="Horizontal Stack", variant="outline", theme=theme.__dict__).render(slide, left=5.2, top=1.8)
 
-    h_stack = Stack(direction="horizontal", gap="md", align="start")
-    positions = h_stack.distribute(
-        num_items=3,
-        item_width=1.3,
-        item_height=2.0,
-        left=5.2,
-        top=2.2
-    )
-
-    for i, pos in enumerate(positions):
+    # Create cards
+    h_cards = []
+    for i in range(3):
         card = Card(variant="outlined", theme=theme.__dict__)
         card.add_child(Card.Title(f"{i+1}"))
-        card.render(slide, **pos)
+        h_cards.append(card)
+
+    # Stack handles positioning automatically
+    h_stack = Stack(direction="horizontal", gap="md", align="start")
+    h_stack.render_children(slide, h_cards, left=5.2, top=2.2, item_width=1.3, item_height=2.0)
 
 
 def create_spacing_demo(prs, theme):
@@ -219,7 +213,7 @@ def create_spacing_demo(prs, theme):
 
 
 def create_responsive_dashboard(prs, theme):
-    """Create a clean responsive dashboard."""
+    """Create a clean responsive dashboard demonstrating 12-column grid system."""
     print("  • Creating Responsive Dashboard...")
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     theme.apply_to_slide(slide)
@@ -227,20 +221,26 @@ def create_responsive_dashboard(prs, theme):
     # Title
     title_shape = slide.shapes.title
     if title_shape:
-        title_shape.text = "Responsive Dashboard Layout"
+        title_shape.text = "Responsive Dashboard - 12 Column Grid"
         title_shape.text_frame.paragraphs[0].font.color.rgb = theme.get_color("foreground.DEFAULT")
 
-    grid = Grid(columns=12, gap="md")
+    # Use Container to establish content boundaries
+    container = Container(size="lg", padding="sm", center=True)
+    bounds = container.render(slide, top=1.8)
 
-    # KPI Cards - 3 columns of 4 each
+    # Grid uses container bounds - no need to pass them to each get_cell call
+    grid = Grid(columns=12, rows=2, gap="md", bounds=bounds)
+
+    # Row 0 - Metrics (3 cells of 4 columns each)
     metrics = [
         ("Revenue", "$1.2M", "+15%", "up", 0),
-        ("Users", "45.2K", "+8%", "up", 4),
+        ("Users", "45K", "+8%", "up", 4),
         ("Growth", "23%", "+3%", "up", 8),
     ]
 
     for label, value, change, trend, col_start in metrics:
-        pos = grid.get_span(col_span=4, col_start=col_start, left=0.5, top=2.0, width=9.0, height=1.4)
+        # Grid knows its bounds - just specify cell position
+        pos = grid.get_cell(col_span=4, col_start=col_start, row_start=0)
         MetricCard(
             label=label,
             value=value,
@@ -249,47 +249,41 @@ def create_responsive_dashboard(prs, theme):
             theme=theme.__dict__
         ).render(slide, **pos)
 
-    # Main content (8 cols)
-    main_pos = grid.get_span(col_span=8, col_start=0, left=0.5, top=3.6, width=9.0, height=2.8)
+    # Row 1 - Main content (8 cols)
+    main_pos = grid.get_cell(col_span=8, col_start=0, row_start=1)
     main_card = Card(variant="elevated", theme=theme.__dict__)
-    main_card.add_child(Card.Title("Main Content"))
-    main_card.add_child(Card.Description("Charts, tables, and detailed analytics go here"))
-    main_card.render(slide, left=main_pos['left'], top=main_pos['top'],
-                     width=main_pos['width'], height=main_pos['height'])
+    main_card.add_child(Card.Title("Main Content (8/12 cols)"))
+    main_card.add_child(Card.Description("Primary content area scales with grid system"))
+    main_card.render(slide, **main_pos)
 
-    # Sidebar (4 cols) with stacked buttons
-    sidebar_pos = grid.get_span(col_span=4, col_start=8, left=0.5, top=3.6, width=9.0, height=2.8)
+    # Row 1 - Sidebar (4 cols) - simplified, no manual calculations
+    sidebar_pos = grid.get_cell(col_span=4, col_start=8, row_start=1)
 
-    # Background card for sidebar
-    sidebar_card = Card(variant="outlined", theme=theme.__dict__)
-    sidebar_card.add_child(Card.Title("Quick Actions"))
-    sidebar_card.render(slide, left=sidebar_pos['left'], top=sidebar_pos['top'],
-                        width=sidebar_pos['width'], height=sidebar_pos['height'])
-
-    # Stack buttons in sidebar
-    stack = Stack(direction="vertical", gap="sm", align="start")
-    button_positions = stack.distribute(
-        num_items=3,
-        item_width=1.8,
-        item_height=0.4,
-        left=sidebar_pos['left'] + 0.2,
-        top=sidebar_pos['top'] + 0.8
+    # Just a label badge for the sidebar section
+    Badge(text="Actions (4/12)", variant="outline", theme=theme.__dict__).render(
+        slide, left=sidebar_pos['left'] + 0.1, top=sidebar_pos['top'] + 0.1
     )
 
+    # Buttons stacked in sidebar - grid provides boundaries
     buttons = [
-        ("Export Data", "outline"),
-        ("Refresh", "secondary"),
-        ("Settings", "ghost")
+        Button("Export", variant="outline", size="sm", theme=theme.__dict__),
+        Button("Refresh", variant="secondary", size="sm", theme=theme.__dict__),
+        Button("Settings", variant="ghost", size="sm", theme=theme.__dict__)
     ]
 
-    for (text, variant), pos in zip(buttons, button_positions):
-        Button(text=text, variant=variant, size="sm", theme=theme.__dict__).render(
-            slide, left=pos['left'], top=pos['top'], width=pos['width'], height=pos['height']
-        )
+    stack = Stack(direction="vertical", gap="sm", align="start")
+    stack.render_children(
+        slide,
+        buttons,
+        left=sidebar_pos['left'] + 0.1,
+        top=sidebar_pos['top'] + 0.5,
+        item_width=sidebar_pos['width'] - 0.2,
+        item_height=0.4
+    )
 
 
 def create_divider_demo(prs, theme):
-    """Demonstrate dividers."""
+    """Demonstrate dividers with clean, visually appealing layout."""
     print("  • Creating Divider demo...")
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     theme.apply_to_slide(slide)
@@ -300,38 +294,70 @@ def create_divider_demo(prs, theme):
         title_shape.text = "Dividers & Separators"
         title_shape.text_frame.paragraphs[0].font.color.rgb = theme.get_color("foreground.DEFAULT")
 
-    # Horizontal dividers with sections
+    # Left side: Badges with dividers demonstrating separator usage
     sections = [
-        ("Introduction", 2.0, "default"),
-        ("Analysis", 3.2, "success"),
-        ("Recommendations", 4.4, "warning"),
-        ("Conclusion", 5.6, "outline")
+        ("Introduction", "default"),
+        ("Analysis", "success"),
+        ("Recommendation", "warning"),
+        ("Conclusion", "outline")
     ]
 
-    for label, top, variant in sections:
-        Badge(text=label, variant=variant, theme=theme.__dict__).render(slide, left=0.5, top=top)
+    # Create badges
+    section_badges = [
+        Badge(text=label, variant=variant, theme=theme.__dict__)
+        for label, variant in sections
+    ]
 
-        # Divider below each section
-        if top < 5.6:  # Don't add divider after last section
-            Divider(orientation="horizontal", thickness=1, theme=theme.__dict__).render(
-                slide, left=0.5, top=top + 0.4, width=4.0
-            )
+    # Stack badges with proper gap
+    left_stack = Stack(direction="vertical", gap="lg")
 
-    # Vertical divider in center
-    Divider(orientation="vertical", thickness=2, theme=theme.__dict__).render(
-        slide, left=5.2, top=2.0, height=4.0
+    # Get positions for both badges and dividers
+    positions = left_stack.distribute(
+        num_items=len(sections),
+        item_width=4.0,
+        item_height=0.3,
+        left=0.5,
+        top=2.0
     )
 
-    # Content on right side
-    card_left = Card(variant="default", theme=theme.__dict__)
-    card_left.add_child(Card.Title("Left Panel"))
-    card_left.add_child(Card.Description("Before divider"))
-    card_left.render(slide, left=5.6, top=2.0, width=2.0, height=1.5)
+    # Render badges at calculated positions
+    for badge, pos in zip(section_badges, positions):
+        badge.render(slide, left=pos['left'], top=pos['top'])
 
-    card_right = Card(variant="default", theme=theme.__dict__)
-    card_right.add_child(Card.Title("Right Panel"))
-    card_right.add_child(Card.Description("After divider"))
-    card_right.render(slide, left=7.8, top=2.0, width=2.0, height=1.5)
+        # Add divider below each badge (except last)
+        if badge != section_badges[-1]:
+            Divider(orientation="horizontal", thickness=1, theme=theme.__dict__).render(
+                slide, left=pos['left'], top=pos['top'] + 0.4, width=4.0
+            )
+
+    # Vertical divider in center - taller and more prominent
+    Divider(orientation="vertical", thickness=2, theme=theme.__dict__).render(
+        slide, left=5.0, top=1.8, height=4.6
+    )
+
+    # Right side: Content cards with proper spacing
+    right_stack = Stack(direction="vertical", gap="md", align="start")
+
+    # Get positions for cards
+    card_positions = right_stack.distribute(
+        num_items=2,
+        item_width=4.0,
+        item_height=1.5,  # Fixed height for each card
+        left=5.5,
+        top=2.0
+    )
+
+    # Render cards at calculated positions
+    right_cards = [
+        ("Content Section A", "First content area with consistent styling"),
+        ("Content Section B", "Second content area with matching layout")
+    ]
+
+    for (title, description), pos in zip(right_cards, card_positions):
+        card = Card(variant="elevated", theme=theme.__dict__)
+        card.add_child(Card.Title(title))
+        card.add_child(Card.Description(description))
+        card.render(slide, left=pos['left'], top=pos['top'], width=pos['width'])
 
 
 def main():

@@ -134,11 +134,24 @@ class Grid(Component):
                  columns: int = 12,
                  gap: Literal["none", "xs", "sm", "md", "lg", "xl"] = "md",
                  rows: int = 1,
+                 bounds: Optional[Dict[str, float]] = None,
                  theme: Optional[Dict[str, Any]] = None):
+        """
+        Initialize grid.
+
+        Args:
+            columns: Number of columns
+            gap: Gap between cells
+            rows: Number of rows
+            bounds: Optional container bounds dict with 'left', 'top', 'width', 'height'
+                   If provided, grid will use these as defaults for all cell calculations
+            theme: Optional theme
+        """
         super().__init__(theme)
         self.columns = columns
         self.gap = GAPS.get(gap, GAPS["md"])
         self.rows = rows
+        self.bounds = bounds or {}
 
     def get_cell_positions(self,
                           slide,
@@ -224,6 +237,73 @@ class Grid(Component):
             'width': span_width,
             'height': span_height
         }
+
+    def get_cell(self,
+                 col_span: int = 1,
+                 row_span: int = 1,
+                 col_start: int = 0,
+                 row_start: int = 0,
+                 left: Optional[float] = None,
+                 top: Optional[float] = None,
+                 width: Optional[float] = None,
+                 height: Optional[float] = None,
+                 auto_height: bool = True) -> Dict[str, float]:
+        """
+        Get position for a cell with optional auto-height for components.
+
+        This is the preferred method for laying out components in a grid.
+        Use auto_height=True (default) for components that calculate their own height.
+        Use auto_height=False when you need fixed-height cells.
+
+        Args:
+            col_span: Number of columns to span
+            row_span: Number of rows to span
+            col_start: Starting column (0-indexed)
+            row_start: Starting row (0-indexed)
+            left: Grid left position (uses bounds if not provided)
+            top: Grid top position (uses bounds if not provided)
+            width: Grid total width (uses bounds if not provided)
+            height: Grid total height (uses bounds if not provided)
+            auto_height: If True, omit height from result (for auto-sizing components)
+
+        Returns:
+            Dict with 'left', 'top', 'width' and optionally 'height'
+
+        Example:
+            # With bounds set on grid
+            grid = Grid(columns=12, rows=2, bounds=container_bounds)
+            pos = grid.get_cell(col_span=8, col_start=0, row_start=1)
+            card.render(slide, **pos)
+
+            # Without bounds (manual positioning)
+            grid = Grid(columns=12, rows=2)
+            pos = grid.get_cell(col_span=8, col_start=0, row_start=1,
+                               left=0.5, top=2.0, width=9.0, height=4.0)
+            card.render(slide, **pos)
+        """
+        # Use bounds as defaults if available
+        grid_left = left if left is not None else self.bounds.get('left', 0.5)
+        grid_top = top if top is not None else self.bounds.get('top', 1.5)
+        grid_width = width if width is not None else self.bounds.get('width', CONTENT_WIDTH)
+        grid_height = height if height is not None else self.bounds.get('height', CONTENT_HEIGHT)
+
+        # Get full position from get_span
+        position = self.get_span(
+            col_span=col_span,
+            row_span=row_span,
+            col_start=col_start,
+            row_start=row_start,
+            left=grid_left,
+            top=grid_top,
+            width=grid_width,
+            height=grid_height
+        )
+
+        # Remove height if auto-sizing
+        if auto_height:
+            return {k: v for k, v in position.items() if k != 'height'}
+
+        return position
 
 
 @component(
@@ -348,6 +428,54 @@ class Stack(Component):
                 current_left += width + self.gap
 
         return positions
+
+    def render_children(self,
+                       slide,
+                       children: List[Any],
+                       left: float = 0.5,
+                       top: float = 1.5,
+                       item_width: Optional[float] = None,
+                       item_height: Optional[float] = None) -> List[Any]:
+        """
+        Render a list of components in a stack layout.
+
+        This is a convenience method that handles positioning automatically.
+
+        Args:
+            slide: PowerPoint slide
+            children: List of component instances to render
+            left: Starting left position
+            top: Starting top position
+            item_width: Width for all items (optional)
+            item_height: Height for all items (optional)
+
+        Returns:
+            List of rendered shapes
+
+        Example:
+            stack = Stack(direction="vertical", gap="md")
+            buttons = [
+                Button("Save", "default"),
+                Button("Cancel", "ghost")
+            ]
+            stack.render_children(slide, buttons, left=1, top=2)
+        """
+        positions = self.distribute(
+            num_items=len(children),
+            item_width=item_width,
+            item_height=item_height,
+            left=left,
+            top=top
+        )
+
+        shapes = []
+        for child, pos in zip(children, positions):
+            # Render each child at its calculated position
+            if hasattr(child, 'render'):
+                shape = child.render(slide, **pos)
+                shapes.append(shape)
+
+        return shapes
 
 
 @component(

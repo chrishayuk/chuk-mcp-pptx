@@ -137,10 +137,10 @@ class Badge(Component):
 
     def _calculate_width(self) -> float:
         """Calculate width based on text length."""
-        # Rough estimation: base padding + character width
-        char_width = 0.05  # inches per character
-        min_width = 0.5
-        padding = 0.3
+        # More generous estimation to prevent text cutoff
+        char_width = 0.08  # inches per character (increased from 0.05)
+        min_width = 0.6
+        padding = 0.5  # More padding (increased from 0.3)
 
         calculated = len(self.text) * char_width + padding
         return max(min_width, calculated)

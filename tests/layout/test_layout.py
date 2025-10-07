@@ -277,6 +277,161 @@ class TestStack:
 
         assert len(positions) == 0
 
+    def test_stack_render_children_vertical(self, mock_slide):
+        """Test render_children with vertical stack."""
+        # Create mock components with render method
+        class MockComponent:
+            def __init__(self, name):
+                self.name = name
+                self.rendered = False
+                self.render_args = None
+
+            def render(self, slide, **kwargs):
+                self.rendered = True
+                self.render_args = kwargs
+                return f"shape_{self.name}"
+
+        components = [MockComponent(f"item_{i}") for i in range(3)]
+
+        stack = Stack(direction="vertical", gap="md")
+        shapes = stack.render_children(
+            mock_slide,
+            components,
+            left=0.5,
+            top=2.0,
+            item_width=4.0,
+            item_height=1.0
+        )
+
+        # All components should be rendered
+        assert len(shapes) == 3
+        for component in components:
+            assert component.rendered
+
+        # Verify vertical stacking (increasing top positions)
+        assert components[0].render_args['top'] < components[1].render_args['top']
+        assert components[1].render_args['top'] < components[2].render_args['top']
+
+        # Verify consistent dimensions
+        for component in components:
+            assert component.render_args['width'] == 4.0
+            assert component.render_args['height'] == 1.0
+
+    def test_stack_render_children_horizontal(self, mock_slide):
+        """Test render_children with horizontal stack."""
+        class MockComponent:
+            def __init__(self, name):
+                self.name = name
+                self.rendered = False
+                self.render_args = None
+
+            def render(self, slide, **kwargs):
+                self.rendered = True
+                self.render_args = kwargs
+                return f"shape_{self.name}"
+
+        components = [MockComponent(f"item_{i}") for i in range(4)]
+
+        stack = Stack(direction="horizontal", gap="lg")
+        shapes = stack.render_children(
+            mock_slide,
+            components,
+            left=0.5,
+            top=2.0,
+            item_width=2.0,
+            item_height=1.5
+        )
+
+        # All components should be rendered
+        assert len(shapes) == 4
+        for component in components:
+            assert component.rendered
+
+        # Verify horizontal stacking (increasing left positions)
+        assert components[0].render_args['left'] < components[1].render_args['left']
+        assert components[1].render_args['left'] < components[2].render_args['left']
+        assert components[2].render_args['left'] < components[3].render_args['left']
+
+        # Verify consistent dimensions
+        for component in components:
+            assert component.render_args['width'] == 2.0
+            assert component.render_args['height'] == 1.5
+
+    def test_stack_render_children_empty(self, mock_slide):
+        """Test render_children with empty list."""
+        stack = Stack(direction="vertical", gap="md")
+        shapes = stack.render_children(mock_slide, [], left=0.5, top=2.0)
+
+        assert len(shapes) == 0
+
+    def test_stack_render_children_matches_distribute(self, mock_slide):
+        """Test that render_children positioning matches distribute."""
+        class MockComponent:
+            def __init__(self):
+                self.render_args = None
+
+            def render(self, slide, **kwargs):
+                self.render_args = kwargs
+                return "shape"
+
+        components = [MockComponent() for _ in range(3)]
+
+        stack = Stack(direction="vertical", gap="sm")
+
+        # Get positions from distribute
+        positions = stack.distribute(
+            num_items=3,
+            item_width=3.0,
+            item_height=1.0,
+            left=1.0,
+            top=2.5
+        )
+
+        # Render using render_children
+        stack.render_children(
+            mock_slide,
+            components,
+            left=1.0,
+            top=2.5,
+            item_width=3.0,
+            item_height=1.0
+        )
+
+        # Verify positions match
+        for i, (component, expected_pos) in enumerate(zip(components, positions)):
+            assert component.render_args['left'] == expected_pos['left']
+            assert component.render_args['top'] == expected_pos['top']
+            assert component.render_args['width'] == expected_pos['width']
+            assert component.render_args['height'] == expected_pos['height']
+
+    def test_stack_render_children_without_render_method(self, mock_slide):
+        """Test render_children skips objects without render method."""
+        class MockComponent:
+            def render(self, slide, **kwargs):
+                return "shape"
+
+        class InvalidComponent:
+            pass  # No render method
+
+        components = [
+            MockComponent(),
+            InvalidComponent(),
+            MockComponent()
+        ]
+
+        stack = Stack(direction="vertical", gap="md")
+        shapes = stack.render_children(
+            mock_slide,
+            components,
+            left=0.5,
+            top=2.0,
+            item_width=3.0,
+            item_height=1.0
+        )
+
+        # Should only render components with render method
+        assert len(shapes) == 2
+
 
 class TestSpacer:
     """Test Spacer component."""
@@ -507,3 +662,71 @@ class TestLayoutEdgeCases:
         )
 
         assert pos is not None
+
+    def test_grid_with_bounds(self):
+        """Test grid initialized with bounds."""
+        bounds = {'left': 1.0, 'top': 2.0, 'width': 8.0, 'height': 5.0}
+        grid = Grid(columns=12, rows=2, gap="md", bounds=bounds)
+
+        # Get cell without specifying bounds
+        pos = grid.get_cell(col_span=6, col_start=0, row_start=0)
+
+        # Should use bounds from initialization
+        assert pos['left'] >= bounds['left']
+        assert pos['top'] >= bounds['top']
+        assert pos['width'] <= bounds['width']
+        assert 'height' not in pos  # auto_height=True by default
+
+    def test_grid_get_cell_auto_height(self):
+        """Test get_cell with auto_height=True."""
+        grid = Grid(columns=12, gap="md")
+
+        # Auto-height (default)
+        pos = grid.get_cell(col_span=4, col_start=0, left=0.5, top=2.0, width=9.0, height=4.0)
+
+        assert 'left' in pos
+        assert 'top' in pos
+        assert 'width' in pos
+        assert 'height' not in pos  # Should be omitted
+
+    def test_grid_get_cell_fixed_height(self):
+        """Test get_cell with auto_height=False."""
+        grid = Grid(columns=12, gap="md")
+
+        # Fixed height
+        pos = grid.get_cell(
+            col_span=4, col_start=0,
+            left=0.5, top=2.0, width=9.0, height=4.0,
+            auto_height=False
+        )
+
+        assert 'left' in pos
+        assert 'top' in pos
+        assert 'width' in pos
+        assert 'height' in pos  # Should be included
+
+    def test_grid_get_cell_multiple_rows(self):
+        """Test get_cell with multiple rows."""
+        bounds = {'left': 0.5, 'top': 1.8, 'width': 9.0, 'height': 4.5}
+        grid = Grid(columns=12, rows=2, gap="md", bounds=bounds)
+
+        # Row 0
+        row0_pos = grid.get_cell(col_span=4, col_start=0, row_start=0)
+
+        # Row 1
+        row1_pos = grid.get_cell(col_span=4, col_start=0, row_start=1)
+
+        # Row 1 should be below Row 0
+        assert row1_pos['top'] > row0_pos['top']
+
+    def test_grid_bounds_override(self):
+        """Test that explicit parameters override bounds."""
+        bounds = {'left': 1.0, 'top': 2.0, 'width': 8.0, 'height': 5.0}
+        grid = Grid(columns=12, gap="md", bounds=bounds)
+
+        # Override with explicit left
+        pos = grid.get_cell(col_span=6, col_start=0, left=0.5)
+
+        # Should use overridden left, but bounds for others
+        assert pos['left'] == 0.5 or pos['left'] > 0.5  # Might be offset by column
+        assert pos['top'] >= bounds['top']
