@@ -4,7 +4,7 @@ This directory contains examples demonstrating the PowerPoint MCP Server's capab
 
 ## 🎨 Design System Showcases (Start Here!)
 
-Our "shadcn for PowerPoint" design system - comprehensive demonstrations of the design system:
+Our "shadcn for PowerPoint" design system - comprehensive demonstrations:
 
 ### Core Design System
 - **`tokens_showcase.py`** - Design tokens: colors, typography, spacing, semantic colors
@@ -18,26 +18,32 @@ Our "shadcn for PowerPoint" design system - comprehensive demonstrations of the 
   - **Connectors & Arrows** (straight, elbow, curved)
   - **SmartArt Diagrams** (process, cycle, hierarchy)
   - **Text** (text boxes, bullet lists, formatting)
-  - **Text + Layout** (text with grid/stack layouts)
   - **Images** (layouts, effects, aspect ratios, filters)
-  - **Images + Layout** (images with grid/stack layouts)
 
 ### Business-Focused Galleries
-- **`beautiful_chart_gallery.py`** - Comprehensive showcase of all chart types with modern themes
 - **`theme_showcase_by_domain.py`** - Business domain-specific charts across all themes (48 presentations!)
+- **`complete_chart_showcase.py`** - Comprehensive showcase of all chart types with modern themes
 
-### Additional Component Galleries
-- **`table_gallery.py`** - Table and data grid components
+## 📊 Chart & Data Galleries
 
-## 📊 Chart Examples
+### Chart Galleries
+- **`theme_chart_galleries.py`** - 🆕 Individual chart galleries for each theme (12 galleries)
+  - Creates one gallery per theme showing all chart types
+  - Demonstrates consistent styling across themes
+  - 7 slides per gallery with professional layouts
+  - All charts use component-based architecture
 
-### Basic Charts
-- **`chart_demo.py`** - Simple chart creation examples
-- **`chart_gallery.py`** - Basic chart types demonstration
+### Data Tables
+- **`table_gallery.py`** - 🆕 Professional table components (3 themed galleries)
+  - Financial reports, product comparisons, project timelines
+  - Performance metrics, budget allocations
+  - 4 table variants: default, bordered, striped, minimal
+  - Creates galleries for corporate, dark, and ocean themes
 
-### Advanced Charts
-- **`comprehensive_chart_showcase.py`** - Advanced chart features
-- **`theme_chart_galleries.py`** - Charts with theme variations
+### Chat Interfaces
+- **`chat_conversation_showcase.py`** - Chat message components and layouts
+- **`container_chat_showcase.py`** - Chat interfaces with containers
+- **`platform_chat_showcase.py`** - Platform-style chat designs
 
 ## 🚀 Quick Start Examples
 
@@ -50,14 +56,30 @@ Running these examples will create presentations in the `../outputs/` directory:
 
 ```
 outputs/
-├── beautiful_chart_gallery.pptx      # Main chart gallery
-├── theme_galleries/                  # Domain-specific themed charts
-│   ├── general_business_*.pptx      # Business analytics (8 themes)
-│   ├── tech_teams_*.pptx            # Engineering metrics (8 themes)
-│   ├── finance_*.pptx               # Financial dashboards (8 themes)
-│   ├── hr_*.pptx                    # People analytics (8 themes)
-│   ├── project_mgmt_*.pptx          # Project management (8 themes)
-│   └── stock_market_*.pptx          # Trading analytics (8 themes)
+├── complete_chart_showcase.pptx       # Main comprehensive chart gallery
+├── theme_galleries/                   # Individual theme chart galleries
+│   ├── chart_gallery_dark.pptx       # Dark theme charts
+│   ├── chart_gallery_dark_blue.pptx  # Dark blue theme
+│   ├── chart_gallery_dark_violet.pptx
+│   ├── chart_gallery_dark_green.pptx
+│   ├── chart_gallery_dark_purple.pptx
+│   ├── chart_gallery_light.pptx      # Light theme charts
+│   ├── chart_gallery_corporate.pptx  # Corporate theme
+│   ├── chart_gallery_light_warm.pptx
+│   ├── chart_gallery_cyberpunk.pptx  # Special themes
+│   ├── chart_gallery_sunset.pptx
+│   ├── chart_gallery_ocean.pptx
+│   └── chart_gallery_minimal.pptx
+├── table_gallery_corporate.pptx       # Corporate theme tables
+├── table_gallery_dark.pptx            # Dark theme tables
+├── table_gallery_ocean.pptx           # Ocean theme tables
+├── domain_galleries/                  # Domain-specific themed charts
+│   ├── general_business_*.pptx       # Business analytics (8 themes)
+│   ├── tech_teams_*.pptx             # Engineering metrics (8 themes)
+│   ├── finance_*.pptx                # Financial dashboards (8 themes)
+│   ├── hr_*.pptx                     # People analytics (8 themes)
+│   ├── project_mgmt_*.pptx           # Project management (8 themes)
+│   └── stock_market_*.pptx           # Trading analytics (8 themes)
 └── [other output files]
 ```
 
@@ -67,8 +89,9 @@ outputs/
 2. **Layout System**: Run `layout_system_showcase.py` to see grid and layout capabilities
 3. **Themes**: Run `themes_showcase.py` to explore all available themes
 4. **Components**: Run `core_components_showcase.py` to see all UI components
-5. **Charts**: Run `beautiful_chart_gallery.py` to see all chart types
-6. **Business Focus**: Run `theme_showcase_by_domain.py` for domain-specific galleries (48 presentations!)
+5. **Charts**: Run `theme_chart_galleries.py` to see charts across all themes (12 galleries!)
+6. **Tables**: Run `table_gallery.py` to see professional table components (3 themes)
+7. **Business Focus**: Run `theme_showcase_by_domain.py` for domain-specific galleries (48 presentations!)
 
 ## 💡 Design System Philosophy
 
@@ -84,18 +107,63 @@ All examples can be run using uv:
 
 ```bash
 # Design System showcases (recommended starting point)
-uv run python examples/tokens_showcase.py
-uv run python examples/layout_system_showcase.py
-uv run python examples/themes_showcase.py
-uv run python examples/core_components_showcase.py
+uv run examples/tokens_showcase.py
+uv run examples/layout_system_showcase.py
+uv run examples/themes_showcase.py
+uv run examples/core_components_showcase.py
 
-# Business-focused galleries
-uv run python examples/beautiful_chart_gallery.py
-uv run python examples/theme_showcase_by_domain.py  # Creates 48 presentations!
+# Chart galleries
+uv run examples/theme_chart_galleries.py    # Creates 12 themed chart galleries!
+uv run examples/complete_chart_showcase.py
+uv run examples/theme_showcase_by_domain.py # Creates 48 domain presentations!
 
-# Run any other example
-uv run python examples/[example_name].py
+# Table galleries
+uv run examples/table_gallery.py            # Creates 3 themed table galleries!
+
+# Chat interfaces
+uv run examples/chat_conversation_showcase.py
+uv run examples/container_chat_showcase.py
+uv run examples/platform_chat_showcase.py
+
+# Quick start
+uv run examples/simple_example.py
+uv run examples/code_examples.py
 ```
+
+## 📊 Chart Galleries
+
+### Theme Chart Galleries (`theme_chart_galleries.py`)
+Creates 12 individual galleries, one for each theme:
+
+**Dark Themes:**
+- dark, dark-blue, dark-violet, dark-green, dark-purple
+
+**Light Themes:**
+- light, corporate, light-warm
+
+**Special Themes:**
+- cyberpunk, sunset, ocean, minimal
+
+Each gallery contains 7 slides:
+1. Title slide
+2. Column & Bar Charts (quarterly performance, technology trends)
+3. Line & Area Charts (platform growth, customer segments)
+4. Pie & Doughnut Charts (revenue by product, global distribution)
+5. Scatter & Bubble Charts (performance correlation, market positioning)
+6. Radar & Gauge Charts (product comparison, satisfaction/uptime metrics)
+7. Sample Charts (multi-series column, color palette showcase)
+
+### Table Gallery (`table_gallery.py`)
+Creates 3 themed table galleries (corporate, dark, ocean):
+
+Each gallery contains 7 slides:
+1. Title slide
+2. Financial Report (quarterly metrics)
+3. Product Comparison (feature matrix)
+4. Project Timeline (phases and milestones)
+5. Performance Metrics (department KPIs)
+6. Budget Allocation (quarterly budgets)
+7. Table Variants (default, bordered, striped, minimal)
 
 ## 📊 Business Domain Charts
 
@@ -138,34 +206,24 @@ The `theme_showcase_by_domain.py` creates specialized charts for each business d
 - Bubble Charts for risk/return analysis
 - Waterfall Charts for P&L breakdown
 
-## 📚 Archive
+## 🎨 Available Themes
 
-Old examples and test scripts have been moved to the `archive/` folder for reference.
+All examples support these 12 built-in themes:
 
-**Archived Duplicates** (consolidated into new showcases):
-- `beautiful_themes_demo.py` → Consolidated into `themes_showcase.py`
-- `theme_gallery.py` → Consolidated into `themes_showcase.py`
-- `theme_focused_showcase.py` → Consolidated into `themes_showcase.py`
-- `demo_single_theme.py` → Consolidated into `themes_showcase.py`
-- `enhanced_components_demo.py` → Consolidated into `tokens_showcase.py` and `core_components_showcase.py`
+**Dark Themes:**
+- `dark` - Default dark theme
+- `dark-blue` - Blue accent dark theme
+- `dark-violet` - Violet accent dark theme
+- `dark-green` - Green accent dark theme
+- `dark-purple` - Purple accent dark theme
 
-**Shape & Image Components** (now in `core_components_showcase.py`):
-- `shapes_gallery.py` → Shapes now in core components
-- `smartart_gallery.py` → SmartArt diagrams now in core components
-- `connector_proof.py` → Connectors now in core components
-- `final_connector_report.py` → Replaced by component-based connectors
-- `verify_connectors.py` → Replaced by component tests
-- `image_demo.py` → Images now in core components
-- `image_gallery.py` → Image layouts and filters now in core components
+**Light Themes:**
+- `light` - Default light theme
+- `corporate` - Professional corporate theme
+- `light-warm` - Warm light theme
 
-**Old Showcase Iterations** (superseded):
-- `component_showcase.py` → Replaced by `core_components_showcase.py`
-- `domain_focused_showcase.py` → Replaced by `theme_showcase_by_domain.py`
-- `fixed_comprehensive_showcase.py` → Old iteration
-- `robust_showcase.py` → Old iteration
-- `safe_showcase.py` → Old iteration
-
-**Debug/Inspection Tools** (in `archive/debug/`):
-- `direct_inspect.py`
-- `full_inspection.py`
-- `layout_inspection_demo.py`
+**Special Themes:**
+- `cyberpunk` - High-contrast cyberpunk aesthetic
+- `sunset` - Warm sunset colors
+- `ocean` - Cool ocean blues
+- `minimal` - Minimalist monochrome

@@ -26,20 +26,19 @@ class TestLineChart:
         assert "Revenue" in line_chart.series
         assert "Costs" in line_chart.series
         assert line_chart.title == "Monthly Performance"
-        assert line_chart.smooth is False
-        assert line_chart.markers is True
-        assert line_chart.variant == "default"
+        assert line_chart.variant == "line"  # Updated API
+        assert line_chart.style == "default"
     
     def test_initialization_with_options(self):
         """Test line chart with custom options."""
         chart = LineChart(
             categories=["Q1", "Q2", "Q3", "Q4"],
             series={"Sales": [100, 110, 120, 115]},
-            smooth=True,
-            markers=False
+            variant="smooth",  # Use variant instead of smooth param
+            style="minimal"
         )
-        assert chart.smooth is True
-        assert chart.markers is False
+        assert chart.variant == "smooth"
+        assert chart.style == "minimal"
     
     def test_validate_data_valid(self, line_chart):
         """Test validation with valid data."""
@@ -80,31 +79,34 @@ class TestLineChart:
         assert chart.chart_type == XL_CHART_TYPE.LINE_MARKERS
     
     def test_chart_type_3d(self):
-        """Test 3D line chart type."""
+        """Test 3D line chart type - removed in new API."""
+        # 3D variant removed, use standard line
         chart = LineChart(
             categories=["A", "B"],
             series={"Test": [1, 2]},
-            variant="3d"
+            variant="line"
         )
-        assert chart.chart_type == XL_CHART_TYPE.THREE_D_LINE
+        assert chart.chart_type == XL_CHART_TYPE.LINE_MARKERS
     
     def test_smooth_lines(self):
         """Test smooth lines option."""
         chart = LineChart(
             categories=["A", "B", "C"],
             series={"Test": [1, 2, 3]},
-            smooth=True
+            variant="smooth"  # Use variant instead
         )
-        assert chart.smooth is True
+        assert chart.variant == "smooth"
+        assert chart.variant_props.get("smooth") is True
     
     def test_no_markers(self):
         """Test line chart without markers."""
         chart = LineChart(
             categories=["A", "B", "C"],
             series={"Test": [1, 2, 3]},
-            markers=False
+            style="minimal"  # Minimal style hides markers
         )
-        assert chart.markers is False
+        assert chart.style == "minimal"
+        assert chart.variant_props.get("show_markers") is False
 
 
 class TestAreaChart:
@@ -124,7 +126,7 @@ class TestAreaChart:
         assert area_chart.categories == ["2020", "2021", "2022", "2023"]
         assert area_chart.series == {"Growth": [100, 150, 200, 180]}
         assert area_chart.title == "Growth Trend"
-        assert area_chart.variant == "default"
+        assert area_chart.variant == "area"
     
     def test_chart_type_default(self, area_chart):
         """Test default area chart type."""
@@ -158,13 +160,15 @@ class TestAreaChart:
         assert chart.chart_type == XL_CHART_TYPE.THREE_D_AREA
     
     def test_transparency_option(self):
-        """Test transparency option for area charts."""
+        """Test transparency option - removed from new API."""
+        # Options parameter removed - use style variants instead
         chart = AreaChart(
             categories=["A", "B"],
             series={"Test": [1, 2]},
-            options={"transparency": 30}
+            style="default"
         )
-        assert chart.options["transparency"] == 30
+        # Verify chart was created successfully
+        assert chart.style == "default"
 
 
 class TestSparklineChart:
@@ -180,7 +184,7 @@ class TestSparklineChart:
     
     def test_initialization(self, sparkline_chart):
         """Test sparkline chart initialization."""
-        assert sparkline_chart.values == [10, 15, 12, 18, 20, 17, 22, 25]
+        assert sparkline_chart.series["Value"] == [10, 15, 12, 18, 20, 17, 22, 25]
         assert sparkline_chart.title == "Trend"
         # Sparkline auto-generates categories
         assert len(sparkline_chart.categories) == 8
@@ -191,23 +195,20 @@ class TestSparklineChart:
             values=[10, 20, 30],
             categories=["A", "B", "C"]
         )
-        assert chart.values == [10, 20, 30]
+        assert chart.series["Value"] == [10, 20, 30]
         assert chart.categories == ["A", "B", "C"]
     
-    def test_show_axes_false(self, sparkline_chart):
-        """Test that sparklines hide axes by default."""
-        assert sparkline_chart.show_axes is False
+    def test_minimal_styling(self, sparkline_chart):
+        """Test that sparklines use minimal style by default."""
+        assert sparkline_chart.style == "minimal"
+        assert sparkline_chart.legend == "none"
     
-    def test_show_gridlines_false(self, sparkline_chart):
-        """Test that sparklines hide gridlines by default."""
-        assert sparkline_chart.show_gridlines is False
-    
-    def test_minimal_style(self):
-        """Test sparkline minimal style settings."""
+    def test_default_variant(self):
+        """Test sparkline uses line variant by default."""
         chart = SparklineChart(
             values=[1, 2, 3, 4, 5]
         )
-        # Sparklines should have minimal styling
-        assert chart.show_axes is False
-        assert chart.show_gridlines is False
-        assert chart.markers is False  # Default no markers for sparklines
+        # Sparklines use line variant with minimal styling
+        assert chart.variant == "line"
+        assert chart.style == "minimal"
+        assert chart.variant_props.get("show_markers") is False

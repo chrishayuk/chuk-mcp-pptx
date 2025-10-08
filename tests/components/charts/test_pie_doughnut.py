@@ -23,8 +23,8 @@ class TestPieChart:
         assert pie_chart.values == [30, 25, 20, 25]
         assert pie_chart.title == "Sales by Region"
         assert pie_chart.explode_slice is None
-        assert pie_chart.variant == "default"  # Actual default value
-        assert pie_chart.show_percentages is True
+        assert pie_chart.variant == "pie"  # Updated to match new API
+        assert pie_chart.style == "default"  # Check style instead
     
     def test_initialization_with_explode(self):
         """Test pie chart with exploded slice."""
@@ -80,13 +80,14 @@ class TestPieChart:
         assert pie_chart.chart_type == XL_CHART_TYPE.PIE
     
     def test_variant_3d(self):
-        """Test 3D pie chart variant."""
+        """Test 3D pie chart variant - removed in new API."""
+        # 3D variant removed - pie only supports: pie, doughnut, exploded
         chart = PieChart(
             categories=["A"],
             values=[100],
-            variant="3d"
+            variant="pie"
         )
-        assert chart.chart_type == XL_CHART_TYPE.THREE_D_PIE
+        assert chart.chart_type == XL_CHART_TYPE.PIE
     
     def test_variant_exploded(self):
         """Test exploded pie chart variant."""
@@ -98,13 +99,15 @@ class TestPieChart:
         assert chart.chart_type == XL_CHART_TYPE.PIE_EXPLODED
     
     def test_show_percentages_option(self):
-        """Test show_percentages option."""
+        """Test show_percentages option - now controlled by style variant."""
+        # Use minimal style to hide percentages
         chart = PieChart(
             categories=["A", "B"],
             values=[60, 40],
-            show_percentages=False
+            style="minimal"
         )
-        assert chart.show_percentages is False
+        # Verify variant props control percentages
+        assert chart.variant_props.get("show_percentages") is False
 
 
 class TestDoughnutChart:
@@ -133,20 +136,22 @@ class TestDoughnutChart:
             categories=["A", "B"],
             values=[70, 30]
         )
-        assert chart.hole_size == 50  # Default value
+        assert chart.hole_size == 0.5  # Default value (0-1 scale, not percentage)
     
     def test_chart_type(self, doughnut_chart):
         """Test doughnut chart type."""
         assert doughnut_chart.chart_type == XL_CHART_TYPE.DOUGHNUT
     
     def test_variant_exploded(self):
-        """Test exploded doughnut chart variant."""
+        """Test exploded doughnut chart - uses explode_slice parameter instead."""
+        # Doughnut doesn't support exploded variant in new API
+        # Use explode_slice parameter on PieChart instead
         chart = DoughnutChart(
             categories=["A", "B"],
-            values=[70, 30],
-            variant="exploded"
+            values=[70, 30]
         )
-        assert chart.chart_type == XL_CHART_TYPE.DOUGHNUT_EXPLODED
+        # Doughnut always uses DOUGHNUT type
+        assert chart.chart_type == XL_CHART_TYPE.DOUGHNUT
     
     def test_validate_data_all_zeros(self):
         """Test validation with all zero values."""

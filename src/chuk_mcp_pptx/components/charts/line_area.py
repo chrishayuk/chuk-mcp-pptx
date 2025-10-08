@@ -1,353 +1,450 @@
 """
-Line and Area chart components with beautiful styling.
+Line and Area chart components with variants and registry integration.
 """
 
 from typing import Dict, Any, List, Optional, Tuple
 from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_MARKER_STYLE
-from pptx.util import Pt
+from pptx.enum.text import MSO_ANCHOR
+from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
 
 from .base import ChartComponent
+from ...variants import LINE_CHART_VARIANTS
+from ...registry import component, ComponentCategory, prop, example
 
 
+@component(
+    name="LineChart",
+    category=ComponentCategory.DATA,
+    description="Line chart component for showing trends and changes over time",
+    props=[
+        prop("categories", "array", "Category labels for x-axis", required=True,
+             example=["Jan", "Feb", "Mar", "Apr"]),
+        prop("series", "object", "Dictionary of series names to values", required=True,
+             example={"Revenue": [100, 120, 115, 130], "Costs": [80, 85, 90, 95]}),
+        prop("variant", "string", "Chart variant",
+             options=["line", "smooth", "area", "smooth_area"],
+             default="line", example="line"),
+        prop("style", "string", "Visual style preset",
+             options=["default", "minimal", "detailed"],
+             default="default", example="default"),
+        prop("title", "string", "Chart title", example="Monthly Trends"),
+        prop("legend", "string", "Legend position",
+             options=["right", "bottom", "top", "none"],
+             default="right", example="right"),
+    ],
+    variants={
+        "variant": ["line", "smooth", "area", "smooth_area"],
+        "style": ["default", "minimal", "detailed"]
+    },
+    examples=[
+        example(
+            "Basic line chart",
+            """
+chart = LineChart(
+    categories=["Jan", "Feb", "Mar", "Apr"],
+    series={"Sales": [100, 120, 115, 130]},
+    title="Monthly Sales Trend",
+    variant="line"
+)
+chart.render(slide, left=1, top=2)
+            """,
+            categories=["Jan", "Feb", "Mar", "Apr"],
+            series={"Sales": [100, 120, 115, 130]},
+            variant="line"
+        ),
+        example(
+            "Smooth line chart",
+            """
+chart = LineChart(
+    categories=["Q1", "Q2", "Q3", "Q4"],
+    series={"Revenue": [100, 150, 125, 175], "Target": [110, 140, 130, 180]},
+    title="Revenue vs Target",
+    variant="smooth",
+    style="detailed"
+)
+chart.render(slide)
+            """,
+            categories=["Q1", "Q2", "Q3", "Q4"],
+            series={"Revenue": [100, 150, 125, 175]},
+            variant="smooth",
+            style="detailed"
+        )
+    ],
+    tags=["chart", "line", "trend", "time-series"]
+)
 class LineChart(ChartComponent):
     """
     Line chart component for showing trends over time.
-    
+
     Features:
-    - Smooth or straight lines
-    - Data markers
-    - Multiple series
-    - Gradient fills (area under line)
+    - Multiple variants (line, smooth, area, smooth_area)
+    - Theme-aware styling
+    - Data validation
+    - Customizable markers and lines
+
+    Variants:
+    - line: Standard line chart with markers
+    - smooth: Smoothed curves with markers
+    - area: Line chart with filled area below
+    - smooth_area: Smoothed line with filled area
+
+    Styles:
+    - default: Standard appearance with grid
+    - minimal: Clean look without grid or markers
+    - detailed: Shows values on data points
     """
-    
+
     def __init__(self,
                  categories: List[str],
                  series: Dict[str, List[float]],
-                 smooth: bool = False,
-                 markers: bool = True,
-                 variant: str = "default",
+                 variant: str = "line",
+                 style: str = "default",
                  **kwargs):
         """
         Initialize line chart.
-        
+
         Args:
             categories: Category labels (x-axis)
             series: Dictionary of series names to values
-            smooth: Whether to smooth lines
-            markers: Whether to show data point markers
-            variant: Chart variant (default, markers, stacked)
-            **kwargs: Additional chart parameters
+            variant: Chart variant (line, smooth, area, smooth_area)
+            style: Visual style (default, minimal, detailed)
+            **kwargs: Additional chart parameters (title, theme, legend, etc.)
         """
-        super().__init__(**kwargs)
+        super().__init__(style=style, **kwargs)
         self.categories = categories
         self.series = series
-        self.smooth = smooth
-        self.markers = markers
         self.variant = variant
-        
+
         # Validate data during initialization
         is_valid, error = self.validate_data()
         if not is_valid:
             raise ValueError(f"Invalid chart data: {error}")
-        
-        # Set chart type based on options
-        if variant == "3d":
-            self.chart_type = XL_CHART_TYPE.THREE_D_LINE
-        elif variant == "stacked":
-            self.chart_type = XL_CHART_TYPE.LINE_STACKED
-        elif markers:
-            self.chart_type = XL_CHART_TYPE.LINE_MARKERS
+
+        # Update variant props to include line-specific variants
+        self.variant_props = LINE_CHART_VARIANTS.build(
+            variant=variant,
+            style=style
+        )
+
+        # Set chart type based on variant
+        if "area" in variant:
+            self.chart_type = XL_CHART_TYPE.AREA
         else:
-            self.chart_type = XL_CHART_TYPE.LINE
-    
+            self.chart_type = XL_CHART_TYPE.LINE_MARKERS
+
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """Validate line chart data."""
         if not self.categories:
             return False, "No categories provided"
-        
+
         if not self.series:
             return False, "No data series provided"
-        
+
         expected_length = len(self.categories)
         for name, values in self.series.items():
             if len(values) != expected_length:
                 return False, f"Series '{name}' has {len(values)} values, expected {expected_length}"
-        
+
         return True, None
-    
+
     def _prepare_chart_data(self) -> CategoryChartData:
         """Prepare line chart data."""
         chart_data = CategoryChartData()
         chart_data.categories = self.categories
-        
+
         for series_name, values in self.series.items():
             chart_data.add_series(series_name, values)
-        
+
         return chart_data
-    
-    def _render_sync(self, slide, **kwargs):
-        """Render line chart with beautiful styling."""
-        chart = super()._render_sync(slide, **kwargs)
-        
+
+    def render(self, slide, **kwargs):
+        """Render line chart with theme styling."""
+        chart = super().render(slide, **kwargs)
+
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
-        
+
         # Style each series
         for idx, series in enumerate(chart.series):
-            # Smooth lines if requested
-            if hasattr(series, 'smooth'):
-                series.smooth = self.smooth
-            
-            # Configure line style
-            line = series.format.line
-            line.width = Pt(2.5)  # Thicker lines for visibility
-            
-            # Apply color with gradient effect
+            # Apply colors
             if idx < len(chart_colors):
                 color_hex = chart_colors[idx]
-                if isinstance(color_hex, str):
-                    rgb = self.hex_to_rgb(color_hex)
-                    line.color.rgb = RGBColor(*rgb)
-            
+                rgb = self.hex_to_rgb(color_hex)
+                series.format.line.color.rgb = RGBColor(*rgb)
+                series.format.line.width = Pt(2)
+
+            # Apply smooth if requested
+            smooth = self.variant_props.get("smooth", False)
+            if hasattr(series, 'smooth'):
+                series.smooth = smooth
+
             # Configure markers
-            if self.markers and hasattr(series, 'marker'):
+            show_markers = self.variant_props.get("show_markers", True)
+            if hasattr(series, 'marker') and show_markers:
                 series.marker.style = XL_MARKER_STYLE.CIRCLE
-                series.marker.size = 8
-                
-                # Marker fill matches line color
-                if idx < len(chart_colors):
-                    fill = series.marker.format.fill
-                    fill.solid()
-                    fill.fore_color.rgb = RGBColor(*rgb)
-                    
-                    # White border on markers
-                    marker_line = series.marker.format.line
-                    marker_line.color.rgb = RGBColor(255, 255, 255)
-                    marker_line.width = Pt(1)
-        
-        # Add data labels if requested
-        if self.options.get("show_values", False):
-            plot = chart.plots[0]
-            plot.has_data_labels = True
-            data_labels = plot.data_labels
-            data_labels.font.size = Pt(9)
-            data_labels.font.color.rgb = self.get_color("muted.foreground")
-            data_labels.number_format = '0'
-        
-        # Configure grid lines for cleaner look
-        if hasattr(chart, 'value_axis'):
-            value_axis = chart.value_axis
-            value_axis.has_major_gridlines = True
-            gridlines = value_axis.major_gridlines.format.line
-            gridlines.color.rgb = self.get_color("border.secondary")
-            gridlines.width = Pt(0.5)
-            # gridlines.dash_style = "dash"  # Simplified dash style
-        
+                series.marker.size = 6
+
+        # Hide grid for minimal style
+        if not self.variant_props.get("show_grid", True):
+            if hasattr(chart, 'category_axis'):
+                chart.category_axis.has_major_gridlines = False
+            if hasattr(chart, 'value_axis'):
+                chart.value_axis.has_major_gridlines = False
+
         return chart
 
 
+@component(
+    name="AreaChart",
+    category=ComponentCategory.DATA,
+    description="Area chart component for showing cumulative trends with filled areas",
+    props=[
+        prop("categories", "array", "Category labels for x-axis", required=True,
+             example=["Q1", "Q2", "Q3", "Q4"]),
+        prop("series", "object", "Dictionary of series names to values", required=True,
+             example={"Sales": [100, 120, 130, 150]}),
+        prop("variant", "string", "Chart variant",
+             options=["area", "stacked", "stacked100"],
+             default="area", example="area"),
+        prop("style", "string", "Visual style preset",
+             options=["default", "minimal", "detailed"],
+             default="default", example="default"),
+        prop("title", "string", "Chart title", example="Sales Trends"),
+    ],
+    variants={
+        "variant": ["area", "stacked", "stacked100"],
+        "style": ["default", "minimal", "detailed"]
+    },
+    examples=[
+        example(
+            "Basic area chart",
+            """
+chart = AreaChart(
+    categories=["Jan", "Feb", "Mar"],
+    series={"Revenue": [100, 120, 140]},
+    title="Revenue Growth"
+)
+chart.render(slide)
+            """,
+            categories=["Jan", "Feb", "Mar"],
+            series={"Revenue": [100, 120, 140]}
+        )
+    ],
+    tags=["chart", "area", "cumulative", "trend"]
+)
 class AreaChart(ChartComponent):
     """
-    Area chart component for showing magnitude over time.
-    
-    Features:
-    - Semi-transparent fills
-    - Stacked variants
-    - Gradient effects
+    Area chart component for showing cumulative trends.
+
+    Inherits from ChartComponent and uses area chart types.
+    Perfect for showing magnitude changes over time.
     """
-    
+
     def __init__(self,
                  categories: List[str],
                  series: Dict[str, List[float]],
-                 variant: str = "default",
-                 transparency: int = 30,
+                 variant: str = "area",
+                 style: str = "default",
                  **kwargs):
         """
         Initialize area chart.
-        
+
         Args:
             categories: Category labels
             series: Dictionary of series names to values
-            variant: Chart variant (default, stacked, stacked100)
-            transparency: Fill transparency (0-100)
+            variant: Chart variant (area, stacked, stacked100)
+            style: Visual style (default, minimal, detailed)
             **kwargs: Additional chart parameters
         """
-        super().__init__(**kwargs)
+        super().__init__(style=style, **kwargs)
         self.categories = categories
         self.series = series
         self.variant = variant
-        self.transparency = max(0, min(100, transparency))
-        
-        # Validate data during initialization
+
+        # Validate data
         is_valid, error = self.validate_data()
         if not is_valid:
             raise ValueError(f"Invalid chart data: {error}")
-        
+
         # Set chart type based on variant
         variant_map = {
-            "default": XL_CHART_TYPE.AREA,
+            "area": XL_CHART_TYPE.AREA,
             "stacked": XL_CHART_TYPE.AREA_STACKED,
             "stacked100": XL_CHART_TYPE.AREA_STACKED_100,
             "3d": XL_CHART_TYPE.THREE_D_AREA,
         }
         self.chart_type = variant_map.get(variant, XL_CHART_TYPE.AREA)
-    
+
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """Validate area chart data."""
         if not self.categories:
             return False, "No categories provided"
-        
+
         if not self.series:
             return False, "No data series provided"
-        
+
         expected_length = len(self.categories)
         for name, values in self.series.items():
             if len(values) != expected_length:
                 return False, f"Series '{name}' has {len(values)} values, expected {expected_length}"
-        
+
         return True, None
-    
+
     def _prepare_chart_data(self) -> CategoryChartData:
         """Prepare area chart data."""
         chart_data = CategoryChartData()
         chart_data.categories = self.categories
-        
+
         for series_name, values in self.series.items():
             chart_data.add_series(series_name, values)
-        
+
         return chart_data
-    
-    def _render_sync(self, slide, **kwargs):
-        """Render area chart with beautiful styling."""
-        chart = super()._render_sync(slide, **kwargs)
-        
-        # Get theme colors
-        chart_colors = self.tokens.get("chart", [])
-        
-        # Style each series with semi-transparent fills
-        for idx, series in enumerate(chart.series):
-            if idx < len(chart_colors):
-                color_hex = chart_colors[idx]
-                if isinstance(color_hex, str):
-                    rgb = self.hex_to_rgb(color_hex)
-                    
-                    # Apply fill color
-                    fill = series.format.fill
-                    fill.solid()
-                    fill.fore_color.rgb = RGBColor(*rgb)
-                    
-                    # Set transparency for modern look
-                    if hasattr(fill, 'transparency'):
-                        fill.transparency = self.transparency / 100.0
-                    
-                    # Style the line
-                    line = series.format.line
-                    line.color.rgb = RGBColor(*rgb)
-                    line.width = Pt(2)
-        
-        # Clean gridlines
-        if hasattr(chart, 'value_axis'):
-            value_axis = chart.value_axis
-            value_axis.has_major_gridlines = True
-            gridlines = value_axis.major_gridlines.format.line
-            gridlines.color.rgb = self.get_color("border.secondary")
-            gridlines.width = Pt(0.5)
-            # gridlines.dash_style = "dash"  # Simplified dash style
-        
-        return chart
 
 
+@component(
+    name="SparklineChart",
+    category=ComponentCategory.DATA,
+    description="Sparkline chart component for compact inline trend visualization",
+    props=[
+        prop("values", "array", "Data values", required=True,
+             example=[10, 15, 13, 17, 14, 20]),
+        prop("categories", "array", "Optional category labels",
+             example=["Jan", "Feb", "Mar", "Apr", "May", "Jun"]),
+        prop("style", "string", "Visual style",
+             options=["minimal", "default"],
+             default="minimal", example="minimal"),
+    ],
+    examples=[
+        example(
+            "Minimal sparkline",
+            """
+chart = SparklineChart(
+    values=[10, 15, 13, 17, 14, 20],
+    style="minimal"
+)
+chart.render(slide, left=1, top=1, width=2, height=0.5)
+            """,
+            values=[10, 15, 13, 17, 14, 20],
+            style="minimal"
+        )
+    ],
+    tags=["chart", "sparkline", "micro", "inline"]
+)
 class SparklineChart(LineChart):
     """
-    Sparkline chart - minimal line chart for inline data visualization.
-    
-    Features:
-    - No axes or labels
-    - Minimal styling
-    - Small size optimized
+    Sparkline chart component for compact trend visualization.
+
+    Simplified line chart designed for small spaces.
+    Perfect for dashboards and inline metrics.
     """
-    
+
     def __init__(self,
                  values: List[float],
-                 color: Optional[str] = None,
-                 show_markers: bool = False,
-                 highlight_minmax: bool = False,
+                 categories: Optional[List[str]] = None,
+                 label: Optional[str] = None,
+                 show_value: bool = True,
                  **kwargs):
         """
         Initialize sparkline chart.
-        
+
         Args:
             values: Data values
-            color: Line color (hex)
-            show_markers: Whether to show data point markers
-            highlight_minmax: Whether to highlight min/max values
-            **kwargs: Additional parameters
+            categories: Optional category labels (auto-generated if not provided)
+            label: Optional label to show on left
+            show_value: Whether to show current value on right
+            **kwargs: Additional chart parameters
         """
-        # Store values and options before calling parent
+        # Auto-generate categories if not provided
+        if categories is None:
+            categories = [str(i) for i in range(len(values))]
+
+        # Store sparkline-specific properties
         self.values = values
-        self.show_markers = show_markers
-        self.highlight_minmax = highlight_minmax
-        
-        # Remove 'categories' from kwargs if present (avoid double argument)
-        provided_categories = kwargs.pop('categories', None)
-        
-        # Handle empty values
-        if not values:
-            # Create dummy data for empty sparkline
-            categories = provided_categories or [0]
-            series = {"": [0]}
-        else:
-            # Use provided categories or create minimal categories
-            categories = provided_categories or list(range(len(values)))
-            series = {"": values}  # Single unnamed series
-        
+        self.label = label
+        self.show_value = show_value
+
+        # Force minimal styling for sparklines
+        kwargs['style'] = kwargs.get('style', 'minimal')
+        kwargs['legend'] = 'none'
+
         super().__init__(
             categories=categories,
-            series=series,
-            smooth=True,
-            markers=show_markers,
+            series={"Value": values},
+            variant="line",
             **kwargs
         )
-        self.color = color
-        
-        # Store sparkline-specific attributes
-        self.show_axes = False
-        self.show_gridlines = False
-        
-        # Override defaults for sparklines
-        self.DEFAULT_WIDTH = 2.0
-        self.DEFAULT_HEIGHT = 0.5
-    
-    def _render_sync(self, slide, **kwargs):
-        """Render minimal sparkline."""
-        chart = super()._render_sync(slide, **kwargs)
-        
-        # Remove all chrome
-        chart.has_title = False
-        chart.has_legend = False
-        
-        # Hide axes
-        if hasattr(chart, 'value_axis'):
-            chart.value_axis.visible = False
+
+    def render(self, slide, **kwargs):
+        """Render sparkline with minimal styling and integrated labels."""
+        from pptx.enum.text import PP_ALIGN
+
+        # Get position parameters
+        left = kwargs.get('left', 1.0)
+        top = kwargs.get('top', 2.0)
+        width = kwargs.get('width', 2.0)
+        height = kwargs.get('height', 0.5)
+
+        # Reserve space for label and value if needed
+        chart_left = left
+        chart_width = width
+
+        if self.label:
+            # Add 2 inches for label on left
+            chart_left += 2.0
+            chart_width -= 2.0
+
+        if self.show_value:
+            # Reserve 0.8 inches for value on right
+            chart_width -= 0.8
+
+        # Update kwargs with adjusted position
+        kwargs['left'] = chart_left
+        kwargs['width'] = chart_width
+        kwargs['height'] = height
+
+        chart = super().render(slide, **kwargs)
+
+        # Remove axes for true sparkline effect
         if hasattr(chart, 'category_axis'):
             chart.category_axis.visible = False
-        
-        # Remove gridlines
         if hasattr(chart, 'value_axis'):
-            chart.value_axis.has_major_gridlines = False
-            chart.value_axis.has_minor_gridlines = False
-        
-        # Apply custom color if provided
-        if self.color and len(chart.series) > 0:
-            series = chart.series[0]
-            line = series.format.line
-            
-            if self.color.startswith('#'):
-                rgb = self.hex_to_rgb(self.color)
-                line.color.rgb = RGBColor(*rgb)
-            
-            line.width = Pt(1.5)
-        
+            chart.value_axis.visible = False
+
+        # Add label on left if provided
+        if self.label:
+            label_box = slide.shapes.add_textbox(
+                Inches(left),
+                Inches(top),
+                Inches(1.8),
+                Inches(height)
+            )
+            label_frame = label_box.text_frame
+            label_frame.text = self.label
+            label_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+            label_para = label_frame.paragraphs[0]
+            label_para.font.size = Pt(11)
+            label_para.font.bold = True
+            label_para.font.color.rgb = self.get_color("foreground.DEFAULT")
+            label_para.alignment = PP_ALIGN.LEFT
+
+        # Add current value on right if enabled
+        if self.show_value:
+            current_value = self.values[-1]
+            value_box = slide.shapes.add_textbox(
+                Inches(chart_left + chart_width + 0.1),
+                Inches(top),
+                Inches(0.7),
+                Inches(height)
+            )
+            value_frame = value_box.text_frame
+            value_frame.text = f"{current_value:.0f}"
+            value_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+            value_para = value_frame.paragraphs[0]
+            value_para.font.size = Pt(10)
+            value_para.font.bold = True
+            value_para.font.color.rgb = self.get_color("primary.DEFAULT")
+            value_para.alignment = PP_ALIGN.RIGHT
+
         return chart

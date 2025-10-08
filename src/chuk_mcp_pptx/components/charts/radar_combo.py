@@ -5,7 +5,7 @@ Radar, Combo, and other specialized chart components.
 from typing import Dict, Any, List, Optional, Tuple, Union
 from pptx.chart.data import CategoryChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_DATA_LABEL_POSITION
-from pptx.util import Pt
+from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
 
 from .base import ChartComponent
@@ -79,7 +79,7 @@ class RadarChart(ChartComponent):
         """Prepare radar chart data."""
         chart_data = CategoryChartData()
         chart_data.categories = self.categories
-        
+
         # Scale values if max_value is specified
         if self.max_value:
             for series_name, values in self.series.items():
@@ -88,23 +88,24 @@ class RadarChart(ChartComponent):
         else:
             for series_name, values in self.series.items():
                 chart_data.add_series(series_name, values)
-        
+
         return chart_data
-    
-    def _render_sync(self, slide, **kwargs):
+
+    def render(self, slide, **kwargs):
         """Render radar chart with beautiful styling."""
-        chart = super()._render_sync(slide, **kwargs)
-        
+        # Call base render to create chart
+        chart = super().render(slide, **kwargs)
+
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
-        
+
         # Style each series
         for idx, series in enumerate(chart.series):
             if idx < len(chart_colors):
                 color_hex = chart_colors[idx]
                 if isinstance(color_hex, str):
                     rgb = self.hex_to_rgb(color_hex)
-                    
+
                     if self.variant == "filled":
                         # Semi-transparent fill
                         fill = series.format.fill
@@ -112,39 +113,39 @@ class RadarChart(ChartComponent):
                         fill.fore_color.rgb = RGBColor(*rgb)
                         if hasattr(fill, 'transparency'):
                             fill.transparency = 0.3
-                    
+
                     # Line styling
                     line = series.format.line
                     line.color.rgb = RGBColor(*rgb)
                     line.width = Pt(2.5)
-                    
+
                     # Marker styling for appropriate variants
                     if hasattr(series, 'marker') and self.variant in ["markers", "filled"]:
                         series.marker.style = 1  # Circle
                         series.marker.size = 8
-                        
+
                         marker_fill = series.marker.format.fill
                         marker_fill.solid()
                         marker_fill.fore_color.rgb = RGBColor(*rgb)
-                        
+
                         marker_line = series.marker.format.line
                         marker_line.color.rgb = RGBColor(255, 255, 255)
                         marker_line.width = Pt(1)
-        
+
         # Configure radar-specific styling
         if hasattr(chart, 'value_axis'):
             value_axis = chart.value_axis
             value_axis.has_major_gridlines = True
-            
+
             # Set max value if specified
             if self.max_value:
                 value_axis.maximum_scale = self.max_value
-            
+
             # Style gridlines
             gridlines = value_axis.major_gridlines.format.line
             gridlines.color.rgb = self.get_color("border.secondary")
             gridlines.width = Pt(0.5)
-        
+
         return chart
 
 
@@ -214,32 +215,33 @@ class ComboChart(ChartComponent):
         """Prepare combo chart data."""
         chart_data = CategoryChartData()
         chart_data.categories = self.categories
-        
+
         # Add column series first
         for series_name, values in self.column_series.items():
             chart_data.add_series(series_name, values)
-        
+
         # Add line series
         for series_name, values in self.line_series.items():
             chart_data.add_series(series_name, values)
-        
+
         return chart_data
-    
-    def _render_sync(self, slide, **kwargs):
+
+    def render(self, slide, **kwargs):
         """Render combo chart with mixed chart types."""
-        chart = super()._render_sync(slide, **kwargs)
-        
+        # Call base render to create chart
+        chart = super().render(slide, **kwargs)
+
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
-        
+
         # Track series index
         series_idx = 0
-        
+
         # Style column series (keep as columns)
         for i, (name, values) in enumerate(self.column_series.items()):
             if series_idx < len(chart.series):
                 series = chart.series[series_idx]
-                
+
                 # Apply color
                 if series_idx < len(chart_colors):
                     color_hex = chart_colors[series_idx]
@@ -248,40 +250,40 @@ class ComboChart(ChartComponent):
                         fill = series.format.fill
                         fill.solid()
                         fill.fore_color.rgb = RGBColor(*rgb)
-                
+
                 series_idx += 1
-        
+
         # Convert line series to line charts
         for i, (name, values) in enumerate(self.line_series.items()):
             if series_idx < len(chart.series):
                 series = chart.series[series_idx]
-                
+
                 # Change to line chart type
                 # Note: This requires XML manipulation in python-pptx
                 # For now, we style as best as possible
-                
+
                 # Apply line styling
                 if series_idx < len(chart_colors):
                     color_hex = chart_colors[series_idx]
                     if isinstance(color_hex, str):
                         rgb = self.hex_to_rgb(color_hex)
-                        
+
                         # Make fill transparent for line effect
                         fill = series.format.fill
                         fill.background()
-                        
+
                         # Style border as line
                         line = series.format.line
                         line.color.rgb = RGBColor(*rgb)
                         line.width = Pt(3)
-                
+
                 # Move to secondary axis if specified
                 if name in self.secondary_axis:
                     # Note: Secondary axis assignment requires XML manipulation
                     pass
-                
+
                 series_idx += 1
-        
+
         return chart
 
 
@@ -358,19 +360,28 @@ class GaugeChart(ChartComponent):
         chart_data.categories = self.categories
         chart_data.add_series("Gauge", self.values)
         return chart_data
-    
-    def _render_sync(self, slide, **kwargs):
-        """Render gauge chart with custom styling."""
-        chart = super()._render_sync(slide, **kwargs)
-        
+
+    def render(self, slide, **kwargs):
+        """Render gauge chart with custom styling and integrated labels."""
+        from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+
+        # Get position parameters
+        left = kwargs.get('left', 1.0)
+        top = kwargs.get('top', 2.0)
+        width = kwargs.get('width', 3.0)
+        height = kwargs.get('height', 2.5)
+
+        # Call base render to create chart
+        chart = super().render(slide, **kwargs)
+
         if len(chart.series) > 0:
             series = chart.series[0]
-            
+
             # Style each segment
             for idx, point in enumerate(series.points):
                 fill = point.format.fill
                 line = point.format.line
-                
+
                 if idx == 0:  # Value segment
                     # Use success color for filled portion
                     fill.solid()
@@ -383,8 +394,54 @@ class GaugeChart(ChartComponent):
                     # Make invisible
                     fill.background()
                     line.fill.background()
-        
+
         # Remove legend for cleaner look
         chart.has_legend = False
-        
+
+        # Add title above gauge if provided
+        if self.title:
+            title_box = slide.shapes.add_textbox(
+                Inches(left),
+                Inches(top - 0.5),
+                Inches(width),
+                Inches(0.4)
+            )
+            title_frame = title_box.text_frame
+            title_frame.text = self.title
+            title_para = title_frame.paragraphs[0]
+            title_para.font.size = Pt(12)
+            title_para.font.bold = True
+            title_para.font.color.rgb = self.get_color("foreground.DEFAULT")
+            title_para.alignment = PP_ALIGN.CENTER
+
+        # Add value display in center/below gauge
+        value_box = slide.shapes.add_textbox(
+            Inches(left),
+            Inches(top + height * 0.4),
+            Inches(width),
+            Inches(0.6)
+        )
+        value_frame = value_box.text_frame
+        value_frame.text = f"{self.value:.0f}"
+        value_para = value_frame.paragraphs[0]
+        value_para.font.size = Pt(28)
+        value_para.font.bold = True
+        value_para.font.color.rgb = self.get_color("primary.DEFAULT")
+        value_para.alignment = PP_ALIGN.CENTER
+
+        # Add percentage or range label
+        label_box = slide.shapes.add_textbox(
+            Inches(left),
+            Inches(top + height * 0.65),
+            Inches(width),
+            Inches(0.3)
+        )
+        label_frame = label_box.text_frame
+        percentage = ((self.value - self.min_value) / (self.max_value - self.min_value)) * 100
+        label_frame.text = f"{percentage:.0f}%"
+        label_para = label_frame.paragraphs[0]
+        label_para.font.size = Pt(11)
+        label_para.font.color.rgb = self.get_color("muted.foreground")
+        label_para.alignment = PP_ALIGN.CENTER
+
         return chart

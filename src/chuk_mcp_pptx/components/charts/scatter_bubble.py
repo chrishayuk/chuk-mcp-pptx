@@ -85,49 +85,50 @@ class ScatterChart(ChartComponent):
     def _prepare_chart_data(self) -> XyChartData:
         """Prepare scatter chart data."""
         chart_data = XyChartData()
-        
+
         for series in self.series_data:
             series_name = series.get('name', 'Series')
             x_values = series['x_values']
             y_values = series['y_values']
-            
+
             series_obj = chart_data.add_series(series_name)
-            
+
             for x, y in zip(x_values, y_values):
                 series_obj.add_data_point(x, y)
-        
+
         return chart_data
-    
-    def _render_sync(self, slide, **kwargs):
+
+    def render(self, slide, **kwargs):
         """Render scatter chart with beautiful styling."""
-        chart = super()._render_sync(slide, **kwargs)
-        
+        # Call base render to create chart
+        chart = super().render(slide, **kwargs)
+
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
-        
+
         # Style each series
         for idx, series in enumerate(chart.series):
             # Configure markers
             if hasattr(series, 'marker'):
                 series.marker.style = XL_MARKER_STYLE.CIRCLE
                 series.marker.size = self.marker_size
-                
+
                 # Apply color
                 if idx < len(chart_colors):
                     color_hex = chart_colors[idx]
                     if isinstance(color_hex, str):
                         rgb = self.hex_to_rgb(color_hex)
-                        
+
                         # Marker fill
                         fill = series.marker.format.fill
                         fill.solid()
                         fill.fore_color.rgb = RGBColor(*rgb)
-                        
+
                         # Marker border
                         line = series.marker.format.line
                         line.color.rgb = RGBColor(255, 255, 255)
                         line.width = Pt(1)
-            
+
             # Configure lines if present
             if hasattr(series, 'format') and hasattr(series.format, 'line'):
                 line = series.format.line
@@ -137,7 +138,7 @@ class ScatterChart(ChartComponent):
                         rgb = self.hex_to_rgb(color_hex)
                         line.color.rgb = RGBColor(*rgb)
                         line.width = Pt(2)
-        
+
         # Add trend lines if requested
         if self.show_trendline:
             for series in chart.series:
@@ -145,18 +146,18 @@ class ScatterChart(ChartComponent):
                     # Note: PowerPoint trendline support varies
                     # This is a placeholder for trendline functionality
                     pass
-        
+
         # Configure axes
         if hasattr(chart, 'value_axis'):
             # Y-axis
             value_axis = chart.value_axis
             value_axis.has_major_gridlines = True
-            
+
         if hasattr(chart, 'category_axis'):
             # X-axis (for scatter, this is also a value axis)
             cat_axis = chart.category_axis
             cat_axis.has_major_gridlines = True
-        
+
         return chart
 
 
@@ -225,72 +226,65 @@ class BubbleChart(ChartComponent):
     def _prepare_chart_data(self) -> BubbleChartData:
         """Prepare bubble chart data."""
         chart_data = BubbleChartData()
-        
+
         for series in self.series_data:
             series_name = series.get('name', 'Series')
             points = series['points']
-            
+
             series_obj = chart_data.add_series(series_name)
-            
+
             for point in points:
                 x, y, size = point
                 # Apply size scaling
                 scaled_size = size * self.size_scale
                 series_obj.add_data_point(x, y, scaled_size)
-        
+
         return chart_data
-    
-    def _render_sync(self, slide, **kwargs):
+
+    def render(self, slide, **kwargs):
         """Render bubble chart with beautiful styling."""
-        chart = super()._render_sync(slide, **kwargs)
-        
+        # Call base render to create chart
+        chart = super().render(slide, **kwargs)
+
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
-        
+
         # Style each series
         for idx, series in enumerate(chart.series):
             if idx < len(chart_colors):
                 color_hex = chart_colors[idx]
                 if isinstance(color_hex, str):
                     rgb = self.hex_to_rgb(color_hex)
-                    
+
                     # Apply fill color to bubbles
                     fill = series.format.fill
                     fill.solid()
                     fill.fore_color.rgb = RGBColor(*rgb)
-                    
+
                     # Set transparency for modern look
                     if hasattr(fill, 'transparency'):
                         fill.transparency = self.transparency / 100.0
-                    
+
                     # Subtle border
                     line = series.format.line
                     line.color.rgb = RGBColor(*rgb)
                     line.width = Pt(1)
-        
+
         # Configure axes with appropriate scaling
         if hasattr(chart, 'value_axis'):
             value_axis = chart.value_axis
             value_axis.has_major_gridlines = True
-            
-        # Add data labels if requested
-        if self.options.get("show_values", False):
-            plot = chart.plots[0]
-            plot.has_data_labels = True
-            data_labels = plot.data_labels
-            data_labels.font.size = Pt(8)
-            data_labels.font.color.rgb = self.get_color("foreground.DEFAULT")
-        
+
         return chart
 
 
-class Matrix3DChart(ScatterChart):
+class Matrix3DChart(BubbleChart):
     """
     3D Matrix chart for multi-dimensional data visualization.
-    
-    Uses scatter plot with size and color encoding for 4+ dimensions.
+
+    Uses bubble chart with size and color encoding for 4+ dimensions.
     """
-    
+
     def __init__(self,
                  data_points: List[Dict[str, Union[float, str]]],
                  x_field: str,
@@ -300,7 +294,7 @@ class Matrix3DChart(ScatterChart):
                  **kwargs):
         """
         Initialize matrix 3D chart.
-        
+
         Args:
             data_points: List of data records
             x_field: Field name for x-axis
@@ -314,14 +308,12 @@ class Matrix3DChart(ScatterChart):
         self.y_field = y_field
         self.size_field = size_field
         self.color_field = color_field
-        
-        # Convert to scatter chart format
+
+        # Convert to bubble chart format
         series_data = self._convert_to_series()
-        
+
+        # Initialize BubbleChart with converted data
         super().__init__(series_data=series_data, **kwargs)
-        
-        # Override to use bubble chart for size encoding
-        self.chart_type = XL_CHART_TYPE.BUBBLE
     
     def _convert_to_series(self) -> List[Dict[str, Any]]:
         """Convert matrix data to series format."""

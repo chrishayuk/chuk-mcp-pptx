@@ -5,11 +5,31 @@ Beautiful, theme-aware charts similar to modern design systems.
 
 from .base import ChartComponent
 from .column_bar import ColumnChart, BarChart, WaterfallChart
+from .pie_doughnut import PieChart, DoughnutChart
+
+# Line and Area charts - refactored
 from .line_area import LineChart, AreaChart, SparklineChart
-from .pie_doughnut import PieChart, DoughnutChart, SunburstChart
-from .scatter_bubble import ScatterChart, BubbleChart, Matrix3DChart
-from .radar_combo import RadarChart, ComboChart
-from .funnel import FunnelChart, GanttChart, HeatmapChart
+
+try:
+    from .scatter_bubble import ScatterChart, BubbleChart, Matrix3DChart
+except ImportError:
+    ScatterChart = None
+    BubbleChart = None
+    Matrix3DChart = None
+
+try:
+    from .radar_combo import RadarChart, ComboChart, GaugeChart
+except ImportError:
+    RadarChart = None
+    ComboChart = None
+    GaugeChart = None
+
+try:
+    from .funnel import FunnelChart, GanttChart, HeatmapChart
+except ImportError:
+    FunnelChart = None
+    GanttChart = None
+    HeatmapChart = None
 
 # Legacy chart component (for backward compatibility)
 try:
@@ -38,7 +58,6 @@ __all__ = [
     # Pie & Doughnut Charts
     'PieChart',
     'DoughnutChart',
-    'SunburstChart',
     
     # Scatter & Bubble Charts
     'ScatterChart',
@@ -48,7 +67,8 @@ __all__ = [
     # Specialized Charts
     'RadarChart',
     'ComboChart',
-    
+    'GaugeChart',
+
     # Business Charts
     'FunnelChart',
     'GanttChart',

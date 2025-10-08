@@ -303,3 +303,105 @@ BADGE_VARIANTS = create_variants(
         "variant": "default"
     }
 )
+
+# Chart variants
+CHART_VARIANTS = create_variants(
+    base={
+        "show_legend": True,
+        "legend_position": "right",
+        "show_grid": True,
+        "gap_width": 150,
+    },
+    variants={
+        "style": {
+            "default": {"show_values": False, "show_grid": True},
+            "minimal": {"show_values": False, "show_grid": False, "legend_position": "bottom"},
+            "detailed": {"show_values": True, "show_grid": True, "legend_position": "right"},
+            "compact": {"show_values": False, "show_grid": False, "gap_width": 100},
+        },
+        "legend": {
+            "right": {"legend_position": "right", "show_legend": True},
+            "bottom": {"legend_position": "bottom", "show_legend": True},
+            "top": {"legend_position": "top", "show_legend": True},
+            "none": {"show_legend": False},
+        }
+    },
+    default_variants={
+        "style": "default",
+        "legend": "right"
+    }
+)
+
+COLUMN_CHART_VARIANTS = create_variants(
+    base={
+        "show_legend": True,
+        "legend_position": "right",
+        "show_grid": True,
+        "gap_width": 150,
+    },
+    variants={
+        "variant": {
+            "clustered": {"gap_width": 150, "overlap": 0},
+            "stacked": {"overlap": 100},
+            "stacked100": {"overlap": 100},
+        },
+        "style": {
+            "default": {"show_values": False},
+            "minimal": {"show_values": False, "show_grid": False},
+            "detailed": {"show_values": True},
+        }
+    },
+    default_variants={
+        "variant": "clustered",
+        "style": "default"
+    }
+)
+
+PIE_CHART_VARIANTS = create_variants(
+    base={
+        "show_legend": True,
+        "legend_position": "right",
+    },
+    variants={
+        "variant": {
+            "pie": {"show_labels": True},
+            "doughnut": {"show_labels": True, "hole_size": 0.5},
+            "exploded": {"show_labels": True, "explosion": 0.1},
+        },
+        "style": {
+            "default": {"show_percentages": True, "show_values": False},
+            "detailed": {"show_percentages": True, "show_values": True},
+            "minimal": {"show_percentages": False, "show_values": False},
+        }
+    },
+    default_variants={
+        "variant": "pie",
+        "style": "default"
+    }
+)
+
+LINE_CHART_VARIANTS = create_variants(
+    base={
+        "show_legend": True,
+        "legend_position": "right",
+        "show_grid": True,
+        "smooth": False,
+    },
+    variants={
+        "variant": {
+            "line": {"smooth": False, "show_markers": True},
+            "smooth": {"smooth": True, "show_markers": True},
+            "area": {"fill_area": True, "smooth": False},
+            "smooth_area": {"fill_area": True, "smooth": True},
+        },
+        "style": {
+            "default": {"show_values": False, "show_grid": True},
+            "minimal": {"show_values": False, "show_grid": False, "show_markers": False},
+            "detailed": {"show_values": True, "show_grid": True},
+        }
+    },
+    default_variants={
+        "variant": "line",
+        "style": "default"
+    }
+)

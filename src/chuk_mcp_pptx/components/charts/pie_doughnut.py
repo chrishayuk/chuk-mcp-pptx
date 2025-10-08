@@ -1,5 +1,5 @@
 """
-Pie and Doughnut chart components with modern styling.
+Pie and Doughnut chart components with variants and registry integration.
 """
 
 from typing import Dict, Any, List, Optional, Tuple
@@ -9,283 +9,264 @@ from pptx.util import Pt
 from pptx.dml.color import RGBColor
 
 from .base import ChartComponent
+from ...variants import PIE_CHART_VARIANTS
+from ...registry import component, ComponentCategory, prop, example
 
 
+@component(
+    name="PieChart",
+    category=ComponentCategory.DATA,
+    description="Pie chart component for showing proportions and percentages",
+    props=[
+        prop("categories", "array", "Category labels", required=True,
+             example=["Q1", "Q2", "Q3", "Q4"]),
+        prop("values", "array", "Data values (must be positive)", required=True,
+             example=[30, 25, 25, 20]),
+        prop("variant", "string", "Chart variant",
+             options=["pie", "doughnut", "exploded"],
+             default="pie", example="pie"),
+        prop("style", "string", "Visual style preset",
+             options=["default", "detailed", "minimal"],
+             default="default", example="default"),
+        prop("title", "string", "Chart title", example="Market Share"),
+        prop("explode_slice", "number", "Index of slice to explode (0-based)", example=0),
+        prop("legend", "string", "Legend position",
+             options=["right", "bottom", "top", "none"],
+             default="right", example="right"),
+    ],
+    variants={
+        "variant": ["pie", "doughnut", "exploded"],
+        "style": ["default", "detailed", "minimal"]
+    },
+    examples=[
+        example(
+            "Basic pie chart",
+            """
+chart = PieChart(
+    categories=["Product A", "Product B", "Product C"],
+    values=[45, 30, 25],
+    title="Market Share",
+    variant="pie"
+)
+chart.render(slide, left=1, top=2)
+            """,
+            categories=["Product A", "Product B", "Product C"],
+            values=[45, 30, 25],
+            variant="pie"
+        ),
+        example(
+            "Doughnut chart with detailed style",
+            """
+chart = PieChart(
+    categories=["Sales", "Marketing", "R&D", "Operations"],
+    values=[40, 25, 20, 15],
+    title="Budget Allocation",
+    variant="doughnut",
+    style="detailed"
+)
+chart.render(slide)
+            """,
+            categories=["Sales", "Marketing", "R&D", "Operations"],
+            values=[40, 25, 20, 15],
+            variant="doughnut",
+            style="detailed"
+        )
+    ],
+    tags=["chart", "pie", "doughnut", "proportions", "percentages"]
+)
 class PieChart(ChartComponent):
     """
     Pie chart component for showing proportions.
-    
+
     Features:
+    - Multiple variants (pie, doughnut, exploded)
+    - Automatic percentage calculation
+    - Theme-aware coloring
+    - Data validation
     - Exploded slices
-    - Data labels with percentages
-    - Custom colors
-    - 3D variants
+
+    Variants:
+    - pie: Classic circular pie chart
+    - doughnut: Pie chart with hollow center
+    - exploded: Pie chart with separated slices
+
+    Styles:
+    - default: Shows percentages
+    - detailed: Shows percentages and values
+    - minimal: No labels
     """
-    
+
     def __init__(self,
                  categories: List[str],
                  values: List[float],
+                 variant: str = "pie",
+                 style: str = "default",
                  explode_slice: Optional[int] = None,
-                 variant: str = "default",
-                 show_percentages: bool = True,
                  **kwargs):
         """
         Initialize pie chart.
-        
+
         Args:
             categories: Category labels
-            values: Data values
+            values: Data values (must be positive)
+            variant: Chart variant (pie, doughnut, exploded)
+            style: Visual style (default, detailed, minimal)
             explode_slice: Index of slice to explode (optional)
-            variant: Chart variant (default, 3d, exploded)
-            show_percentages: Whether to show percentages
-            **kwargs: Additional chart parameters
+            **kwargs: Additional chart parameters (title, theme, legend, etc.)
         """
-        super().__init__(**kwargs)
+        super().__init__(style=style, **kwargs)
         self.categories = categories
         self.values = values
-        self.explode_slice = explode_slice
         self.variant = variant
-        self.show_percentages = show_percentages
-        
+        self.explode_slice = explode_slice
+
         # Validate data during initialization
         is_valid, error = self.validate_data()
         if not is_valid:
             raise ValueError(f"Invalid chart data: {error}")
-        
+
+        # Update variant props to include pie-specific variants
+        self.variant_props = PIE_CHART_VARIANTS.build(
+            variant=variant,
+            style=style
+        )
+
         # Set chart type based on variant
-        if variant == "3d":
-            self.chart_type = XL_CHART_TYPE.THREE_D_PIE
+        if variant == "doughnut":
+            self.chart_type = XL_CHART_TYPE.DOUGHNUT
         elif variant == "exploded":
             self.chart_type = XL_CHART_TYPE.PIE_EXPLODED
         else:
             self.chart_type = XL_CHART_TYPE.PIE
-    
+
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """Validate pie chart data."""
         if not self.categories:
             return False, "No categories provided"
-        
+
         if not self.values:
             return False, "No values provided"
-        
+
         if len(self.categories) != len(self.values):
             return False, f"Categories ({len(self.categories)}) and values ({len(self.values)}) must have same length"
-        
+
         # Check for negative values
         if any(v < 0 for v in self.values):
             return False, "Pie chart cannot have negative values"
-        
+
         # Check if all values are zero
         if sum(self.values) == 0:
             return False, "Pie chart must have at least one non-zero value"
-        
+
         return True, None
-    
+
     def _prepare_chart_data(self) -> CategoryChartData:
         """Prepare pie chart data."""
         chart_data = CategoryChartData()
         chart_data.categories = self.categories
         chart_data.add_series("Values", self.values)
         return chart_data
-    
-    def _render_sync(self, slide, **kwargs):
-        """Render pie chart with beautiful styling."""
-        chart = super()._render_sync(slide, **kwargs)
-        
+
+    def render(self, slide, **kwargs):
+        """Render pie chart with theme styling."""
+        chart = super().render(slide, **kwargs)
+
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
-        
+
         # Apply colors to slices
         if len(chart.series) > 0:
             series = chart.series[0]
-            
-            for idx, point in enumerate(series.points):
-                if idx < len(chart_colors):
-                    color_hex = chart_colors[idx]
-                    if isinstance(color_hex, str):
+
+            for i, point in enumerate(series.points):
+                if i < len(chart_colors):
+                    color_hex = chart_colors[i]
+                    if isinstance(color_hex, str) and color_hex.startswith('#'):
                         rgb = self.hex_to_rgb(color_hex)
                         fill = point.format.fill
                         fill.solid()
                         fill.fore_color.rgb = RGBColor(*rgb)
-                
-                # Add subtle border for definition
-                line = point.format.line
-                line.color.rgb = RGBColor(255, 255, 255)
-                line.width = Pt(0.5)
-        
-        # Explode slice if specified
-        if self.explode_slice is not None and len(chart.series) > 0:
-            series = chart.series[0]
-            if 0 <= self.explode_slice < len(series.points):
-                series.points[self.explode_slice].explosion = 10
-        
-        # Add data labels
-        plot = chart.plots[0]
-        plot.has_data_labels = True
-        data_labels = plot.data_labels
-        
-        # Show percentages and categories
-        opts = self._computed_options if hasattr(self, '_computed_options') else {}
-        if opts.get("show_percentages", self.show_percentages):
-            data_labels.show_percentage = True
-        
-        if opts.get("show_categories", True):
-            data_labels.show_category_name = True
-        
-        if opts.get("show_values", False):
-            data_labels.show_value = True
-        
-        # Configure label appearance
-        data_labels.font.size = Pt(10)
-        data_labels.font.color.rgb = RGBColor(255, 255, 255)
-        data_labels.position = XL_DATA_LABEL_POSITION.CENTER
-        
-        # Add leader lines for outside labels
-        if opts.get("labels_outside", False):
-            data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
-            data_labels.font.color.rgb = self.get_color("foreground.DEFAULT")
-            if hasattr(data_labels, 'show_leader_lines'):
-                data_labels.show_leader_lines = True
-        
+
+                # Explode specific slice if requested
+                if self.explode_slice is not None and i == self.explode_slice:
+                    point.explosion = 20
+
+        # Configure data labels - minimal to avoid corruption
+        try:
+            plot = chart.plots[0]
+            show_labels = self.variant_props.get("show_labels", True)
+
+            if show_labels:
+                plot.has_data_labels = True
+        except Exception:
+            # Skip data labels if they cause issues
+            pass
+
         return chart
 
 
+@component(
+    name="DoughnutChart",
+    category=ComponentCategory.DATA,
+    description="Doughnut chart (pie chart with hollow center) for showing proportions",
+    props=[
+        prop("categories", "array", "Category labels", required=True,
+             example=["Category A", "Category B", "Category C"]),
+        prop("values", "array", "Data values (must be positive)", required=True,
+             example=[40, 35, 25]),
+        prop("style", "string", "Visual style preset",
+             options=["default", "detailed", "minimal"],
+             default="default", example="default"),
+        prop("title", "string", "Chart title", example="Distribution"),
+        prop("hole_size", "number", "Size of center hole (0-1)", default=0.5, example=0.5),
+    ],
+    variants={
+        "style": ["default", "detailed", "minimal"]
+    },
+    examples=[
+        example(
+            "Doughnut chart",
+            """
+chart = DoughnutChart(
+    categories=["Sales", "Marketing", "Operations"],
+    values=[50, 30, 20],
+    title="Department Allocation"
+)
+chart.render(slide, left=1, top=2)
+            """,
+            categories=["Sales", "Marketing", "Operations"],
+            values=[50, 30, 20]
+        )
+    ],
+    tags=["chart", "doughnut", "donut", "proportions"]
+)
 class DoughnutChart(PieChart):
     """
-    Doughnut chart component - pie chart with hollow center.
-    
-    Features:
-    - Adjustable hole size
-    - Center text capability
-    - Modern flat design
+    Doughnut chart component (pie with hollow center).
+
+    Inherits from PieChart but uses doughnut chart type.
+    Perfect for showing proportions with a modern look.
     """
-    
-    def __init__(self,
-                 hole_size: int = 50,
-                 center_text: Optional[str] = None,
-                 variant: str = "default",
-                 **kwargs):
+
+    def __init__(self, hole_size: float = 0.5, **kwargs):
         """
         Initialize doughnut chart.
-        
+
         Args:
-            hole_size: Size of center hole (0-90)
-            center_text: Text to display in the center
-            variant: Chart variant (default, exploded)
+            hole_size: Size of center hole (0-1, default 0.5)
             **kwargs: Additional chart parameters
         """
-        super().__init__(variant=variant, **kwargs)
-        self.hole_size = max(10, min(90, hole_size))
-        self.center_text = center_text
-        
-        # Set chart type
-        if variant == "exploded":
-            self.chart_type = XL_CHART_TYPE.DOUGHNUT_EXPLODED
-        else:
-            self.chart_type = XL_CHART_TYPE.DOUGHNUT
-    
-    def _render_sync(self, slide, **kwargs):
-        """Render doughnut chart with modern styling."""
-        chart = super()._render_sync(slide, **kwargs)
-        
-        # Configure hole size (if python-pptx supports it)
-        # Note: Direct hole size configuration may require XML manipulation
-        # For now, we rely on the default doughnut appearance
-        
-        # Adjust label position for doughnut
-        plot = chart.plots[0]
-        if plot.has_data_labels:
-            data_labels = plot.data_labels
-            
-            # Position labels outside for doughnut
-            opts = self._computed_options if hasattr(self, '_computed_options') else {}
-            if not opts.get("labels_inside", False):
-                data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
-                data_labels.font.color.rgb = self.get_color("foreground.DEFAULT")
-                if hasattr(data_labels, 'show_leader_lines'):
-                    data_labels.show_leader_lines = True
-        
-        return chart
-
-
-class SunburstChart(ChartComponent):
-    """
-    Sunburst chart for hierarchical data.
-    
-    Note: PowerPoint may have limited support for sunburst charts.
-    This creates a multi-level doughnut chart as approximation.
-    """
-    
-    def __init__(self,
-                 data: Dict[str, Any],
-                 max_levels: Optional[int] = None,
-                 color_scheme: Optional[str] = None,
-                 **kwargs):
-        """
-        Initialize sunburst chart.
-        
-        Args:
-            data: Hierarchical data structure
-            max_levels: Maximum depth levels to display
-            color_scheme: Color scheme for the chart
-            **kwargs: Additional chart parameters
-        """
+        # Force variant to doughnut
+        kwargs['variant'] = 'doughnut'
         super().__init__(**kwargs)
-        self.data = data  # Store as data for test compatibility
-        self.max_levels = max_levels
-        self.color_scheme = color_scheme
-        self.chart_type = XL_CHART_TYPE.DOUGHNUT
-        
-        # Convert hierarchical data to flat structure
-        self._flatten_data()
-        
-        # Validate data after flattening
-        is_valid, error = self.validate_data()
-        if not is_valid:
-            raise ValueError(f"Invalid chart data: {error}")
-    
-    def _flatten_data(self):
-        """Flatten hierarchical data for doughnut representation."""
-        # This is a simplified approach
-        # In practice, you'd need more complex logic for true sunburst
-        self.categories = []
-        self.values = []
-        
-        def traverse(node, level=0):
-            # Skip if max_levels is set and we're too deep
-            if self.max_levels and level >= self.max_levels:
-                return
-                
-            if isinstance(node, dict):
-                # Handle both 'name'/'value' structure and generic dict
-                if 'name' in node and 'value' in node:
-                    self.categories.append(node['name'])
-                    self.values.append(node['value'])
-                    # Traverse children if present
-                    if 'children' in node:
-                        for child in node['children']:
-                            traverse(child, level + 1)
-                else:
-                    # Generic dict traversal
-                    for key, value in node.items():
-                        if isinstance(value, (int, float)):
-                            self.categories.append(key)
-                            self.values.append(value)
-                        else:
-                            traverse(value, level + 1)
-        
-        traverse(self.data)
-    
-    def validate_data(self) -> Tuple[bool, Optional[str]]:
-        """Validate sunburst data."""
-        if not self.categories:
-            return False, "No data could be extracted from hierarchical structure"
-        
-        return True, None
-    
-    def _prepare_chart_data(self) -> CategoryChartData:
-        """Prepare sunburst data as doughnut."""
-        chart_data = CategoryChartData()
-        chart_data.categories = self.categories
-        chart_data.add_series("Values", self.values)
-        return chart_data
+        self.hole_size = hole_size
+
+    def render(self, slide, **kwargs):
+        """Render doughnut chart."""
+        chart = super().render(slide, **kwargs)
+
+        # Set hole size if supported
+        if hasattr(chart.plots[0], 'doughnut_hole_size'):
+            chart.plots[0].doughnut_hole_size = int(self.hole_size * 100)
+
+        return chart

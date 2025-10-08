@@ -1,5 +1,5 @@
 """
-Base chart component with validation and boundary detection.
+Base chart component with validation, theming, and composition support.
 """
 
 from typing import Dict, Any, List, Optional, Tuple, Union
@@ -9,7 +9,8 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 import asyncio
 
-from ..base import AsyncComponent
+from ...composition import ComposableComponent
+from ...variants import CHART_VARIANTS
 from ...layout.helpers import (
     validate_position,
     validate_boundaries,
@@ -29,15 +30,30 @@ from ...utilities.chart_utils import (
 )
 
 
-class ChartComponent(AsyncComponent):
+class ChartComponent(ComposableComponent):
     """
-    Base chart component with validation and boundary detection.
+    Base chart component with theming, validation, and composition support.
 
     Features:
     - Data validation
     - Layout integration
     - Theme integration
+    - Variant system support
     - Error handling
+    - Composition support
+
+    Usage:
+        # Extend this class for specific chart types
+        class ColumnChart(ChartComponent):
+            def __init__(self, categories, series, variant="clustered", **kwargs):
+                super().__init__(**kwargs)
+                self.categories = categories
+                self.series = series
+                self.variant = variant
+                self.variant_props = COLUMN_CHART_VARIANTS.build(
+                    variant=variant,
+                    style=kwargs.get("style", "default")
+                )
     """
 
     # Default chart dimensions
@@ -45,36 +61,41 @@ class ChartComponent(AsyncComponent):
     DEFAULT_HEIGHT = 4.5
     DEFAULT_LEFT = 1.0
     DEFAULT_TOP = 2.0
-    
+
     def __init__(self,
                  title: Optional[str] = None,
                  data: Optional[Dict[str, Any]] = None,
                  theme: Optional[Dict[str, Any]] = None,
-                 options: Optional[Dict[str, Any]] = None):
+                 style: str = "default",
+                 legend: str = "right"):
         """
         Initialize chart component.
-        
+
         Args:
             title: Chart title
             data: Chart data
             theme: Theme configuration
-            options: Chart-specific options
+            style: Chart style variant (default, minimal, detailed)
+            legend: Legend position (right, bottom, top, none)
         """
         super().__init__(theme)
         self.title = title
-        self.data = data  # Keep original value (can be None)
-        # Store private attributes for test compatibility
-        self._theme = theme  # Store original theme value (can be None)
-        self._options = options  # Store original options value (can be None)
-        # Store computed options separately for internal use
-        self._computed_options = options or {}
+        self.data = data
+        self.style = style
+        self.legend = legend
         self.chart_type = XL_CHART_TYPE.COLUMN_CLUSTERED
-    
+
+        # Get variant props
+        self.variant_props = CHART_VARIANTS.build(
+            style=style,
+            legend=legend
+        )
+
     def validate(self) -> Tuple[bool, Optional[str]]:
         """
         Public validation method for complete chart configuration.
         Validates data, options, and other settings.
-        
+
         Returns:
             Tuple of (is_valid, error_message)
         """
@@ -82,23 +103,21 @@ class ChartComponent(AsyncComponent):
         valid, error = self.validate_data()
         if not valid:
             return False, error
-        
+
         # Could add more validation here (options, theme, etc.)
-        # For now, just delegate to validate_data
         return True, None
-    
+
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """
         Internal method to validate chart data specifically.
         Override in subclasses for specific data validation.
-        
+
         Returns:
             Tuple of (is_valid, error_message)
         """
         # Base implementation - subclasses should override
         return True, None
-    
-    
+
     def apply_theme_colors(self, chart):
         """
         Apply theme colors to chart.
@@ -119,37 +138,35 @@ class ChartComponent(AsyncComponent):
         # Apply using utility function
         if rgb_colors:
             apply_chart_colors(chart, rgb_colors)
-    
+
     def _get_font_family(self) -> str:
         """Get font family from theme."""
-        if self._internal_theme and isinstance(self._internal_theme, dict):
-            return self._internal_theme.get("font_family", "Inter")
-        return "Inter"
-    
+        return self.get_theme_attr("font_family", "Inter")
+
     def _prepare_chart_data(self) -> Union[CategoryChartData, XyChartData, BubbleChartData]:
         """
         Prepare chart data (override in subclasses).
-        
+
         Returns:
             Chart data object
         """
         raise NotImplementedError("Subclasses must implement _prepare_chart_data")
-    
-    def _render_sync(self, slide,
-                     left: Optional[float] = None,
-                     top: Optional[float] = None,
-                     width: Optional[float] = None,
-                     height: Optional[float] = None) -> Any:
+
+    def render(self, slide,
+               left: Optional[float] = None,
+               top: Optional[float] = None,
+               width: Optional[float] = None,
+               height: Optional[float] = None) -> Any:
         """
-        Synchronous render implementation.
-        
+        Render chart to slide.
+
         Args:
             slide: PowerPoint slide
             left: Left position in inches
             top: Top position in inches
             width: Chart width in inches
             height: Chart height in inches
-        
+
         Returns:
             Chart object
         """
@@ -158,21 +175,18 @@ class ChartComponent(AsyncComponent):
         top = top or self.DEFAULT_TOP
         width = width or self.DEFAULT_WIDTH
         height = height or self.DEFAULT_HEIGHT
-        
+
         # Validate data
         is_valid, error = self.validate_data()
         if not is_valid:
             raise ValueError(f"Chart data validation failed: {error}")
-        
-        # Check if slide has title
-        has_title = bool(slide.shapes.title)
 
         # Validate and adjust position using layout helpers
         left, top, width, height = validate_position(left, top, width, height)
-        
+
         # Prepare data
         chart_data = self._prepare_chart_data()
-        
+
         # Add chart to slide
         chart_shape = slide.shapes.add_chart(
             self.chart_type,
@@ -180,9 +194,9 @@ class ChartComponent(AsyncComponent):
             Inches(width), Inches(height),
             chart_data
         )
-        
+
         chart = chart_shape.chart
-        
+
         # Apply styling using utilities
         font_family = self._get_font_family()
 
@@ -198,20 +212,20 @@ class ChartComponent(AsyncComponent):
         # Apply theme colors
         self.apply_theme_colors(chart)
 
-        # Configure legend
+        # Configure legend from variant props
         configure_legend(
             chart,
-            position=self._computed_options.get("legend_position", "right"),
-            show=self._computed_options.get("show_legend", True),
+            position=self.variant_props.get("legend_position", "right"),
+            show=self.variant_props.get("show_legend", True),
             font_family=font_family
         )
 
-        # Configure axes
+        # Configure axes from variant props
         configure_axes(
             chart,
             gridline_color=self.get_color("border.secondary"),
             label_font_family=font_family,
             label_color=self.get_color("muted.foreground")
         )
-        
+
         return chart

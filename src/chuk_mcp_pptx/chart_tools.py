@@ -12,8 +12,8 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 def register_chart_tools(mcp, manager):
     """Register the unified chart tool with the MCP server."""
-    
-    from .chart_utils import add_chart, add_pie_chart, add_scatter_chart
+
+    from .utilities.chart_utils import add_chart, add_pie_chart, add_scatter_chart
     from .layout.helpers import validate_position, get_safe_content_area
     
     @mcp.tool

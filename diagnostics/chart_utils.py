@@ -7,7 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from pptx import Presentation
-from chuk_mcp_pptx.chart_utils import add_chart, add_pie_chart
+from chuk_mcp_pptx.utilities.chart_utils import add_chart, add_pie_chart
 
 def test_chart_utils():
     """Test our chart utilities"""

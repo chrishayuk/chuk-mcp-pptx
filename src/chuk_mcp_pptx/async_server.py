@@ -23,7 +23,7 @@ from .slide_templates import (
     create_key_metrics_slide, list_templates, list_color_schemes
 )
 # Text utilities now handled by tools/text.py via register_text_tools()
-from .chart_utils import (
+from .utilities.chart_utils import (
     add_chart, add_pie_chart, add_scatter_chart, add_data_table
 )
 # Shape utilities now available as components in components.core

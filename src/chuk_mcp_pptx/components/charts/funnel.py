@@ -52,28 +52,58 @@ class FunnelChart(ChartComponent):
         """Calculate dimensions for each funnel segment."""
         dimensions = []
         max_value = max(self.values)
-        
+
         # Reserve space for title if present
         chart_top = 0.5 if self.title else 0.2
         chart_height = height - chart_top - 0.2
-        
+
         # Calculate segment height
         segment_height = chart_height / len(self.stages)
-        
+
         for i, value in enumerate(self.values):
             # Calculate width based on value
             segment_width = (value / max_value) * width * 0.8  # 80% of available width
-            
+
             # Center the segment
             left_offset = (width - segment_width) / 2
-            
+
             # Calculate vertical position
             top_offset = chart_top + (i * segment_height)
-            
+
             dimensions.append((left_offset, top_offset, segment_width, segment_height * 0.9))
-        
+
         return dimensions
-    
+
+    async def render(self, slide: Slide, left: float = None, top: float = None,
+                     width: float = None, height: float = None):
+        """
+        Render funnel chart to a slide (shape-based, not native chart).
+
+        Args:
+            slide: Slide to add chart to
+            left: Left position in inches
+            top: Top position in inches
+            width: Width in inches
+            height: Height in inches
+
+        Returns:
+            None (no chart object since this uses shapes)
+        """
+        # Use defaults if not specified
+        left = left if left is not None else self.DEFAULT_LEFT
+        top = top if top is not None else self.DEFAULT_TOP
+        width = width if width is not None else self.DEFAULT_WIDTH
+        height = height if height is not None else self.DEFAULT_HEIGHT
+
+        # Validate data
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Chart data validation failed: {error}")
+
+        # Call the shape-based rendering
+        self._render_sync(slide, left=left, top=top, width=width, height=height)
+        return None
+
     def _render_sync(self, slide: Slide, **kwargs) -> None:
         """
         Render funnel chart synchronously using shapes.
@@ -150,35 +180,60 @@ class FunnelChart(ChartComponent):
             line.width = Pt(1)
             
             # Add text to segment
-            shape.text = stage
             text_frame = shape.text_frame
-            text_frame.margin_left = Inches(0.1)
-            text_frame.margin_right = Inches(0.1)
-            text_frame.margin_top = Inches(0.05)
-            text_frame.margin_bottom = Inches(0.05)
+            text_frame.clear()  # Clear any default text
+
+            # Enable word wrap for narrow segments, disable for wide ones
+            text_frame.word_wrap = seg_width < 1.5
+
+            text_frame.margin_left = Inches(0.02)
+            text_frame.margin_right = Inches(0.02)
+            text_frame.margin_top = Inches(0.02)
+            text_frame.margin_bottom = Inches(0.02)
             text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
-            
+
+            # Aggressive font size based on segment width
+            if seg_width > 2.5:
+                stage_font_size = 11
+                value_font_size = 9
+                pct_font_size = 8
+            elif seg_width > 1.5:
+                stage_font_size = 9
+                value_font_size = 8
+                pct_font_size = 7
+            elif seg_width > 0.8:
+                stage_font_size = 7
+                value_font_size = 6
+                pct_font_size = 6
+            else:
+                # Very narrow - use smallest fonts
+                stage_font_size = 6
+                value_font_size = 5
+                pct_font_size = 5
+
+            # Add stage name
             p = text_frame.paragraphs[0]
+            p.text = stage
             p.alignment = PP_ALIGN.CENTER
-            p.font.size = Pt(12)
+            p.font.size = Pt(stage_font_size)
             p.font.bold = True
             p.font.color.rgb = RGBColor(255, 255, 255)
-            
+
             # Add value if requested
             if self.show_values:
                 p = text_frame.add_paragraph()
                 p.text = f"{value:,.0f}"
                 p.alignment = PP_ALIGN.CENTER
-                p.font.size = Pt(10)
+                p.font.size = Pt(value_font_size)
                 p.font.color.rgb = RGBColor(255, 255, 255)
-            
-            # Add percentage if requested
+
+            # Add percentage if requested (conversion rate from previous stage)
             if self.show_percentages and i > 0:
                 conversion_rate = (value / self.values[i-1]) * 100
                 p = text_frame.add_paragraph()
                 p.text = f"{conversion_rate:.1f}%"
                 p.alignment = PP_ALIGN.CENTER
-                p.font.size = Pt(9)
+                p.font.size = Pt(pct_font_size)
                 p.font.color.rgb = RGBColor(255, 255, 255)
     
     def _get_chart_colors(self) -> List[str]:
@@ -253,11 +308,41 @@ class GanttChart(ChartComponent):
         is_valid, error = self.validate_data()
         if not is_valid:
             raise ValueError(f"Invalid chart data: {error}")
-    
+
+    async def render(self, slide: Slide, left: float = None, top: float = None,
+                     width: float = None, height: float = None):
+        """
+        Render Gantt chart to a slide (shape-based, not native chart).
+
+        Args:
+            slide: Slide to add chart to
+            left: Left position in inches
+            top: Top position in inches
+            width: Width in inches
+            height: Height in inches
+
+        Returns:
+            None (no chart object since this uses shapes)
+        """
+        # Use defaults if not specified
+        left = left if left is not None else self.DEFAULT_LEFT
+        top = top if top is not None else self.DEFAULT_TOP
+        width = width if width is not None else self.DEFAULT_WIDTH
+        height = height if height is not None else self.DEFAULT_HEIGHT
+
+        # Validate data
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Chart data validation failed: {error}")
+
+        # Call the shape-based rendering
+        self._render_sync(slide, left=left, top=top, width=width, height=height)
+        return None
+
     def _render_sync(self, slide: Slide, **kwargs) -> None:
         """
         Render Gantt chart using shapes and lines.
-        
+
         Since PowerPoint doesn't have native Gantt charts, we create it with shapes.
         """
         # For now, create a simplified Gantt using horizontal bars
@@ -339,7 +424,7 @@ class HeatmapChart(ChartComponent):
     """
     Heatmap chart for visualizing data density or correlations.
     """
-    
+
     def __init__(self,
                  x_labels: List[str],
                  y_labels: List[str],
@@ -350,7 +435,7 @@ class HeatmapChart(ChartComponent):
                  **kwargs):
         """
         Initialize heatmap chart.
-        
+
         Args:
             x_labels: Labels for x-axis
             y_labels: Labels for y-axis
@@ -367,17 +452,104 @@ class HeatmapChart(ChartComponent):
         self.color_scale = color_scale
         self.show_values = show_values
         self.title = title
-        
+
         # Validate data during initialization
         is_valid, error = self.validate_data()
         if not is_valid:
             raise ValueError(f"Invalid chart data: {error}")
-    
+
+    async def render(self, slide: Slide, left: float = None, top: float = None,
+                     width: float = None, height: float = None):
+        """
+        Render heatmap chart to a slide (shape-based, not native chart).
+
+        Args:
+            slide: Slide to add chart to
+            left: Left position in inches
+            top: Top position in inches
+            width: Width in inches
+            height: Height in inches
+
+        Returns:
+            None (no chart object since this uses shapes)
+        """
+        # Use defaults if not specified
+        left = left if left is not None else self.DEFAULT_LEFT
+        top = top if top is not None else self.DEFAULT_TOP
+        width = width if width is not None else self.DEFAULT_WIDTH
+        height = height if height is not None else self.DEFAULT_HEIGHT
+
+        # Validate data
+        is_valid, error = self.validate_data()
+        if not is_valid:
+            raise ValueError(f"Chart data validation failed: {error}")
+
+        # Call the shape-based rendering
+        self._render_sync(slide, left=left, top=top, width=width, height=height)
+        return None
+
     def _render_sync(self, slide: Slide, **kwargs) -> None:
-        """Render heatmap using colored rectangles."""
-        # Simplified implementation
-        # Would create a grid of colored rectangles based on data values
-        pass
+        """Render heatmap using a table with colored cells."""
+        left = kwargs.get('left', 1.5)
+        top = kwargs.get('top', 1.5)
+        width = kwargs.get('width', 7.0)
+        height = kwargs.get('height', 4.5)
+
+        # Calculate cell dimensions
+        rows = len(self.y_labels) + 1  # +1 for header
+        cols = len(self.x_labels) + 1  # +1 for row labels
+
+        # Add table
+        table_shape = slide.shapes.add_table(
+            rows, cols,
+            Inches(left), Inches(top),
+            Inches(width), Inches(height)
+        )
+        table = table_shape.table
+
+        # Set column headers (x labels)
+        for i, label in enumerate(self.x_labels):
+            cell = table.cell(0, i + 1)
+            cell.text = str(label)
+            cell.text_frame.paragraphs[0].font.size = Pt(9)
+            cell.text_frame.paragraphs[0].font.bold = True
+
+        # Set row headers (y labels) and data
+        for i, y_label in enumerate(self.y_labels):
+            # Row header
+            cell = table.cell(i + 1, 0)
+            cell.text = str(y_label)
+            cell.text_frame.paragraphs[0].font.size = Pt(9)
+            cell.text_frame.paragraphs[0].font.bold = True
+
+            # Data cells
+            for j, value in enumerate(self.data[i]):
+                cell = table.cell(i + 1, j + 1)
+                if self.show_values:
+                    cell.text = str(int(value))
+                    cell.text_frame.paragraphs[0].font.size = Pt(8)
+
+                # Color based on value (simple heat scale)
+                if self.data:
+                    all_values = [val for row in self.data for val in row]
+                    min_val = min(all_values)
+                    max_val = max(all_values)
+                    if max_val > min_val:
+                        normalized = (value - min_val) / (max_val - min_val)
+                        # Heat color scale: blue (low) to red (high)
+                        if normalized < 0.5:
+                            # Blue to yellow
+                            r = int(255 * (normalized * 2))
+                            g = int(255 * (normalized * 2))
+                            b = 255
+                        else:
+                            # Yellow to red
+                            r = 255
+                            g = int(255 * (1 - (normalized - 0.5) * 2))
+                            b = 0
+
+                        cell.fill.solid()
+                        cell.fill.fore_color.rgb = RGBColor(r, g, b)
     
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """Validate heatmap chart data."""
