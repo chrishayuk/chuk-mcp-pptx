@@ -18,10 +18,6 @@ import io
 from chuk_mcp_server import ChukMCPServer
 from pptx.util import Inches
 from .presentation_manager import PresentationManager
-from .slide_templates import (
-    create_title_slide, create_content_slide, create_comparison_slide,
-    create_key_metrics_slide, list_templates, list_color_schemes
-)
 # Text utilities now handled by tools/text.py via register_text_tools()
 from .utilities.chart_utils import (
     add_chart, add_pie_chart, add_scatter_chart, add_data_table
@@ -30,11 +26,16 @@ from .utilities.chart_utils import (
 
 # Import modular tools modules
 from .chart_tools import register_chart_tools
-from .tools.image import register_image_tools
-from .tools.text import register_text_tools
+from .tools.image_tools import register_image_tools
+from .tools.text_tools import register_text_tools
 from .inspection_tools import register_inspection_tools
-from .tools.table import register_table_tools
-from .tools.layout import register_layout_tools
+from .tools.table_tools import register_table_tools
+from .tools.slide_layout_tools import register_layout_tools
+from .tools.component_tools import register_component_tools
+from .tools.registry_tools import register_registry_tools
+from .tools.token_tools import register_token_tools
+from .tools.semantic_tools import register_semantic_tools
+from .tools.theme_tools import register_theme_tools
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -57,8 +58,17 @@ text_tools = register_text_tools(mcp, manager)
 inspection_tools = register_inspection_tools(mcp, manager)
 table_tools = register_table_tools(mcp, manager)
 layout_tools = register_layout_tools(mcp, manager)
-from .tools.shape import register_shape_tools
+from .tools.shape_tools import register_shape_tools
 shape_tools = register_shape_tools(mcp, manager)
+
+# Register design system tools (NEW)
+component_tools = register_component_tools(mcp, manager)
+registry_tools = register_registry_tools(mcp, manager)
+token_tools = register_token_tools(mcp, manager)
+theme_tools = register_theme_tools(mcp, manager)
+
+# Register LLM-friendly semantic tools (NEW)
+semantic_tools = register_semantic_tools(mcp, manager)
 
 # Make tools available at module level for easier imports
 if chart_tools:
@@ -93,12 +103,18 @@ if layout_tools:
     pptx_reorder_slides = layout_tools['pptx_reorder_slides']
 
 if shape_tools:
-    pptx_add_shape = shape_tools['pptx_add_shape']
     pptx_add_arrow = shape_tools['pptx_add_arrow']
     pptx_add_smart_art = shape_tools['pptx_add_smart_art']
     pptx_add_code_block = shape_tools['pptx_add_code_block']
-    pptx_apply_theme = shape_tools['pptx_apply_theme']
-    pptx_list_themes = shape_tools['pptx_list_themes']
+
+# Theme tools now in their own module
+if theme_tools:
+    pptx_list_themes = theme_tools['pptx_list_themes']
+    pptx_get_theme_info = theme_tools['pptx_get_theme_info']
+    pptx_create_custom_theme = theme_tools['pptx_create_custom_theme']
+    pptx_apply_theme = theme_tools['pptx_apply_theme']
+    pptx_apply_component_theme = theme_tools['pptx_apply_component_theme']
+    pptx_list_component_themes = theme_tools['pptx_list_component_themes']
 
 # Create backward compatibility references for chart and image tools
 def _create_function_references():
@@ -504,170 +520,6 @@ async def pptx_get_info(presentation: Optional[str] = None) -> str:
     return await asyncio.get_event_loop().run_in_executor(None, _get_info)
 
 
-# Enhanced tools using template utilities
-
-@mcp.tool
-async def pptx_create_title_slide(
-    title: str,
-    subtitle: str = "",
-    author: str = "",
-    date: str = "",
-    company: str = "",
-    color_scheme: str = "modern_blue",
-    presentation: Optional[str] = None
-) -> str:
-    """
-    Create a professional title slide with enhanced styling.
-    
-    Creates a title slide with professional formatting, optional author information,
-    and customizable color schemes. Perfect for presentation openings.
-    
-    Args:
-        title: Main title of the presentation
-        subtitle: Optional subtitle or tagline
-        author: Optional author name
-        date: Optional date (e.g., "December 2024")
-        company: Optional company or organization name
-        color_scheme: Color scheme to use (modern_blue, corporate_gray, elegant_green, warm_orange)
-        presentation: Name of presentation to add slide to (uses current if not specified)
-        
-    Returns:
-        Success message confirming slide creation
-        
-    Example:
-        await pptx_create_title_slide(
-            title="Strategic Plan 2025",
-            subtitle="Driving Innovation and Growth",
-            author="Jane Smith",
-            date="January 2025",
-            company="Tech Corp",
-            color_scheme="corporate_gray"
-        )
-    """
-    def _create_title():
-        prs = manager.get(presentation)
-        if not prs:
-            return "Error: No presentation found. Create one first with pptx_create()"
-        
-        slide = create_title_slide(
-            prs, title, subtitle, author, date, color_scheme
-        )
-        
-        # Update in VFS if enabled
-        manager.update(presentation)
-        
-        slide_idx = len(prs.slides) - 1
-        return f"Created title slide at index {slide_idx}"
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _create_title)
-
-
-@mcp.tool
-async def pptx_create_comparison_slide(
-    title: str,
-    left_title: str,
-    left_items: List[str],
-    right_title: str,
-    right_items: List[str],
-    color_scheme: str = "modern_blue",
-    presentation: Optional[str] = None
-) -> str:
-    """
-    Create a two-column comparison slide.
-    
-    Creates a slide with two columns for comparing items, features, pros/cons, etc.
-    Each column has its own title and list of items.
-    
-    Args:
-        title: Main slide title
-        left_title: Title for the left column
-        left_items: List of items for the left column
-        right_title: Title for the right column
-        right_items: List of items for the right column
-        color_scheme: Color scheme to use
-        presentation: Name of presentation to add slide to (uses current if not specified)
-        
-    Returns:
-        Success message confirming slide creation
-        
-    Example:
-        await pptx_create_comparison_slide(
-            title="Solution Comparison",
-            left_title="Option A",
-            left_items=["Lower cost", "Faster implementation", "Local support"],
-            right_title="Option B",
-            right_items=["More features", "Better scalability", "Cloud-based"],
-            color_scheme="modern_blue"
-        )
-    """
-    def _create_comparison():
-        prs = manager.get(presentation)
-        if not prs:
-            return "Error: No presentation found. Create one first with pptx_create()"
-        
-        slide = create_comparison_slide(
-            prs, title, left_title, left_items, right_title, right_items, color_scheme
-        )
-        
-        # Update in VFS if enabled
-        manager.update(presentation)
-        
-        slide_idx = len(prs.slides) - 1
-        return f"Created comparison slide at index {slide_idx}"
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _create_comparison)
-
-
-@mcp.tool
-async def pptx_create_metrics_slide(
-    title: str,
-    metrics: List[dict],
-    color_scheme: str = "modern_blue",
-    presentation: Optional[str] = None
-) -> str:
-    """
-    Create a key metrics dashboard slide.
-    
-    Creates a slide displaying key metrics in a visually appealing grid layout.
-    Each metric shows a large value and a description label.
-    
-    Args:
-        title: Slide title
-        metrics: List of metric dictionaries with 'value' and 'label' keys
-        color_scheme: Color scheme to use
-        presentation: Name of presentation to add slide to (uses current if not specified)
-        
-    Returns:
-        Success message confirming slide creation
-        
-    Example:
-        await pptx_create_metrics_slide(
-            title="Q4 Performance Metrics",
-            metrics=[
-                {"value": "$2.5M", "label": "Revenue"},
-                {"value": "147%", "label": "Growth"},
-                {"value": "92", "label": "NPS Score"},
-                {"value": "45ms", "label": "Response Time"}
-            ],
-            color_scheme="corporate_gray"
-        )
-    """
-    def _create_metrics():
-        prs = manager.get(presentation)
-        if not prs:
-            return "Error: No presentation found. Create one first with pptx_create()"
-        
-        slide = create_key_metrics_slide(prs, title, metrics, color_scheme)
-        
-        # Update in VFS if enabled
-        manager.update(presentation)
-        
-        slide_idx = len(prs.slides) - 1
-        return f"Created metrics slide at index {slide_idx}"
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _create_metrics)
-
-
 # Additional async tools for shapes, text extraction, etc.
 
 # Note: pptx_extract_all_text is now provided by text_tools.py
@@ -675,33 +527,6 @@ async def pptx_create_metrics_slide(
 
 # Note: pptx_add_data_table is now provided by table_tools.py with layout validation
 # The function is registered via register_table_tools()
-
-
-@mcp.tool
-async def pptx_list_templates() -> str:
-    """
-    List all available slide templates and color schemes.
-    
-    Returns information about available slide templates and color schemes
-    that can be used when creating slides.
-    
-    Returns:
-        JSON object with templates and color schemes
-        
-    Example:
-        templates = await pptx_list_templates()
-        # Returns JSON with available templates and color schemes
-    """
-    def _list():
-        templates = list_templates()
-        schemes = list_color_schemes()
-        
-        return json.dumps({
-            "templates": templates,
-            "color_schemes": schemes
-        }, indent=2)
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _list)
 
 
 # Run the server

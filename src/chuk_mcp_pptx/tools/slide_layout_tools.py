@@ -1,10 +1,19 @@
+# src/chuk_mcp_pptx/tools/slide_layout_tools.py
 """
-Layout Tools for PowerPoint MCP Server
+Slide Layout Tools for PowerPoint MCP Server
 
-Provides async MCP tools for working with slide layouts and templates.
-Handles layout selection, customization, and management.
+Provides async MCP tools for managing PowerPoint slide layouts.
+Handles:
+- Listing and selecting slide master layouts
+- Customizing slide appearance (backgrounds, footers, etc.)
+- Duplicating and reordering slides
+- Applying master layout formatting
+
+Note: Grid-based component positioning is handled by component_tools.py.
+Slide templates (dashboard, comparison, etc.) are in slide_templates/.
 """
 import asyncio
+import json
 from typing import Optional, List, Dict, Any
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
@@ -13,7 +22,16 @@ from pptx.enum.shapes import MSO_SHAPE
 
 def register_layout_tools(mcp, manager):
     """Register all layout-related tools with the MCP server."""
-    
+
+    # ========================================================================
+    # TRADITIONAL LAYOUT MANAGEMENT TOOLS
+    # ========================================================================
+    # These tools directly manipulate presentation slides:
+    # - List and select slide layouts
+    # - Customize slide appearance
+    # - Duplicate and reorder slides
+    # - Apply master layout settings
+
     @mcp.tool
     async def pptx_list_layouts(
         presentation: Optional[str] = None
@@ -58,8 +76,8 @@ def register_layout_tools(mcp, manager):
             layouts.append("=== AVAILABLE SLIDE LAYOUTS ===\n")
             
             for i, layout in enumerate(prs.slide_master.slide_layouts):
-                layout_name = layout.name
-                
+                layout_name = str(layout.name)
+
                 # Add descriptions for common layouts
                 descriptions = {
                     "Title Slide": "Opening slide with title and subtitle",
@@ -74,14 +92,14 @@ def register_layout_tools(mcp, manager):
                     "Title and Vertical Text": "Vertical text layout",
                     "Vertical Title and Text": "Vertical oriented content"
                 }
-                
+
                 desc = descriptions.get(layout_name, "Custom layout")
                 layouts.append(f"{i:2}: {layout_name:30} - {desc}")
                 
                 # List placeholders in this layout
                 placeholders = []
                 for shape in layout.placeholders:
-                    placeholders.append(shape.name)
+                    placeholders.append(str(shape.name))
                 
                 if placeholders:
                     layouts.append(f"    Placeholders: {', '.join(placeholders)}")
@@ -177,9 +195,9 @@ def register_layout_tools(mcp, manager):
             
             # Update in VFS if enabled
             manager.update(presentation)
-            
+
             slide_idx = len(prs.slides) - 1
-            layout_name = layout.name
+            layout_name = str(layout.name)
             return f"Added slide {slide_idx} using layout '{layout_name}'"
         
         return await asyncio.get_event_loop().run_in_executor(None, _add_with_layout)
@@ -233,20 +251,19 @@ def register_layout_tools(mcp, manager):
             # Set background color
             if background_color:
                 from pptx.dml.color import RGBColor
-                
+
                 # Parse hex color
-                if background_color.startswith("#"):
-                    background_color = background_color[1:]
-                
+                bg_color = background_color[1:] if background_color.startswith("#") else background_color
+
                 try:
-                    r = int(background_color[0:2], 16)
-                    g = int(background_color[2:4], 16)
-                    b = int(background_color[4:6], 16)
-                    
+                    r = int(bg_color[0:2], 16)
+                    g = int(bg_color[2:4], 16)
+                    b = int(bg_color[4:6], 16)
+
                     fill = slide.background.fill
                     fill.solid()
                     fill.fore_color.rgb = RGBColor(r, g, b)
-                    customizations.append(f"background color {background_color}")
+                    customizations.append(f"background color {bg_color}")
                 except:
                     customizations.append("background color (failed - invalid format)")
             
@@ -331,25 +348,23 @@ def register_layout_tools(mcp, manager):
             # Parse colors
             title_rgb = None
             body_rgb = None
-            
+
             if title_color:
-                if title_color.startswith("#"):
-                    title_color = title_color[1:]
+                t_color = title_color[1:] if title_color.startswith("#") else title_color
                 try:
-                    r = int(title_color[0:2], 16)
-                    g = int(title_color[2:4], 16)
-                    b = int(title_color[4:6], 16)
+                    r = int(t_color[0:2], 16)
+                    g = int(t_color[2:4], 16)
+                    b = int(t_color[4:6], 16)
                     title_rgb = RGBColor(r, g, b)
                 except:
                     pass
-            
+
             if body_color:
-                if body_color.startswith("#"):
-                    body_color = body_color[1:]
+                b_color = body_color[1:] if body_color.startswith("#") else body_color
                 try:
-                    r = int(body_color[0:2], 16)
-                    g = int(body_color[2:4], 16)
-                    b = int(body_color[4:6], 16)
+                    r = int(b_color[0:2], 16)
+                    g = int(b_color[2:4], 16)
+                    b = int(b_color[4:6], 16)
                     body_rgb = RGBColor(r, g, b)
                 except:
                     pass
@@ -514,7 +529,16 @@ def register_layout_tools(mcp, manager):
             return f"Moved slide from position {slide_index} to position {new_position}"
         
         return await asyncio.get_event_loop().run_in_executor(None, _reorder_slides)
-    
+
+    # ========================================================================
+    # NOTE: Grid layout is handled internally by component tools
+    # ========================================================================
+    # The Grid class is used internally by:
+    # - component_tools.py: Components accept grid-based positioning
+    # - slide_templates/: Templates use Grid to position multiple components
+    #
+    # No need to expose grid calculation tools - components handle it directly.
+
     # Return the tools for external access
     return {
         'pptx_list_layouts': pptx_list_layouts,
@@ -522,5 +546,5 @@ def register_layout_tools(mcp, manager):
         'pptx_customize_layout': pptx_customize_layout,
         'pptx_apply_master_layout': pptx_apply_master_layout,
         'pptx_duplicate_slide': pptx_duplicate_slide,
-        'pptx_reorder_slides': pptx_reorder_slides
+        'pptx_reorder_slides': pptx_reorder_slides,
     }

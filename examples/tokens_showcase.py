@@ -14,7 +14,7 @@ from pptx.util import Inches
 from chuk_mcp_pptx.components.core.card import Card, MetricCard
 from chuk_mcp_pptx.components.core.badge import Badge
 from chuk_mcp_pptx.components.core.button import Button
-from chuk_mcp_pptx.layout import Container, Grid, Stack, Divider
+from chuk_mcp_pptx.components.core import Container, Grid, Stack, Divider
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 
 

@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/tools/shape_tools.py
 """
 Shape and SmartArt Tools for PowerPoint MCP Server
 
@@ -10,137 +11,20 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 
 def register_shape_tools(mcp, manager):
-    """Register all shape and SmartArt tools with the MCP server."""
+    """Register all shape and SmartArt tools with the MCP server.
+
+    Note: pptx_add_shape is provided by component_tools.py as part of the
+    comprehensive design system. This module provides specialized shape tools.
+    """
 
     from ..components.core import Shape, Connector, ProcessFlow, CycleDiagram, HierarchyDiagram
     from ..layout.helpers import validate_position
     from ..components.code import CodeBlock
     from ..themes.theme_manager import ThemeManager
-    
-    @mcp.tool
-    async def pptx_add_shape(
-        slide_index: int,
-        shape_type: str,
-        left: float = 2.0,
-        top: float = 2.0,
-        width: float = 3.0,
-        height: float = 2.0,
-        text: Optional[str] = None,
-        fill_color: Optional[str] = None,
-        line_color: Optional[str] = None,
-        line_width: float = 1.0,
-        presentation: Optional[str] = None
-    ) -> str:
-        """
-        Add a shape to a slide with customizable properties.
-        
-        Creates various shapes like rectangles, circles, arrows, stars, etc.
-        
-        Args:
-            slide_index: Index of the slide to add shape to (0-based)
-            shape_type: Type of shape. Options:
-                - "rectangle", "rounded_rectangle"
-                - "oval", "diamond"
-                - "triangle", "arrow"
-                - "star", "hexagon"
-                - "chevron", "plus"
-                - "callout"
-            left: Left position in inches
-            top: Top position in inches
-            width: Width in inches
-            height: Height in inches
-            text: Optional text to display inside shape
-            fill_color: Fill color as hex string (e.g., "#FF0000")
-            line_color: Border color as hex string
-            line_width: Border width in points
-            presentation: Name of presentation (uses current if not specified)
-            
-        Returns:
-            Success message confirming shape addition
-            
-        Example:
-            await pptx_add_shape(
-                slide_index=1,
-                shape_type="star",
-                left=3.0,
-                top=2.0,
-                width=2.0,
-                height=2.0,
-                text="Success!",
-                fill_color="#FFD700"
-            )
-        """
-        def _add_shape():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found. Create one first with pptx_create()"
-            
-            if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
-            
-            slide = prs.slides[slide_index]
-            
-            # Remove content placeholders that might interfere with shapes
-            from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
-            placeholders_to_remove = []
-            for shape in slide.shapes:
-                if hasattr(shape, 'shape_type'):
-                    if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
-                        # Skip title placeholders
-                        if hasattr(shape, 'placeholder_format'):
-                            if shape.placeholder_format.type in [PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE]:
-                                continue
-                        # Mark content placeholders for removal
-                        placeholders_to_remove.append(shape)
-            
-            # Remove the placeholders
-            for placeholder in placeholders_to_remove:
-                sp = placeholder._element
-                sp.getparent().remove(sp)
-            
-            # Validate position
-            validated_left, validated_top, validated_width, validated_height = validate_position(
-                left, top, width, height
-            )
 
-            try:
-                # Get theme for shape
-                theme_manager = ThemeManager()
-                theme_obj = theme_manager.get_default_theme()
+    # pptx_add_shape removed - now in component_tools.py as part of design system
+    # Keeping specialized tools: pptx_add_arrow, pptx_add_smart_art, pptx_add_code_block
 
-                # Create shape using component
-                shape_comp = Shape(
-                    shape_type=shape_type,
-                    text=text,
-                    fill_color=fill_color,  # Component handles hex colors
-                    line_color=line_color,
-                    line_width=line_width,
-                    theme=theme_obj
-                )
-                shape = shape_comp.render(
-                    slide,
-                    validated_left,
-                    validated_top,
-                    validated_width,
-                    validated_height
-                )
-                
-                # Update in VFS if enabled
-                manager.update(presentation)
-                
-                # Report if position was adjusted
-                position_note = ""
-                if (validated_left != left or validated_top != top or 
-                    validated_width != width or validated_height != height):
-                    position_note = f" (position adjusted to fit: {validated_left:.1f}, {validated_top:.1f}, {validated_width:.1f}x{validated_height:.1f})"
-                
-                return f"Added {shape_type} shape to slide {slide_index}{position_note}"
-                
-            except Exception as e:
-                return f"Error adding shape: {str(e)}"
-        
-        return await asyncio.get_event_loop().run_in_executor(None, _add_shape)
-    
     @mcp.tool
     async def pptx_add_arrow(
         slide_index: int,
@@ -446,7 +330,7 @@ def register_shape_tools(mcp, manager):
                 theme_obj = theme_manager.get_theme(theme) if theme else None
 
                 code_component = CodeBlock(
-                    code_text=code,
+                    code=code,
                     language=language,
                     theme=theme_obj
                 )
@@ -467,100 +351,15 @@ def register_shape_tools(mcp, manager):
                 return f"Error adding code block: {str(e)}"
         
         return await asyncio.get_event_loop().run_in_executor(None, _add_code)
-    
-    @mcp.tool
-    async def pptx_apply_theme(
-        slide_index: Optional[int] = None,
-        theme: str = "default-light",
-        presentation: Optional[str] = None
-    ) -> str:
-        """
-        Apply a beautiful theme to slides.
 
-        Available themes: Use pptx_list_themes() to see all available themes.
+    # Theme tools have been moved to tools/theme_tools.py for better organization
+    # Use: pptx_apply_theme, pptx_list_themes, pptx_create_custom_theme
 
-        Args:
-            slide_index: Index of slide to theme (None for all slides)
-            theme: Name of theme to apply (e.g., "default-light", "ocean-dark", etc.)
-            presentation: Name of presentation (uses current if not specified)
-
-        Returns:
-            Success message confirming theme application
-        """
-        def _apply_theme():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
-
-            theme_manager = ThemeManager()
-            available_themes = theme_manager.list_themes()
-
-            if theme not in available_themes:
-                return f"Error: Unknown theme '{theme}'. Available: {', '.join(available_themes[:10])}"
-
-            try:
-                theme_obj = theme_manager.get_theme(theme)
-
-                if slide_index is not None:
-                    if slide_index >= len(prs.slides):
-                        return f"Error: Slide index {slide_index} out of range"
-                    slides = [prs.slides[slide_index]]
-                else:
-                    slides = prs.slides
-
-                # Apply background color from theme
-                for slide in slides:
-                    background = slide.background
-                    fill = background.fill
-                    fill.solid()
-                    # Get background color from theme
-                    bg_color_hex = theme_obj.colors.get("background", {}).get("DEFAULT", "#FFFFFF")
-                    if bg_color_hex.startswith("#"):
-                        bg_color_hex = bg_color_hex[1:]
-                    from pptx.dml.color import RGBColor
-                    fill.fore_color.rgb = RGBColor(
-                        int(bg_color_hex[0:2], 16),
-                        int(bg_color_hex[2:4], 16),
-                        int(bg_color_hex[4:6], 16)
-                    )
-
-                # Update in VFS if enabled
-                manager.update(presentation)
-
-                slide_msg = f"slide {slide_index}" if slide_index is not None else "all slides"
-                return f"Applied {theme} theme to {slide_msg}"
-
-            except Exception as e:
-                return f"Error applying theme: {str(e)}"
-
-        return await asyncio.get_event_loop().run_in_executor(None, _apply_theme)
-    
-    @mcp.tool
-    async def pptx_list_themes() -> str:
-        """
-        List all available themes with descriptions.
-
-        Returns:
-            List of available themes and their characteristics
-        """
-        theme_manager = ThemeManager()
-        themes = theme_manager.list_themes()
-
-        theme_list = []
-        for theme_name in themes:
-            theme_obj = theme_manager.get_theme(theme_name)
-            mode = theme_obj.mode
-            primary = theme_obj.colors.get("primary", {}).get("DEFAULT", "N/A")
-            theme_list.append(f"• {theme_name} ({mode}): Primary: {primary}")
-
-        return "Available themes:\n" + "\n".join(theme_list)
-    
     # Return tools for external access
+    # Note: pptx_add_shape is provided by component_tools.py
+    # Note: Theme tools are provided by theme_tools.py
     return {
-        'pptx_add_shape': pptx_add_shape,
         'pptx_add_arrow': pptx_add_arrow,
         'pptx_add_smart_art': pptx_add_smart_art,
         'pptx_add_code_block': pptx_add_code_block,
-        'pptx_apply_theme': pptx_apply_theme,
-        'pptx_list_themes': pptx_list_themes
     }

@@ -21,7 +21,7 @@ class TestGrid:
         """Test creating a grid."""
         grid = Grid(columns=12, gap="md")
         assert grid.columns == 12
-        assert grid.gap > 0
+        assert grid.gap_inches > 0
 
     def test_grid_custom_columns(self):
         """Test grid with custom column count."""
@@ -33,7 +33,7 @@ class TestGrid:
         gaps = ["none", "xs", "sm", "md", "lg", "xl"]
         for gap in gaps:
             grid = Grid(gap=gap)
-            assert grid.gap >= 0
+            assert grid.gap_inches >= 0
 
     def test_grid_cell_positions(self, mock_slide):
         """Test getting cell positions."""

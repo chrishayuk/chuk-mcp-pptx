@@ -86,7 +86,11 @@ class ThemeManager:
     def get_theme(self, name: str) -> Optional['Theme']:
         """Get theme by name."""
         return self.themes.get(name)
-    
+
+    def get_default_theme(self) -> 'Theme':
+        """Get the default theme."""
+        return self.get_theme("dark")
+
     def set_current_theme(self, name: str):
         """Set the current active theme."""
         theme = self.get_theme(name)

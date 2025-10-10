@@ -673,14 +673,9 @@ def register_image_tools(mcp, manager):
             
             try:
                 # Use layout helper for logo positioning
+                # Note: get_logo_position defaults to top-right for invalid positions
                 logo_pos = get_logo_position(position, size, margin)
-                
-                if logo_pos is None:
-                    valid_positions = ["top-left", "top-center", "top-right", 
-                                     "center-left", "center", "center-right",
-                                     "bottom-left", "bottom-center", "bottom-right"]
-                    return f"Error: Invalid position '{position}'. Valid positions: {valid_positions}"
-                
+
                 left = logo_pos['left']
                 top = logo_pos['top']
                 
@@ -800,7 +795,139 @@ def register_image_tools(mcp, manager):
                 return f"Error replacing image: {str(e)}"
         
         return await asyncio.get_event_loop().run_in_executor(None, _replace_image)
-    
+
+    @mcp.tool
+    async def pptx_add_image_placeholder(
+        slide_index: int,
+        left: float = 1.0,
+        top: float = 2.0,
+        width: float = 4.0,
+        height: float = 3.0,
+        label: str = "Image Placeholder",
+        background_color: str = "#E0E0E0",
+        text_color: str = "#666666",
+        presentation: Optional[str] = None
+    ) -> str:
+        """
+        Add an image placeholder for mockups and prototyping.
+
+        Creates a rectangular placeholder box with a label, useful for designing
+        slide layouts before actual images are available.
+
+        Args:
+            slide_index: Index of the slide to add placeholder to (0-based)
+            left: Left position in inches
+            top: Top position in inches
+            width: Width of placeholder in inches
+            height: Height of placeholder in inches
+            label: Text to display on the placeholder
+            background_color: Background color as hex string (default: light gray)
+            text_color: Text color as hex string (default: dark gray)
+            presentation: Name of presentation (uses current if not specified)
+
+        Returns:
+            Success message confirming placeholder addition
+
+        Example:
+            await pptx_add_image_placeholder(
+                slide_index=1,
+                left=2.0,
+                top=2.0,
+                width=5.0,
+                height=3.5,
+                label="Product Screenshot",
+                background_color="#F5F5F5"
+            )
+        """
+        def _add_placeholder():
+            prs = manager.get(presentation)
+            if not prs:
+                return "Error: No presentation found"
+
+            if slide_index >= len(prs.slides):
+                return f"Error: Slide index {slide_index} out of range"
+
+            slide = prs.slides[slide_index]
+
+            try:
+                from pptx.enum.shapes import MSO_SHAPE
+                from pptx.dml.color import RGBColor
+                from pptx.util import Pt
+                from pptx.enum.text import PP_ALIGN
+
+                # Validate position
+                validated_left, validated_top, validated_width, validated_height = validate_position(
+                    left, top, width, height
+                )
+
+                # Create rectangle shape
+                shape = slide.shapes.add_shape(
+                    MSO_SHAPE.RECTANGLE,
+                    Inches(validated_left), Inches(validated_top),
+                    Inches(validated_width), Inches(validated_height)
+                )
+
+                # Parse and apply background color
+                if background_color.startswith("#"):
+                    bg_hex = background_color[1:]
+                else:
+                    bg_hex = background_color
+
+                try:
+                    r, g, b = int(bg_hex[0:2], 16), int(bg_hex[2:4], 16), int(bg_hex[4:6], 16)
+                    shape.fill.solid()
+                    shape.fill.fore_color.rgb = RGBColor(r, g, b)
+                except:
+                    # Fallback to light gray if color parsing fails
+                    shape.fill.solid()
+                    shape.fill.fore_color.rgb = RGBColor(224, 224, 224)
+
+                # Add border
+                shape.line.color.rgb = RGBColor(150, 150, 150)
+                shape.line.width = Pt(1)
+                shape.line.dash_style = 2  # Dashed line
+
+                # Add label text
+                text_frame = shape.text_frame
+                text_frame.clear()
+                p = text_frame.paragraphs[0]
+                p.text = label
+                p.alignment = PP_ALIGN.CENTER
+
+                # Parse and apply text color
+                if text_color.startswith("#"):
+                    txt_hex = text_color[1:]
+                else:
+                    txt_hex = text_color
+
+                try:
+                    r, g, b = int(txt_hex[0:2], 16), int(txt_hex[2:4], 16), int(txt_hex[4:6], 16)
+                    p.font.color.rgb = RGBColor(r, g, b)
+                except:
+                    # Fallback to dark gray if color parsing fails
+                    p.font.color.rgb = RGBColor(102, 102, 102)
+
+                p.font.size = Pt(14)
+                p.font.italic = True
+
+                # Center text vertically
+                text_frame.vertical_anchor = 1  # MSO_ANCHOR.MIDDLE
+
+                # Update in VFS if enabled
+                manager.update(presentation)
+
+                # Report if position was adjusted
+                position_note = ""
+                if (validated_left != left or validated_top != top or
+                    validated_width != width or validated_height != height):
+                    position_note = f" (position adjusted to fit: {validated_left:.1f}, {validated_top:.1f}, {validated_width:.1f}x{validated_height:.1f})"
+
+                return f"Added image placeholder '{label}' to slide {slide_index}{position_note}"
+            except Exception as e:
+                return f"Error adding image placeholder: {str(e)}"
+
+        return await asyncio.get_event_loop().run_in_executor(None, _add_placeholder)
+
     # Return the tools for external access
     return {
         'pptx_add_image_slide': pptx_add_image_slide,
@@ -809,5 +936,6 @@ def register_image_tools(mcp, manager):
         'pptx_add_image_gallery': pptx_add_image_gallery,
         'pptx_add_image_with_caption': pptx_add_image_with_caption,
         'pptx_add_logo': pptx_add_logo,
-        'pptx_replace_image': pptx_replace_image
+        'pptx_replace_image': pptx_replace_image,
+        'pptx_add_image_placeholder': pptx_add_image_placeholder,
     }

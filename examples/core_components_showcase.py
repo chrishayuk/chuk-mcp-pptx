@@ -24,7 +24,7 @@ from chuk_mcp_pptx.components.core import (
     TextBox, BulletList,
     Table
 )
-from chuk_mcp_pptx.layout import Container, Grid, Stack
+from chuk_mcp_pptx.components.core import Container, Grid, Stack
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 
 

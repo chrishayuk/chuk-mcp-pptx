@@ -9,7 +9,7 @@ Provides:
 - Responsive layout patterns
 """
 
-from .components import Container, Grid, Stack, Spacer, Divider
+from ..components.core import Container, Grid, Stack, Spacer, Divider
 from .helpers import (
     SLIDE_WIDTH,
     SLIDE_HEIGHT,

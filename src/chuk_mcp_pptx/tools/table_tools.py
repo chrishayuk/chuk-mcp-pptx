@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/tools/table_tools.py
 """
 Table Tools for PowerPoint MCP Server
 
@@ -393,12 +394,11 @@ def register_table_tools(mcp, manager):
                 if bold is not None:
                     paragraph.font.bold = bold
                 if color:
-                    if color.startswith("#"):
-                        color = color[1:]
+                    c_color = color[1:] if color.startswith("#") else color
                     try:
-                        r = int(color[0:2], 16)
-                        g = int(color[2:4], 16)
-                        b = int(color[4:6], 16)
+                        r = int(c_color[0:2], 16)
+                        g = int(c_color[2:4], 16)
+                        b = int(c_color[4:6], 16)
                         paragraph.font.color.rgb = RGBColor(r, g, b)
                     except:
                         pass
@@ -478,12 +478,11 @@ def register_table_tools(mcp, manager):
                             paragraph.font.bold = True
                     
                     if header_color:
-                        if header_color.startswith("#"):
-                            header_color = header_color[1:]
+                        h_color = header_color[1:] if header_color.startswith("#") else header_color
                         try:
-                            r = int(header_color[0:2], 16)
-                            g = int(header_color[2:4], 16)
-                            b = int(header_color[4:6], 16)
+                            r = int(h_color[0:2], 16)
+                            g = int(h_color[2:4], 16)
+                            b = int(h_color[4:6], 16)
                             cell.fill.solid()
                             cell.fill.fore_color.rgb = RGBColor(r, g, b)
                         except:

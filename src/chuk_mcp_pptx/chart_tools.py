@@ -15,6 +15,8 @@ def register_chart_tools(mcp, manager):
 
     from .utilities.chart_utils import add_chart, add_pie_chart, add_scatter_chart
     from .layout.helpers import validate_position, get_safe_content_area
+    from .tokens.colors import PALETTE
+    import json
     
     @mcp.tool
     async def pptx_add_chart(
@@ -437,6 +439,198 @@ def register_chart_tools(mcp, manager):
                 return f"Error adding {chart_type} chart: {str(e)}"
         
         return await asyncio.get_event_loop().run_in_executor(None, _add_unified_chart)
-    
-    # Return the tool for external access
-    return {'pptx_add_chart': pptx_add_chart}
+
+    @mcp.tool
+    async def pptx_get_chart_style(style_preset: str = "corporate") -> str:
+        """
+        Get a pre-defined color palette for charts based on a style preset.
+
+        Returns a color palette from the design token system that can be used
+        with the pptx_add_chart tool's options.colors parameter.
+
+        Available style presets:
+        - "corporate": Professional blues and grays for business presentations
+        - "vibrant": Bold, energetic colors for creative presentations
+        - "pastel": Soft, muted colors for gentle emphasis
+        - "monochrome_blue": Shades of blue for focused data
+        - "monochrome_green": Shades of green for growth/positive metrics
+        - "earthy": Natural, warm tones (browns, greens, oranges)
+        - "cool": Blues, cyans, and teals for calm data
+        - "warm": Reds, oranges, and yellows for energy
+        - "rainbow": Full spectrum for diverse categories
+        - "status": Traffic light colors (green/yellow/red) for KPIs
+
+        Args:
+            style_preset: Name of the style preset to use
+
+        Returns:
+            JSON with color array that can be used with pptx_add_chart
+
+        Example:
+            style = await pptx_get_chart_style("corporate")
+            # Returns: {"colors": ["#3b82f6", "#64748b", "#10b981", ...]}
+
+            # Use with pptx_add_chart:
+            await pptx_add_chart(
+                slide_index=0,
+                chart_type="column",
+                data={"categories": [...], "series": {...}},
+                options=json.loads(style)
+            )
+        """
+        # Define style presets using colors from the token system
+        style_presets = {
+            "corporate": {
+                "colors": [
+                    PALETTE["blue"][600],      # Professional blue
+                    PALETTE["slate"][600],     # Neutral gray
+                    PALETTE["emerald"][600],   # Success green
+                    PALETTE["amber"][600],     # Warning amber
+                    PALETTE["indigo"][600],    # Deep blue
+                    PALETTE["zinc"][500],      # Medium gray
+                    PALETTE["sky"][600],       # Light blue
+                    PALETTE["teal"][600],      # Teal accent
+                ],
+                "description": "Professional blues and grays for business presentations"
+            },
+
+            "vibrant": {
+                "colors": [
+                    PALETTE["blue"][500],      # Bright blue
+                    PALETTE["pink"][500],      # Hot pink
+                    PALETTE["green"][500],     # Vivid green
+                    PALETTE["orange"][500],    # Bright orange
+                    PALETTE["purple"][500],    # Rich purple
+                    PALETTE["cyan"][500],      # Electric cyan
+                    PALETTE["rose"][500],      # Rose red
+                    PALETTE["lime"][500],      # Lime green
+                ],
+                "description": "Bold, energetic colors for creative presentations"
+            },
+
+            "pastel": {
+                "colors": [
+                    PALETTE["blue"][200],      # Soft blue
+                    PALETTE["pink"][200],      # Soft pink
+                    PALETTE["green"][200],     # Soft green
+                    PALETTE["purple"][200],    # Soft purple
+                    PALETTE["amber"][200],     # Soft amber
+                    PALETTE["cyan"][200],      # Soft cyan
+                    PALETTE["rose"][200],      # Soft rose
+                    PALETTE["lime"][200],      # Soft lime
+                ],
+                "description": "Soft, muted colors for gentle emphasis"
+            },
+
+            "monochrome_blue": {
+                "colors": [
+                    PALETTE["blue"][900],      # Darkest
+                    PALETTE["blue"][700],
+                    PALETTE["blue"][600],
+                    PALETTE["blue"][500],
+                    PALETTE["blue"][400],
+                    PALETTE["blue"][300],
+                    PALETTE["blue"][200],      # Lightest
+                ],
+                "description": "Shades of blue for focused data visualization"
+            },
+
+            "monochrome_green": {
+                "colors": [
+                    PALETTE["green"][900],     # Darkest
+                    PALETTE["green"][700],
+                    PALETTE["green"][600],
+                    PALETTE["green"][500],
+                    PALETTE["green"][400],
+                    PALETTE["green"][300],
+                    PALETTE["green"][200],     # Lightest
+                ],
+                "description": "Shades of green for growth and positive metrics"
+            },
+
+            "earthy": {
+                "colors": [
+                    PALETTE["amber"][700],     # Deep amber/brown
+                    PALETTE["orange"][600],    # Warm orange
+                    PALETTE["lime"][700],      # Olive green
+                    PALETTE["emerald"][700],   # Forest green
+                    PALETTE["amber"][500],     # Golden
+                    PALETTE["orange"][800],    # Dark orange
+                    PALETTE["green"][800],     # Dark green
+                ],
+                "description": "Natural, warm tones for organic data"
+            },
+
+            "cool": {
+                "colors": [
+                    PALETTE["blue"][600],      # Cool blue
+                    PALETTE["cyan"][600],      # Cyan
+                    PALETTE["teal"][600],      # Teal
+                    PALETTE["sky"][600],       # Sky blue
+                    PALETTE["indigo"][600],    # Indigo
+                    PALETTE["blue"][400],      # Light blue
+                    PALETTE["cyan"][400],      # Light cyan
+                ],
+                "description": "Blues, cyans, and teals for calm, professional data"
+            },
+
+            "warm": {
+                "colors": [
+                    PALETTE["red"][600],       # Red
+                    PALETTE["orange"][600],    # Orange
+                    PALETTE["amber"][600],     # Amber
+                    PALETTE["yellow"][600],    # Yellow
+                    PALETTE["rose"][600],      # Rose
+                    PALETTE["pink"][600],      # Pink
+                    PALETTE["orange"][400],    # Light orange
+                ],
+                "description": "Reds, oranges, and yellows for energetic data"
+            },
+
+            "rainbow": {
+                "colors": [
+                    PALETTE["red"][500],       # Red
+                    PALETTE["orange"][500],    # Orange
+                    PALETTE["yellow"][500],    # Yellow
+                    PALETTE["green"][500],     # Green
+                    PALETTE["blue"][500],      # Blue
+                    PALETTE["indigo"][500],    # Indigo
+                    PALETTE["violet"][500],    # Violet
+                    PALETTE["pink"][500],      # Pink
+                ],
+                "description": "Full spectrum for diverse categories"
+            },
+
+            "status": {
+                "colors": [
+                    PALETTE["green"][600],     # Success/Good
+                    PALETTE["amber"][600],     # Warning/Caution
+                    PALETTE["red"][600],       # Error/Critical
+                    PALETTE["blue"][600],      # Info/Neutral
+                    PALETTE["emerald"][500],   # Positive
+                    PALETTE["orange"][600],    # Attention
+                ],
+                "description": "Traffic light colors for KPIs and status indicators"
+            }
+        }
+
+        if style_preset not in style_presets:
+            available = ", ".join(style_presets.keys())
+            return json.dumps({
+                "error": f"Invalid style_preset '{style_preset}'. Available: {available}"
+            }, indent=2)
+
+        preset = style_presets[style_preset]
+
+        return json.dumps({
+            "colors": preset["colors"],
+            "description": preset["description"],
+            "preset_name": style_preset,
+            "usage": "Pass this to pptx_add_chart's options parameter: options={'colors': <colors array>}"
+        }, indent=2)
+
+    # Return the tools for external access
+    return {
+        'pptx_add_chart': pptx_add_chart,
+        'pptx_get_chart_style': pptx_get_chart_style
+    }

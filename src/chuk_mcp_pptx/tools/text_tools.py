@@ -1,3 +1,4 @@
+# src/chuk_mcp_pptx/tools/text_tools.py
 """
 Text Tools for PowerPoint MCP Server
 
@@ -11,9 +12,14 @@ from ..utilities.text_utils import extract_presentation_text
 
 
 def register_text_tools(mcp, manager):
-    """Register all text tools with the MCP server."""
+    """Register all text tools with the MCP server.
+
+    Note: pptx_add_bullet_list is provided by component_tools.py as part of the
+    comprehensive design system. This module provides text utilities and slides.
+    """
 
     from ..components.core import TextBox, BulletList
+    from ..themes.theme_manager import ThemeManager
 
     @mcp.tool
     async def pptx_add_text_slide(
@@ -149,9 +155,8 @@ def register_text_tools(mcp, manager):
             # Get theme if using semantic colors
             theme_obj = None
             if color and '.' in color:
-                from ...themes.theme_manager import ThemeManager
                 theme_manager = ThemeManager()
-                theme_obj = theme_manager.get_theme()  # Get current theme
+                theme_obj = theme_manager.get_default_theme()
 
             # Create text box component
             text_comp = TextBox(
@@ -173,88 +178,12 @@ def register_text_tools(mcp, manager):
 
         return await asyncio.get_event_loop().run_in_executor(None, _add_text_box)
 
-    @mcp.tool
-    async def pptx_add_bullet_list(
-        slide_index: int,
-        items: list,
-        left: float = 1.0,
-        top: float = 2.0,
-        width: float = 8.0,
-        height: float = 4.0,
-        font_size: int = 16,
-        color: Optional[str] = None,
-        bullet_char: str = "•",
-        presentation: Optional[str] = None
-    ) -> str:
-        """
-        Add a bullet list to a slide.
-
-        Creates a formatted bullet list with custom bullet characters and styling.
-
-        Args:
-            slide_index: Index of the slide to add list to (0-based)
-            items: List of items to display
-            left: Left position in inches
-            top: Top position in inches
-            width: Width in inches
-            height: Height in inches
-            font_size: Font size in points
-            color: Text color (semantic like "foreground.DEFAULT" or hex like "#000000")
-            bullet_char: Character to use for bullets (e.g., "•", "→", "✓")
-            presentation: Name of presentation (uses current if not specified)
-
-        Returns:
-            Success message confirming bullet list addition
-
-        Example:
-            await pptx_add_bullet_list(
-                slide_index=1,
-                items=["Increase revenue", "Reduce costs", "Improve quality"],
-                font_size=18,
-                color="primary.DEFAULT",
-                bullet_char="→"
-            )
-        """
-        def _add_bullet_list():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
-
-            if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
-
-            slide = prs.slides[slide_index]
-
-            # Get theme if using semantic colors
-            theme_obj = None
-            if color and '.' in color:
-                from ...themes.theme_manager import ThemeManager
-                theme_manager = ThemeManager()
-                theme_obj = theme_manager.get_theme()  # Get current theme
-
-            # Create bullet list component
-            bullets = BulletList(
-                items=items,
-                font_size=font_size,
-                color=color,
-                bullet_char=bullet_char,
-                theme=theme_obj.__dict__ if theme_obj else None
-            )
-
-            # Render to slide
-            bullets.render(slide, left=left, top=top, width=width, height=height)
-
-            # Update in VFS if enabled
-            manager.update(presentation)
-
-            return f"Added bullet list with {len(items)} items to slide {slide_index}"
-
-        return await asyncio.get_event_loop().run_in_executor(None, _add_bullet_list)
+    # pptx_add_bullet_list removed - now in component_tools.py as part of design system
 
     # Return the tools for external access
+    # Note: pptx_add_bullet_list is provided by component_tools.py
     return {
         'pptx_add_text_slide': pptx_add_text_slide,
         'pptx_extract_all_text': pptx_extract_all_text,
         'pptx_add_text_box': pptx_add_text_box,
-        'pptx_add_bullet_list': pptx_add_bullet_list,
     }

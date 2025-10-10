@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from pptx import Presentation
 from pptx.util import Inches
 
-from chuk_mcp_pptx.layout import Container, Grid, Stack, Spacer, Divider
+from chuk_mcp_pptx.components.core import Container, Grid, Stack, Spacer, Divider
 from chuk_mcp_pptx.components.core.card import Card, MetricCard
 from chuk_mcp_pptx.components.core.badge import Badge
 from chuk_mcp_pptx.components.core.button import Button

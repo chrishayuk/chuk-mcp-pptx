@@ -198,12 +198,13 @@ def get_logo_position(
         "bottom-center": ((slide_width - size) / 2, slide_height - size - margin),
         "bottom-right": (slide_width - size - margin, slide_height - size - margin)
     }
-    
+
+    # Default to top-right for invalid positions
     left, top = positions.get(position, positions["top-right"])
-    
+
     # Validate position
     left, top, width, height = validate_position(left, top, size, size, aspect_ratio)
-    
+
     return {
         'left': left,
         'top': top,
