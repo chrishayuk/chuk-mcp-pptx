@@ -6,11 +6,20 @@ Provides access to colors, typography, spacing, and other design tokens.
 
 import asyncio
 import json
-from typing import Optional
-
 from ..tokens.colors import PALETTE, get_semantic_tokens
 from ..tokens.typography import FONT_FAMILIES, FONT_SIZES, FONT_WEIGHTS, LINE_HEIGHTS, get_text_style
 from ..tokens.spacing import SPACING, PADDING, MARGINS, RADIUS
+
+from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
+from ..constants import (
+    SlideLayoutIndex,
+    ErrorMessages,
+    SuccessMessages,
+    ShapeType,
+    Spacing,
+    Defaults,
+)
+
 
 
 def register_token_tools(mcp, manager):

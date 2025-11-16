@@ -11,6 +11,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING
 
 
 class WhatsAppBubble(Component):
@@ -152,16 +153,16 @@ class WhatsAppBubble(Component):
         if self.sender and self.variant == "received":
             current_p.text = self.sender
             current_p.alignment = PP_ALIGN.LEFT
-            current_p.font.size = Pt(13)  # Larger sender name
+            current_p.font.size = Pt(FONT_SIZES["sm"])  # 12pt (was 13pt, using closest design token)
             current_p.font.bold = True
             current_p.font.color.rgb = RGBColor(6, 124, 98)  # Stronger WhatsApp teal
-            current_p.space_after = Pt(4)  # More space after sender
+            current_p.space_after = Pt(PARAGRAPH_SPACING["xs"])  # More space after sender
             current_p = text_frame.add_paragraph()
 
         # Message text
         current_p.text = self.text
         current_p.alignment = PP_ALIGN.LEFT
-        current_p.font.size = Pt(15)  # Larger font
+        current_p.font.size = Pt(FONT_SIZES["lg"])  # 16pt (was 15pt, using closest design token)
         current_p.font.name = "Helvetica Neue"  # WhatsApp font
         current_p.font.color.rgb = self._get_text_color()
         current_p.line_spacing = 1.3  # Better line spacing
@@ -189,7 +190,7 @@ class WhatsAppBubble(Component):
                 ts_frame.margin_right = Inches(0.05)
                 ts_p = ts_frame.paragraphs[0]
                 ts_p.alignment = PP_ALIGN.RIGHT
-                ts_p.font.size = Pt(9)
+                ts_p.font.size = Pt(FONT_SIZES["xs"])  # 10pt (was 9pt, using closest design token)
                 ts_p.font.color.rgb = RGBColor(150, 150, 150)  # Gray
                 shapes.append(ts_box)
 

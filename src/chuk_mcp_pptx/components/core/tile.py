@@ -13,7 +13,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import get_text_style
+from ...tokens.typography import get_text_style, FONT_SIZES, PARAGRAPH_SPACING
 
 
 class Tile(Component):
@@ -221,7 +221,7 @@ class Tile(Component):
         if self.text:
             if has_content:
                 current_p = text_frame.add_paragraph()
-                current_p.space_before = Pt(4)
+                current_p.space_before = Pt(PARAGRAPH_SPACING["xs"])
 
             current_p.text = self.text
             current_p.alignment = PP_ALIGN.CENTER
@@ -243,11 +243,11 @@ class Tile(Component):
         if self.label:
             if has_content:
                 current_p = text_frame.add_paragraph()
-                current_p.space_before = Pt(4)
+                current_p.space_before = Pt(PARAGRAPH_SPACING["xs"])
 
             current_p.text = self.label
             current_p.alignment = PP_ALIGN.CENTER
-            current_p.font.size = Pt(10)
+            current_p.font.size = Pt(FONT_SIZES["xs"])
             current_p.font.color.rgb = self._get_label_color()
 
         return tile

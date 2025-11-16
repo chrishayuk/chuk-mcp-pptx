@@ -12,6 +12,7 @@ from pptx.enum.text import PP_ALIGN
 from ...composition import ComposableComponent, SubComponent, CardTitle, CardDescription
 from ...variants import create_variants
 from ...registry import component, ComponentCategory, prop, example
+from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING
 
 
 # Alert-specific variants
@@ -233,7 +234,7 @@ class Alert(ComposableComponent):
                 p = text_frame.paragraphs[0]
                 p.text = f"{icon}  "
                 p.alignment = PP_ALIGN.LEFT  # Explicitly left-align icon
-                p.font.size = Pt(14)
+                p.font.size = Pt(FONT_SIZES["base"])
                 p.font.color.rgb = self.get_color(self.variant_props.get("fg_color"))
 
             for child in self._children:
@@ -293,7 +294,7 @@ class AlertDescription(SubComponent):
         p = text_frame.add_paragraph()
         p.text = self.text
         p.alignment = PP_ALIGN.LEFT  # Ensure left alignment
-        p.space_before = Pt(6)
+        p.space_before = Pt(PARAGRAPH_SPACING["sm"])
         style = self.get_text_style("body-sm")
         p.font.name = style["font_family"]
         p.font.size = Pt(style["font_size"])

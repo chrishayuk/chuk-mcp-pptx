@@ -4,16 +4,26 @@ Inspection and Layout Tools for PowerPoint MCP Server
 Provides tools for inspecting slide contents, analyzing layouts,
 and making intelligent adjustments to fix positioning issues.
 """
+from __future__ import annotations
+
 import asyncio
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Any
 from pptx.util import Inches
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pptx.enum.text import PP_ALIGN
 
+from .models import ErrorResponse, SuccessResponse
+from .constants import (
+    ErrorMessages,
+    SuccessMessages,
+    ShapeType,
+    Spacing,
+)
+
 
 def register_inspection_tools(mcp, manager):
     """Register slide inspection and layout adjustment tools."""
-    
+
     from .layout.helpers import (
         validate_position, get_safe_content_area,
         SLIDE_WIDTH, SLIDE_HEIGHT, MARGIN_TOP
@@ -24,7 +34,7 @@ def register_inspection_tools(mcp, manager):
         slide_index: int,
         include_measurements: bool = True,
         check_overlaps: bool = True,
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Inspect and describe the contents of a slide.
@@ -347,7 +357,7 @@ def register_inspection_tools(mcp, manager):
         fix_bounds: bool = True,
         fix_spacing: bool = True,
         maintain_relative_positions: bool = True,
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Automatically fix layout issues on a slide.
@@ -600,7 +610,7 @@ def register_inspection_tools(mcp, manager):
     
     @mcp.tool
     async def pptx_analyze_presentation_layout(
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Analyze the entire presentation for layout consistency and issues.

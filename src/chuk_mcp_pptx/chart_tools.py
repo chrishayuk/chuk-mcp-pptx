@@ -4,10 +4,19 @@ Chart Tools for PowerPoint MCP Server
 Provides a unified async MCP tool for creating all chart types in presentations.
 Optimized for AI/LLM tool invocation with clear parameter structure.
 """
-import asyncio
-from typing import Dict, List, Optional, Union, Any
+from __future__ import annotations
+
+from typing import Any
 from pptx.util import Inches
 from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+from .models import ErrorResponse, ChartResponse
+from .constants import (
+    ErrorMessages,
+    SuccessMessages,
+    ShapeType,
+    Defaults,
+)
 
 
 def register_chart_tools(mcp, manager):
@@ -28,15 +37,25 @@ def register_chart_tools(mcp, manager):
         top: float = 2.0,
         width: float = 8.0,
         height: float = 4.5,
-        options: Optional[dict] = None,
-        presentation: Optional[str] = None
+        options: dict | None = None,
+        presentation: str | None = None
     ) -> str:
         """
-        Add any type of chart to a slide with a unified interface.
-        
-        This single tool handles all chart types, making it easier for AI/LLM invocation.
-        The data structure automatically adapts based on the chart_type.
-        
+        Create and add a chart (bar, line, pie, etc.) to a presentation slide.
+
+        USE THIS TOOL when you need to add visual data charts to slides.
+        This is the PRIMARY tool for creating charts - use it for all chart types.
+
+        Common use cases:
+        - "add a bar chart showing sales data" → use this tool
+        - "create a pie chart for market share" → use this tool
+        - "show revenue trends in a line chart" → use this tool
+
+        ⚠️  BEST PRACTICES:
+        - Multiple charts: Use SEPARATE SLIDES for clarity (1 chart/slide ideal, 2 max)
+        - Chart titles: Keep concise (under 45 characters) to prevent wrapping/overlap
+        - THREE+ charts = create separate slides to avoid overlap/clutter
+
         Args:
             slide_index: Index of the slide to add chart to (0-based)
             
@@ -172,24 +191,61 @@ def register_chart_tools(mcp, manager):
                 title="Price vs Sales Correlation"
             )
         """
-        def _add_unified_chart():
-            nonlocal options
-            
-            prs = manager.get(presentation)
-            if not prs:
+        async def _add_unified_chart():
+            nonlocal options, data
+
+            # Convert parameters to correct types (MCP protocol may send as strings)
+            try:
+                idx = int(slide_index)
+            except (ValueError, TypeError):
+                return f"Error: slide_index must be a number, got: {slide_index}"
+
+            try:
+                # Store original values for comparison
+                original_left = float(left)
+                original_top = float(top)
+                original_width = float(width)
+                original_height = float(height)
+
+                # Use these for validation
+                validated_left = original_left
+                validated_top = original_top
+                validated_width = original_width
+                validated_height = original_height
+            except (ValueError, TypeError) as e:
+                return f"Error: Position/size parameters must be numbers. Got left={left}, top={top}, width={width}, height={height}"
+
+            # Parse data if it's a JSON string
+            if isinstance(data, str):
+                try:
+                    data = json.loads(data)
+                except json.JSONDecodeError as e:
+                    return f"Error: data parameter must be a valid JSON object. Got parse error: {e}"
+
+            # Parse options if it's a JSON string
+            if isinstance(options, str):
+                try:
+                    options = json.loads(options)
+                except json.JSONDecodeError:
+                    options = {}
+
+            result = await manager.get(presentation)
+            if not result:
                 return "Error: No presentation found. Create one first with pptx_create()"
-            
-            if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range. Presentation has {len(prs.slides)} slides."
-            
-            slide = prs.slides[slide_index]
+
+            prs, metadata = result
+
+            if idx >= len(prs.slides) or idx < 0:
+                return f"Error: Slide index {idx} out of range. Presentation has {len(prs.slides)} slides (0-{len(prs.slides)-1})."
+
+            slide = prs.slides[idx]
             
             # Get safe content area
             safe_area = get_safe_content_area(has_title=bool(slide.shapes.title))
-            
-            # Validate and adjust position to fit within slide
+
+            # Validate and adjust position to fit within slide (use already converted float values)
             validated_left, validated_top, validated_width, validated_height = validate_position(
-                left, top, width, height
+                validated_left, validated_top, validated_width, validated_height
             )
             
             # Further adjust if position is too close to title area
@@ -229,7 +285,25 @@ def register_chart_tools(mcp, manager):
             # Remove overlapping placeholders
             for placeholder in placeholders_to_remove:
                 slide.shapes._spTree.remove(placeholder.element)
-            
+
+            # Check for potential chart overlap with existing charts
+            overlap_warning = ""
+            chart_right = validated_left + validated_width
+            chart_bottom = validated_top + validated_height
+
+            for shape in slide.shapes:
+                if hasattr(shape, 'has_chart') and shape.has_chart:
+                    existing_left = shape.left.inches if hasattr(shape.left, 'inches') else 0
+                    existing_top = shape.top.inches if hasattr(shape.top, 'inches') else 0
+                    existing_right = existing_left + (shape.width.inches if hasattr(shape.width, 'inches') else 0)
+                    existing_bottom = existing_top + (shape.height.inches if hasattr(shape.height, 'inches') else 0)
+
+                    # Check for overlap
+                    if not (existing_right <= validated_left or existing_left >= chart_right or
+                           existing_bottom <= validated_top or existing_top >= chart_bottom):
+                        overlap_warning = " ⚠️  Warning: Chart may overlap with existing chart on this slide. Consider using separate slides for clarity."
+                        break
+
             try:
                 # Validate chart type
                 valid_types = [
@@ -419,26 +493,80 @@ def register_chart_tools(mcp, manager):
                 
                 else:
                     return f"Error: Unsupported chart_type '{chart_type}'"
-                
+
+                # Apply theme-aware colors to chart text elements
+                if metadata and metadata.theme:
+                    from .themes.theme_manager import ThemeManager
+                    theme_manager = ThemeManager()
+                    theme_obj = theme_manager.get_theme(metadata.theme)
+                    if theme_obj:
+                        # Only apply background, don't override chart text colors
+                        theme_obj.apply_to_slide(slide, override_text_colors=False)
+
+                        # Apply theme foreground color to chart text elements
+                        text_color = theme_obj.get_color("foreground.DEFAULT")
+
+                        # Get chart object from chart_shape
+                        if hasattr(chart_shape, 'chart'):
+                            chart = chart_shape.chart
+
+                            # Style chart title
+                            if chart.has_title:
+                                try:
+                                    for para in chart.chart_title.text_frame.paragraphs:
+                                        para.font.color.rgb = text_color
+                                except:
+                                    pass
+
+                            # Style axis labels
+                            try:
+                                if hasattr(chart, 'value_axis') and hasattr(chart.value_axis, 'tick_labels'):
+                                    chart.value_axis.tick_labels.font.color.rgb = text_color
+                            except:
+                                pass
+
+                            try:
+                                if hasattr(chart, 'category_axis') and hasattr(chart.category_axis, 'tick_labels'):
+                                    chart.category_axis.tick_labels.font.color.rgb = text_color
+                            except:
+                                pass
+
+                            # Style legend
+                            try:
+                                if chart.has_legend and hasattr(chart.legend, 'font'):
+                                    chart.legend.font.color.rgb = text_color
+                            except:
+                                pass
+
+                            # Style data labels if present
+                            try:
+                                for series in chart.series:
+                                    if hasattr(series, 'has_data_labels') and series.has_data_labels:
+                                        for point in series.points:
+                                            if hasattr(point, 'data_label'):
+                                                point.data_label.font.color.rgb = text_color
+                            except:
+                                pass
+
                 # Update in VFS if enabled
-                manager.update(presentation)
-                
+                await manager.update(presentation)
+
                 # Report if position was adjusted
                 position_note = ""
-                if (validated_left != left or validated_top != top or 
-                    validated_width != width or validated_height != height):
+                if (validated_left != original_left or validated_top != original_top or
+                    validated_width != original_width or validated_height != original_height):
                     position_note = f" (position adjusted to fit: {validated_left:.1f}, {validated_top:.1f}, {validated_width:.1f}x{validated_height:.1f})"
-                
-                return f"Added {chart_type} chart to slide {slide_index}{position_note}"
-                
+
+                return f"Added {chart_type} chart to slide {idx}{position_note}{overlap_warning}"
+
             except KeyError as e:
                 return f"Error: Missing required data field: {str(e)}. Check the data structure for {chart_type} charts."
             except ValueError as e:
                 return f"Error: Invalid data values: {str(e)}"
             except Exception as e:
                 return f"Error adding {chart_type} chart: {str(e)}"
-        
-        return await asyncio.get_event_loop().run_in_executor(None, _add_unified_chart)
+
+        return await _add_unified_chart()
 
     @mcp.tool
     async def pptx_get_chart_style(style_preset: str = "corporate") -> str:

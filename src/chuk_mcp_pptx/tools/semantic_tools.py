@@ -12,10 +12,20 @@ These tools provide:
 Philosophy: LLMs should describe WHAT they want, not HOW to position it.
 """
 
-import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Any, Optional
 
 from ..themes.theme_manager import ThemeManager
+
+from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
+from ..constants import (
+    SlideLayoutIndex,
+    ErrorMessages,
+    SuccessMessages,
+    ShapeType,
+    Spacing,
+    Defaults,
+)
+
 
 
 def register_semantic_tools(mcp, manager):
@@ -54,7 +64,7 @@ def register_semantic_tools(mcp, manager):
     async def pptx_create_quick_deck(
         name: str,
         title: str,
-        subtitle: Optional[str] = None,
+        subtitle: str | None = None,
         theme: str = "dark-violet"
     ) -> str:
         """
@@ -80,33 +90,33 @@ def register_semantic_tools(mcp, manager):
                 theme="dark-violet"
             )
         """
-        def _create():
-            # Create presentation
-            manager.create(name)
-            prs = manager.get(name)
+        # Create presentation with theme in metadata
+        metadata = await manager.create(name, theme=theme)
+        result = await manager.get(name)
+        if not result:
+            raise ValueError(f"Failed to get presentation '{name}'")
+        prs, metadata = result
 
-            # Add title slide
-            slide_layout = prs.slide_layouts[0]
-            slide = prs.slides.add_slide(slide_layout)
-            slide.shapes.title.text = title
-            if subtitle and len(slide.placeholders) > 1:
-                slide.placeholders[1].text = subtitle
+        # Add title slide
+        slide_layout = prs.slide_layouts[SlideLayoutIndex.TITLE]
+        slide = prs.slides.add_slide(slide_layout)
+        slide.shapes.title.text = title
+        if subtitle and len(slide.placeholders) > 1:
+            slide.placeholders[1].text = subtitle
 
-            # Apply theme
-            theme_obj = theme_manager.get_theme(theme)
-            if theme_obj:
-                theme_obj.apply_to_slide(slide)
+        # Apply theme to title slide
+        theme_obj = theme_manager.get_theme(theme)
+        if theme_obj:
+            theme_obj.apply_to_slide(slide)
 
-            manager.update(name)
-            return f"Created '{name}' with title slide (theme: {theme})"
-
-        return await asyncio.get_event_loop().run_in_executor(None, _create)
+        await manager.update(name)
+        return f"Created '{name}' with title slide (theme: {theme})"
 
     @mcp.tool
     async def pptx_add_metrics_dashboard(
         title: str,
-        metrics: List[Dict[str, str]],
-        theme: Optional[str] = None,
+        metrics: list[dict[str, str]],
+        theme: str | None = None,
         layout: str = "grid"
     ) -> str:
         """
@@ -138,43 +148,41 @@ def register_semantic_tools(mcp, manager):
                 layout="grid"
             )
         """
-        def _add_dashboard():
-            from ..slide_templates import MetricsDashboard
+        from ..slide_templates import MetricsDashboard
 
-            prs = manager.get_current()
-            if not prs:
-                raise ValueError("No active presentation")
+        result = await manager.get()
+        if not result:
+            raise ValueError("No active presentation")
+        prs, metadata = result
 
-            # Get theme
-            theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
-            theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
+        # Get theme
+        theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
+        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
 
-            # Use template to create slide
-            template = MetricsDashboard(
-                title=title,
-                metrics=metrics,
-                layout=layout,
-                theme=theme_dict
-            )
-            slide_idx = template.render(prs)
+        # Use template to create slide
+        template = MetricsDashboard(
+            title=title,
+            metrics=metrics,
+            layout=layout,
+            theme=theme_dict
+        )
+        slide_idx = template.render(prs)
 
-            # Apply theme to slide
-            if theme_obj:
-                slide = prs.slides[slide_idx]
-                theme_obj.apply_to_slide(slide)
+        # Apply theme background only (components already have themed colors)
+        if theme_obj:
+            slide = prs.slides[slide_idx]
+            theme_obj.apply_to_slide(slide, override_text_colors=False)
 
-            manager.update()
-            return f"Added metrics dashboard with {len(metrics)} metrics at slide {slide_idx}"
-
-        return await asyncio.get_event_loop().run_in_executor(None, _add_dashboard)
+        await manager.update()
+        return f"Added metrics dashboard with {len(metrics)} metrics at slide {slide_idx}"
 
     @mcp.tool
     async def pptx_add_content_grid(
         title: str,
-        items: List[Dict[str, str]],
+        items: list[dict[str, str]],
         item_type: str = "card",
         columns: int = 2,
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a grid of content items with automatic layout.
@@ -207,43 +215,41 @@ def register_semantic_tools(mcp, manager):
                 columns=2
             )
         """
-        def _add_grid():
-            from ..slide_templates import ContentGridSlide
+        from ..slide_templates import ContentGridSlide
 
-            prs = manager.get_current()
-            if not prs:
-                raise ValueError("No active presentation")
+        result = await manager.get()
+        if not result:
+            raise ValueError("No active presentation")
+        prs, metadata = result
 
-            # Get theme
-            theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
-            theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
+        # Get theme
+        theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
+        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
 
-            # Use template to create slide
-            template = ContentGridSlide(
-                title=title,
-                items=items,
-                item_type=item_type,
-                columns=columns,
-                theme=theme_dict
-            )
-            slide_idx = template.render(prs)
+        # Use template to create slide
+        template = ContentGridSlide(
+            title=title,
+            items=items,
+            item_type=item_type,
+            columns=columns,
+            theme=theme_dict
+        )
+        slide_idx = template.render(prs)
 
-            # Apply theme
-            if theme_obj:
-                slide = prs.slides[slide_idx]
-                theme_obj.apply_to_slide(slide)
+        # Apply theme background only (components already have themed colors)
+        if theme_obj:
+            slide = prs.slides[slide_idx]
+            theme_obj.apply_to_slide(slide, override_text_colors=False)
 
-            manager.update()
-            return f"Added content grid with {len(items)} {item_type}s in {columns} columns at slide {slide_idx}"
-
-        return await asyncio.get_event_loop().run_in_executor(None, _add_grid)
+        await manager.update()
+        return f"Added content grid with {len(items)} {item_type}s in {columns} columns at slide {slide_idx}"
 
     @mcp.tool
     async def pptx_add_timeline_slide(
         title: str,
-        events: List[Dict[str, str]],
+        events: list[dict[str, str]],
         orientation: str = "horizontal",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a timeline slide with automatic layout.
@@ -273,44 +279,42 @@ def register_semantic_tools(mcp, manager):
                 ]
             )
         """
-        def _add_timeline():
-            from ..slide_templates import TimelineSlide
+        from ..slide_templates import TimelineSlide
 
-            prs = manager.get_current()
-            if not prs:
-                raise ValueError("No active presentation")
+        result = await manager.get()
+        if not result:
+            raise ValueError("No active presentation")
+        prs, metadata = result
 
-            # Get theme
-            theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
-            theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
+        # Get theme
+        theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
+        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
 
-            # Use template to create slide
-            template = TimelineSlide(
-                title=title,
-                events=events,
-                orientation=orientation,
-                theme=theme_dict
-            )
-            slide_idx = template.render(prs)
+        # Use template to create slide
+        template = TimelineSlide(
+            title=title,
+            events=events,
+            orientation=orientation,
+            theme=theme_dict
+        )
+        slide_idx = template.render(prs)
 
-            # Apply theme
-            if theme_obj:
-                slide = prs.slides[slide_idx]
-                theme_obj.apply_to_slide(slide)
+        # Apply theme background only (components already have themed colors)
+        if theme_obj:
+            slide = prs.slides[slide_idx]
+            theme_obj.apply_to_slide(slide, override_text_colors=False)
 
-            manager.update()
-            return f"Added timeline slide with {len(events)} events at slide {slide_idx}"
-
-        return await asyncio.get_event_loop().run_in_executor(None, _add_timeline)
+        await manager.update()
+        return f"Added timeline slide with {len(events)} events at slide {slide_idx}"
 
     @mcp.tool
     async def pptx_add_comparison_slide(
         title: str,
         left_title: str,
-        left_items: List[str],
+        left_items: list[str],
         right_title: str,
-        right_items: List[str],
-        theme: Optional[str] = None
+        right_items: list[str],
+        theme: str | None = None
     ) -> str:
         """
         Add a two-column comparison slide.
@@ -340,41 +344,39 @@ def register_semantic_tools(mcp, manager):
                 right_items=["Quick deployment", "Proven reliability", "Lower initial cost", "Less customization"]
             )
         """
-        def _add_comparison():
-            from ..slide_templates import ComparisonSlide
+        from ..slide_templates import ComparisonSlide
 
-            prs = manager.get_current()
-            if not prs:
-                raise ValueError("No active presentation")
+        result = await manager.get()
+        if not result:
+            raise ValueError("No active presentation")
+        prs, metadata = result
 
-            # Get theme
-            theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
-            theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
+        # Get theme
+        theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
+        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
 
-            # Use template to create slide
-            template = ComparisonSlide(
-                title=title,
-                left_title=left_title,
-                left_items=left_items,
-                right_title=right_title,
-                right_items=right_items,
-                theme=theme_dict
-            )
-            slide_idx = template.render(prs)
+        # Use template to create slide
+        template = ComparisonSlide(
+            title=title,
+            left_title=left_title,
+            left_items=left_items,
+            right_title=right_title,
+            right_items=right_items,
+            theme=theme_dict
+        )
+        slide_idx = template.render(prs)
 
-            # Apply theme
-            if theme_obj:
-                slide = prs.slides[slide_idx]
-                theme_obj.apply_to_slide(slide)
+        # Apply theme background only (components already have themed colors)
+        if theme_obj:
+            slide = prs.slides[slide_idx]
+            theme_obj.apply_to_slide(slide, override_text_colors=False)
 
-            manager.update()
-            return f"Added comparison slide: {left_title} vs {right_title} at slide {slide_idx}"
-
-        return await asyncio.get_event_loop().run_in_executor(None, _add_comparison)
+        await manager.update()
+        return f"Added comparison slide: {left_title} vs {right_title} at slide {slide_idx}"
 
     @mcp.tool
     async def pptx_list_slide_templates(
-        category: Optional[str] = None
+        category: str | None = None
     ) -> str:
         """
         List all available slide templates.
@@ -396,13 +398,10 @@ def register_semantic_tools(mcp, manager):
             # List only dashboard templates
             dashboards = await pptx_list_slide_templates(category="dashboard")
         """
-        def _list_templates():
-            from ..slide_templates.registry import list_templates
-            import json
-            templates = list_templates(category)
-            return json.dumps(templates, indent=2)
-
-        return await asyncio.get_event_loop().run_in_executor(None, _list_templates)
+        from ..slide_templates.registry import list_templates
+        import json
+        templates = list_templates(category)
+        return json.dumps(templates, indent=2)
 
     @mcp.tool
     async def pptx_get_template_info(
@@ -424,15 +423,12 @@ def register_semantic_tools(mcp, manager):
             info = await pptx_get_template_info(template_name="MetricsDashboard")
             # Returns full metadata about the MetricsDashboard template
         """
-        def _get_info():
-            from ..slide_templates.registry import get_template_info
-            import json
-            info = get_template_info(template_name)
-            if info is None:
-                return json.dumps({"error": f"Template '{template_name}' not found"})
-            return json.dumps(info, indent=2)
-
-        return await asyncio.get_event_loop().run_in_executor(None, _get_info)
+        from ..slide_templates.registry import get_template_info
+        import json
+        info = get_template_info(template_name)
+        if info is None:
+            return json.dumps({"error": f"Template '{template_name}' not found"})
+        return json.dumps(info, indent=2)
 
     # Store tools for return
     tools.update({

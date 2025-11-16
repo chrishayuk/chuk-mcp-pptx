@@ -13,7 +13,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import get_text_style
+from ...tokens.typography import get_text_style, FONT_SIZES
 
 
 class Timeline(Component):
@@ -303,7 +303,7 @@ class Timeline(Component):
         p = text_frame.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         style = get_text_style("small")
-        p.font.size = Pt(10)  # Smaller for descriptions
+        p.font.size = Pt(FONT_SIZES["xs"])  # Smaller for descriptions
         p.font.color.rgb = self.get_color("muted.foreground")
 
         return desc_box

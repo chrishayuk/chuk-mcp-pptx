@@ -9,8 +9,7 @@ This module exposes the complete suite of shadcn-inspired components:
 - Data Components: Charts (via separate chart_tools.py)
 """
 
-import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Any, Optional
 from pptx.util import Inches
 
 # Import ALL core components
@@ -39,6 +38,17 @@ from ..components.core import (
 
 from ..themes.theme_manager import ThemeManager
 
+from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
+from ..constants import (
+    SlideLayoutIndex,
+    ErrorMessages,
+    SuccessMessages,
+    ShapeType,
+    Spacing,
+    Defaults,
+)
+
+
 
 def register_component_tools(mcp, manager):
     """
@@ -54,7 +64,7 @@ def register_component_tools(mcp, manager):
     tools = {}
     theme_manager = ThemeManager()
 
-    def get_theme_dict(theme_name: Optional[str] = None):
+    def get_theme_dict(theme_name: str | None = None):
         """Helper to get theme dictionary."""
         theme_obj = theme_manager.get_theme(theme_name) if theme_name else None
         if not theme_obj:
@@ -72,10 +82,10 @@ def register_component_tools(mcp, manager):
         left: float,
         top: float,
         variant: str = "info",
-        title: Optional[str] = None,
+        title: str | None = None,
         width: float = 4.0,
         height: float = 1.0,
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add an alert/notification component to a slide.
@@ -107,18 +117,31 @@ def register_component_tools(mcp, manager):
                 title="Maintenance Alert"
             )
         """
-        def _add_alert():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_alert():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             alert = Alert(description=message, variant=variant, title=title, theme=get_theme_dict(theme))
             alert.render(slide, left, top, width, height)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added {variant} alert to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_alert)
+        return await _add_alert()
 
     # ============================================================================
     # AVATAR COMPONENTS
@@ -132,7 +155,7 @@ def register_component_tools(mcp, manager):
         top: float,
         size: float = 0.5,
         variant: str = "circle",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add an avatar component to a slide.
@@ -160,28 +183,41 @@ def register_component_tools(mcp, manager):
                 variant="circle"
             )
         """
-        def _add_avatar():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_avatar():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             avatar = Avatar(text=initials, size=size, variant=variant, theme=get_theme_dict(theme))
             avatar.render(slide, left, top)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added avatar to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_avatar)
+        return await _add_avatar()
 
     @mcp.tool
     async def pptx_add_avatar_group(
         slide_index: int,
-        initials_list: List[str],
+        initials_list: list[str],
         left: float,
         top: float,
         size: float = 0.5,
         max_visible: int = 3,
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a group of overlapping avatars.
@@ -209,10 +245,14 @@ def register_component_tools(mcp, manager):
                 max_visible=3
             )
         """
-        def _add_avatar_group():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_avatar_group():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             # Convert initials list to members format
@@ -220,9 +260,18 @@ def register_component_tools(mcp, manager):
             group = AvatarGroup(members=members, size=size, max_display=max_visible, theme=get_theme_dict(theme))
             group.render(slide, left, top)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added avatar group with {len(initials_list)} avatars to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_avatar_group)
+        return await _add_avatar_group()
 
     # ============================================================================
     # BADGE COMPONENTS
@@ -235,7 +284,7 @@ def register_component_tools(mcp, manager):
         left: float,
         top: float,
         variant: str = "default",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a badge component to a slide.
@@ -262,18 +311,31 @@ def register_component_tools(mcp, manager):
                 variant="success"
             )
         """
-        def _add_badge():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_badge():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             badge = Badge(text=text, variant=variant, theme=get_theme_dict(theme))
             badge.render(slide, left, top)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added {variant} badge to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_badge)
+        return await _add_badge()
 
     # ============================================================================
     # BUTTON COMPONENTS
@@ -287,9 +349,9 @@ def register_component_tools(mcp, manager):
         top: float,
         variant: str = "default",
         size: str = "md",
-        width: Optional[float] = None,
-        height: Optional[float] = None,
-        theme: Optional[str] = None
+        width: float | None = None,
+        height: float | None = None,
+        theme: str | None = None
     ) -> str:
         """
         Add a button component to a slide.
@@ -320,18 +382,31 @@ def register_component_tools(mcp, manager):
                 size="lg"
             )
         """
-        def _add_button():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_button():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             button = Button(text=text, variant=variant, size=size, theme=get_theme_dict(theme))
             button.render(slide, left, top, width, height)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added {variant} button to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_button)
+        return await _add_button()
 
     # ============================================================================
     # CARD COMPONENTS
@@ -344,10 +419,10 @@ def register_component_tools(mcp, manager):
         top: float,
         width: float = 3.0,
         height: float = 2.0,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
+        title: str | None = None,
+        description: str | None = None,
         variant: str = "default",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a card container component to a slide.
@@ -378,10 +453,14 @@ def register_component_tools(mcp, manager):
                 variant="elevated"
             )
         """
-        def _add_card():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_card():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             card = Card(variant=variant, theme=get_theme_dict(theme))
@@ -391,9 +470,18 @@ def register_component_tools(mcp, manager):
                 card.add_child(Card.Description(description))
             card.render(slide, left, top, width, height)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added {variant} card to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_card)
+        return await _add_card()
 
     @mcp.tool
     async def pptx_add_metric_card(
@@ -402,11 +490,11 @@ def register_component_tools(mcp, manager):
         value: str,
         left: float,
         top: float,
-        change: Optional[str] = None,
-        trend: Optional[str] = None,
+        change: str | None = None,
+        trend: str | None = None,
         width: float = 2.0,
         height: float = 1.5,
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a metric/KPI card component to a slide.
@@ -439,18 +527,31 @@ def register_component_tools(mcp, manager):
                 trend="up"
             )
         """
-        def _add_metric():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_metric():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             metric = MetricCard(label=label, value=value, change=change, trend=trend, theme=get_theme_dict(theme))
             metric.render(slide, left, top, width, height)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added metric card '{label}' to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_metric)
+        return await _add_metric()
 
     # ============================================================================
     # ICON COMPONENTS
@@ -464,7 +565,7 @@ def register_component_tools(mcp, manager):
         top: float,
         size: float = 0.5,
         variant: str = "default",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add an icon component to a slide.
@@ -493,18 +594,31 @@ def register_component_tools(mcp, manager):
                 variant="filled"
             )
         """
-        def _add_icon():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_icon():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             icon = Icon(icon=icon_type, size=size, variant=variant, theme=get_theme_dict(theme))
             icon.render(slide, left, top)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added {icon_type} icon to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_icon)
+        return await _add_icon()
 
     # ============================================================================
     # PROGRESS COMPONENTS
@@ -520,7 +634,7 @@ def register_component_tools(mcp, manager):
         height: float = 0.3,
         variant: str = "default",
         show_label: bool = True,
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a progress bar component to a slide.
@@ -550,18 +664,31 @@ def register_component_tools(mcp, manager):
                 variant="success"
             )
         """
-        def _add_progress():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_progress():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             progress = ProgressBar(value=value, variant=variant, show_percentage=show_label, theme=get_theme_dict(theme))
             progress.render(slide, left, top, width)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added progress bar ({value}%) to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_progress)
+        return await _add_progress()
 
     # ============================================================================
     # TILE COMPONENTS
@@ -577,7 +704,7 @@ def register_component_tools(mcp, manager):
         width: float = 2.0,
         height: float = 1.5,
         variant: str = "default",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a data tile component to a slide.
@@ -608,18 +735,31 @@ def register_component_tools(mcp, manager):
                 variant="primary"
             )
         """
-        def _add_tile():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_tile():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             tile = Tile(text=value, label=label, variant=variant, theme=get_theme_dict(theme))
             tile.render(slide, left, top, width, height)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added tile '{label}' to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_tile)
+        return await _add_tile()
 
     # ============================================================================
     # SHAPE COMPONENTS
@@ -633,9 +773,9 @@ def register_component_tools(mcp, manager):
         top: float,
         width: float = 2.0,
         height: float = 2.0,
-        fill_color: Optional[str] = None,
-        text: Optional[str] = None,
-        theme: Optional[str] = None
+        fill_color: str | None = None,
+        text: str | None = None,
+        theme: str | None = None
     ) -> str:
         """
         Add a shape component to a slide.
@@ -667,18 +807,31 @@ def register_component_tools(mcp, manager):
                 text="Click here"
             )
         """
-        def _add_shape():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_shape():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             shape = Shape(shape_type=shape_type, fill_color=fill_color, text=text, theme=get_theme_dict(theme))
             shape.render(slide, left, top, width, height)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added {shape_type} shape to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_shape)
+        return await _add_shape()
 
     # ============================================================================
     # CONNECTOR COMPONENTS
@@ -692,7 +845,7 @@ def register_component_tools(mcp, manager):
         end_x: float,
         end_y: float,
         connector_type: str = "straight",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a connector line/arrow between two points.
@@ -721,19 +874,32 @@ def register_component_tools(mcp, manager):
                 connector_type="arrow"
             )
         """
-        def _add_connector():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_connector():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             connector = Connector(start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y,
                                 connector_type=connector_type, theme=get_theme_dict(theme))
             connector.render(slide)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added {connector_type} connector to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_connector)
+        return await _add_connector()
 
     # ============================================================================
     # SMARTART COMPONENTS
@@ -742,13 +908,13 @@ def register_component_tools(mcp, manager):
     @mcp.tool
     async def pptx_add_process_flow(
         slide_index: int,
-        steps: List[str],
+        steps: list[str],
         left: float,
         top: float,
         width: float = 8.0,
         height: float = 2.0,
         orientation: str = "horizontal",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a process flow diagram to a slide.
@@ -777,18 +943,31 @@ def register_component_tools(mcp, manager):
                 orientation="horizontal"
             )
         """
-        def _add_flow():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_flow():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             flow = ProcessFlow(items=steps, theme=get_theme_dict(theme))
             flow.render(slide, left, top, width, height)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added process flow with {len(steps)} steps to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_flow)
+        return await _add_flow()
 
     # ============================================================================
     # TIMELINE COMPONENTS
@@ -797,13 +976,13 @@ def register_component_tools(mcp, manager):
     @mcp.tool
     async def pptx_add_timeline(
         slide_index: int,
-        events: List[Dict[str, str]],
+        events: list[dict[str, str]],
         left: float,
         top: float,
         width: float = 8.0,
         height: float = 2.0,
         orientation: str = "horizontal",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a timeline component to a slide.
@@ -835,18 +1014,31 @@ def register_component_tools(mcp, manager):
                 top=2.0
             )
         """
-        def _add_timeline():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_timeline():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             timeline = Timeline(events=events, theme=get_theme_dict(theme))
             timeline.render(slide, left, top, width)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added timeline with {len(events)} events to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_timeline)
+        return await _add_timeline()
 
     # ============================================================================
     # TEXT COMPONENTS
@@ -862,7 +1054,7 @@ def register_component_tools(mcp, manager):
         height: float = 1.0,
         font_size: int = 14,
         alignment: str = "left",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a text box component to a slide.
@@ -893,28 +1085,41 @@ def register_component_tools(mcp, manager):
                 alignment="center"
             )
         """
-        def _add_textbox():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_textbox():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             textbox = TextBox(text=text, font_size=font_size, alignment=alignment, theme=get_theme_dict(theme))
             textbox.render(slide, left, top, width, height)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added text box to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_textbox)
+        return await _add_textbox()
 
     @mcp.tool
     async def pptx_add_bullet_list(
         slide_index: int,
-        items: List[str],
+        items: list[str],
         left: float,
         top: float,
         width: float = 5.0,
         height: float = 3.0,
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a bullet list component to a slide.
@@ -941,18 +1146,31 @@ def register_component_tools(mcp, manager):
                 top=2.0
             )
         """
-        def _add_bullets():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_bullets():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             bullets = BulletList(items=items, theme=get_theme_dict(theme))
             bullets.render(slide, left, top, width, height)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added bullet list with {len(items)} items to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_bullets)
+        return await _add_bullets()
 
     # ============================================================================
     # TABLE COMPONENTS
@@ -961,14 +1179,14 @@ def register_component_tools(mcp, manager):
     @mcp.tool
     async def pptx_add_table_component(
         slide_index: int,
-        headers: List[str],
-        rows: List[List[str]],
+        headers: list[str],
+        rows: list[list[str]],
         left: float,
         top: float,
         width: float = 6.0,
         height: float = 3.0,
         variant: str = "default",
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add a table component to a slide.
@@ -1001,18 +1219,31 @@ def register_component_tools(mcp, manager):
                 top=2.0
             )
         """
-        def _add_table():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_table():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             table = Table(headers=headers, data=rows, variant=variant, theme=get_theme_dict(theme))
             table.render(slide, left, top, width, height)
 
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
+            # Update in VFS
+            await manager.update()
+
             return f"Added table with {len(rows)} rows to slide {slide_index}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_table)
+        return await _add_table()
 
     # ============================================================================
     # IMAGE COMPONENTS
@@ -1024,10 +1255,10 @@ def register_component_tools(mcp, manager):
         image_path: str,
         left: float,
         top: float,
-        width: Optional[float] = None,
-        height: Optional[float] = None,
+        width: float | None = None,
+        height: float | None = None,
         maintain_aspect: bool = True,
-        theme: Optional[str] = None
+        theme: str | None = None
     ) -> str:
         """
         Add an image component to a slide.
@@ -1056,20 +1287,34 @@ def register_component_tools(mcp, manager):
                 width=4.0
             )
         """
-        def _add_image():
-            prs = manager.get_current()
-            if not prs or slide_index >= len(prs.slides):
-                raise ValueError("Invalid presentation or slide index")
+        async def _add_image():
+            result = await manager.get()
+            if not result:
+                raise ValueError("No presentation found. Create one first.")
+
+            prs, metadata = result
+            if slide_index >= len(prs.slides):
+                raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
             try:
                 image = Image(image_source=image_path, theme=get_theme_dict(theme))
                 image.render(slide, left, top, width, height)
+
+                # Apply presentation theme to the slide
+                if metadata and metadata.theme:
+                    theme_obj = theme_manager.get_theme(metadata.theme)
+                    if theme_obj:
+                        theme_obj.apply_to_slide(slide)
+
+                # Update in VFS
+                await manager.update()
+
                 return f"Added image to slide {slide_index}"
             except FileNotFoundError as e:
                 return f"Error adding image: {str(e)}"
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_image)
+        return await _add_image()
 
     # ============================================================================
     # THEME MANAGEMENT

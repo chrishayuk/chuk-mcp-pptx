@@ -87,12 +87,12 @@ def get_dashboard_positions(
 
     return {
         "metrics": [
-            calc_cell(4, 0, 0),  # Metric 1: cols 0-3
-            calc_cell(4, 4, 0),  # Metric 2: cols 4-7
-            calc_cell(4, 8, 0),  # Metric 3: cols 8-11
+            calc_cell(4, 0, 0, auto_height=False),  # Metric 1: cols 0-3
+            calc_cell(4, 4, 0, auto_height=False),  # Metric 2: cols 4-7
+            calc_cell(4, 8, 0, auto_height=False),  # Metric 3: cols 8-11
         ],
-        "main": calc_cell(8, 0, 1),      # Main: cols 0-7, row 1
-        "sidebar": calc_cell(4, 8, 1),   # Sidebar: cols 8-11, row 1
+        "main": calc_cell(8, 0, 1, auto_height=False),      # Main: cols 0-7, row 1
+        "sidebar": calc_cell(4, 8, 1, auto_height=False),   # Sidebar: cols 8-11, row 1
         "description": "Dashboard layout with 3 metrics (top row) + main content (8 cols) + sidebar (4 cols)"
     }
 
@@ -147,12 +147,12 @@ def get_comparison_positions(
     }
 
     if include_header:
-        layout["header"] = calc_cell(12, 0, 0)  # Full width header
-        layout["left"] = calc_cell(6, 0, 1)     # Left column, row 1
-        layout["right"] = calc_cell(6, 6, 1)    # Right column, row 1
+        layout["header"] = calc_cell(12, 0, 0, auto_height=False)  # Full width header
+        layout["left"] = calc_cell(6, 0, 1, auto_height=False)     # Left column, row 1
+        layout["right"] = calc_cell(6, 6, 1, auto_height=False)    # Right column, row 1
     else:
-        layout["left"] = calc_cell(6, 0, 0)     # Left column, row 0
-        layout["right"] = calc_cell(6, 6, 0)    # Right column, row 0
+        layout["left"] = calc_cell(6, 0, 0, auto_height=False)     # Left column, row 0
+        layout["right"] = calc_cell(6, 6, 0, auto_height=False)    # Right column, row 0
 
     return layout
 

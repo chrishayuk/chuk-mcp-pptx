@@ -6,9 +6,20 @@ Enables LLMs to discover and understand available components.
 
 import asyncio
 import json
-from typing import Optional, List
+from typing import List
 
 from ..registry import registry
+
+from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
+from ..constants import (
+    SlideLayoutIndex,
+    ErrorMessages,
+    SuccessMessages,
+    ShapeType,
+    Spacing,
+    Defaults,
+)
+
 
 
 def register_registry_tools(mcp, manager):
@@ -25,7 +36,7 @@ def register_registry_tools(mcp, manager):
     tools = {}
 
     @mcp.tool
-    async def pptx_list_components(category: Optional[str] = None) -> str:
+    async def pptx_list_components(category: str | None = None) -> str:
         """
         List all available PowerPoint components.
 

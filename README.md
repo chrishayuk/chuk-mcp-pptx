@@ -184,25 +184,65 @@ MCP_TRANSPORT=stdio uv run python -m chuk_mcp_pptx.server
 
 # Force HTTP mode on specific port
 MCP_TRANSPORT=http MCP_PORT=8080 uv run python -m chuk_mcp_pptx.server
-
-# Enable VFS persistence mode
-PPTX_USE_VFS=true uv run python -m chuk_mcp_pptx.server
-
-# VFS mode with custom path
-PPTX_USE_VFS=true PPTX_VFS_PATH="vfs://my-presentations" uv run python -m chuk_mcp_pptx.server
 ```
 
-### Environment Variables
+## Storage Configuration
 
-- `PPTX_USE_VFS`: Set to "true" to enable VFS persistence (default: "false")
-- `PPTX_VFS_PATH`: Base path in VFS for storing presentations (default: "vfs://presentations")
+The server uses `chuk-virtual-fs` for flexible storage with support for multiple backends:
 
-## Integration with Virtual Shell/Filesystem
+### Storage Providers
 
-The server supports multiple integration patterns:
+- **file** (default): Local filesystem storage
+- **memory**: In-memory storage (fast, for testing)
+- **sqlite**: SQLite database storage
+- **s3**: AWS S3 or S3-compatible storage
 
-1. **Direct file operations**: Save/load presentations directly to/from disk
-2. **Base64 transfer**: Export/import presentations as base64 for transfer via virtual shell
+### Configuring Storage Provider
+
+Storage is configured in `async_server.py` (line 49):
+
+```python
+# Change provider here
+vfs = AsyncVirtualFileSystem(provider="file")  # or "memory", "sqlite", "s3"
+```
+
+**Default Configuration**:
+```python
+# Uses local filesystem with presentations stored in ./presentations/
+vfs = AsyncVirtualFileSystem(provider="file")
+manager = PresentationManager(vfs=vfs, base_path="presentations")
+```
+
+**Example Configurations**:
+
+```python
+# In-memory storage (for testing)
+vfs = AsyncVirtualFileSystem(provider="memory")
+
+# SQLite storage
+vfs = AsyncVirtualFileSystem(provider="sqlite", db_path="presentations.db")
+
+# S3 storage
+vfs = AsyncVirtualFileSystem(
+    provider="s3",
+    bucket="my-presentations",
+    region="us-east-1"
+)
+```
+
+### Virtual Filesystem Integration
+
+The server automatically persists all presentations to the configured storage backend:
+
+1. **Auto-save**: Presentations are automatically saved to VFS when created or modified
+2. **Auto-load**: Presentations are loaded from VFS when accessed
+3. **Multi-server**: Multiple server instances can share presentations via VFS
+4. **Flexible storage**: Switch storage backends without code changes
+
+### Storage Patterns
+
+1. **Virtual Filesystem**: All presentations use VFS for persistence (flexible backends)
+2. **Base64 transfer**: Export/import presentations as base64 for transfer
 3. **Image support**: Add images via file path or base64 data URLs
 
 ## Example Usage

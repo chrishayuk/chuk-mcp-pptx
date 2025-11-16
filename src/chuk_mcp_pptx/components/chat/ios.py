@@ -11,6 +11,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES
 
 
 class iMessageBubble(Component):
@@ -131,7 +132,7 @@ class iMessageBubble(Component):
         p = text_frame.paragraphs[0]
         p.text = self.text
         p.alignment = PP_ALIGN.LEFT  # All text left-aligned within bubble
-        p.font.size = Pt(15)
+        p.font.size = Pt(FONT_SIZES["lg"])  # 16pt (was 15pt, using closest design token)
         p.font.name = "SF Pro Text"  # iOS system font (fallback to system)
         p.font.color.rgb = self._get_text_color()
 
@@ -149,7 +150,7 @@ class iMessageBubble(Component):
             ts_frame.text = self.timestamp
             ts_p = ts_frame.paragraphs[0]
             ts_p.alignment = PP_ALIGN.CENTER
-            ts_p.font.size = Pt(10)
+            ts_p.font.size = Pt(FONT_SIZES["xs"])
             ts_p.font.color.rgb = RGBColor(142, 142, 147)  # iOS gray
             shapes.append(ts_box)
 

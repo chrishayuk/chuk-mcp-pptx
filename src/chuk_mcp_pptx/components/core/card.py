@@ -15,6 +15,7 @@ from ...composition import (
 )
 from ...variants import CARD_VARIANTS
 from ...registry import component, ComponentCategory, prop, example
+from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING
 
 
 @component(
@@ -399,7 +400,7 @@ class MetricCard(Card):
         p = text_frame.paragraphs[0]
         p.text = self.label
         p.alignment = PP_ALIGN.CENTER
-        p.font.size = Pt(12)
+        p.font.size = Pt(FONT_SIZES["sm"])
         p.font.color.rgb = self.get_color("muted.foreground")
         p.font.name = self.get_theme_attr("font_family", "Inter")
 
@@ -407,8 +408,8 @@ class MetricCard(Card):
         p = text_frame.add_paragraph()
         p.text = self.value
         p.alignment = PP_ALIGN.CENTER
-        p.space_before = Pt(4)
-        p.font.size = Pt(20)  # Reduced to 20pt for cleaner single-line display
+        p.space_before = Pt(PARAGRAPH_SPACING["xs"])
+        p.font.size = Pt(FONT_SIZES["2xl"])  # 22pt (was 20pt, using closest design token)
         p.font.bold = True
         p.font.color.rgb = self.get_color(self.variant_props.get("fg_color", "card.foreground"))
         p.font.name = self.get_theme_attr("font_family", "Inter")
@@ -419,8 +420,8 @@ class MetricCard(Card):
             symbol = self.get_trend_symbol()
             p.text = f"{symbol} {self.change}" if symbol else self.change
             p.alignment = PP_ALIGN.CENTER
-            p.space_before = Pt(4)
-            p.font.size = Pt(12)
+            p.space_before = Pt(PARAGRAPH_SPACING["xs"])
+            p.font.size = Pt(FONT_SIZES["sm"])
             p.font.color.rgb = self.get_trend_color()
             p.font.name = self.get_theme_attr("font_family", "Inter")
 

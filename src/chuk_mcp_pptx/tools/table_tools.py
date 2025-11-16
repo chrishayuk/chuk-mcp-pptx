@@ -6,7 +6,18 @@ Provides async MCP tools for creating and managing tables in presentations.
 Includes layout validation and boundary checking like charts and images.
 """
 import asyncio
-from typing import List, Optional
+
+from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
+from ..constants import (
+    SlideLayoutIndex,
+    ErrorMessages,
+    SuccessMessages,
+    ShapeType,
+    Spacing,
+    Defaults,
+)
+
+from typing import Optional
 from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pptx.dml.color import RGBColor
@@ -25,14 +36,14 @@ def register_table_tools(mcp, manager):
     @mcp.tool
     async def pptx_add_data_table(
         slide_index: int,
-        headers: List[str],
-        data: List[List[str]],
+        headers: list[str],
+        data: list[list[str]],
         left: float = 1.0,
         top: float = 2.0,
         width: float = 8.0,
         height: float = 4.0,
         style: str = "medium",
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Add a formatted data table to a slide with layout validation.
@@ -70,14 +81,18 @@ def register_table_tools(mcp, manager):
                 style="medium"
             )
         """
-        def _add_table():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found. Create one first with pptx_create()"
-            
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+            prs, metadata = result
+
             if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range. Presentation has {len(prs.slides)} slides."
-            
+                return ErrorResponse(
+                    error=f"Slide index {slide_index} not found in presentation"
+                ).model_dump_json()
+
             slide = prs.slides[slide_index]
             
             # Get safe content area considering if there's a title
@@ -121,70 +136,73 @@ def register_table_tools(mcp, manager):
             # Remove overlapping placeholders
             for placeholder in placeholders_to_remove:
                 slide.shapes._spTree.remove(placeholder.element)
-            
-            try:
-                # Get current theme
-                theme_manager = ThemeManager()
-                theme = theme_manager.get_theme(manager.current_theme) if hasattr(manager, 'current_theme') else None
 
-                # Map style to variant
-                variant_map = {
-                    "light": "minimal",
-                    "medium": "default",
-                    "dark": "bordered"
-                }
-                variant = variant_map.get(style, "default")
+            # Get current theme
+            theme_manager = ThemeManager()
+            theme = theme_manager.get_theme(metadata.theme) if metadata.theme else None
 
-                # Create and render table using new Table component
-                table_comp = Table(
-                    headers=headers,
-                    data=data,
-                    variant=variant,
-                    size="md",
-                    theme=theme
-                )
+            # Map style to variant
+            variant_map = {
+                "light": "minimal",
+                "medium": "default",
+                "dark": "bordered"
+            }
+            variant = variant_map.get(style, "default")
 
-                table_shape = table_comp.render(
-                    slide,
-                    left=validated_left,
-                    top=validated_top,
-                    width=validated_width,
-                    height=validated_height
-                )
+            # Create and render table using new Table component
+            table_comp = Table(
+                headers=headers,
+                data=data,
+                variant=variant,
+                size="md",
+                theme=theme
+            )
 
-                # Update in VFS if enabled
-                manager.update(presentation)
-                
-                # Report if position was adjusted
-                position_note = ""
-                if (validated_left != left or validated_top != top or 
-                    validated_width != width or validated_height != height):
-                    position_note = f" (position adjusted to fit: {validated_left:.1f}, {validated_top:.1f}, {validated_width:.1f}x{validated_height:.1f})"
-                
-                return f"Added {len(data)} row table to slide {slide_index}{position_note}"
-                
-            except Exception as e:
-                return f"Error adding table: {str(e)}"
-        
-        return await asyncio.get_event_loop().run_in_executor(None, _add_table)
+            table_shape = table_comp.render(
+                slide,
+                left=validated_left,
+                top=validated_top,
+                width=validated_width,
+                height=validated_height
+            )
+
+            # Update in VFS
+            await manager.update(presentation)
+
+            # Report if position was adjusted
+            position_note = ""
+            if (validated_left != left or validated_top != top or
+                validated_width != width or validated_height != height):
+                position_note = f" (position adjusted to fit: {validated_left:.1f}, {validated_top:.1f}, {validated_width:.1f}x{validated_height:.1f})"
+
+            message = f"Added {len(data)} row table to slide {slide_index}{position_note}"
+            return ComponentResponse(
+                presentation=metadata.name,
+                slide_index=slide_index,
+                message=message,
+                slide_count=metadata.slide_count
+            ).model_dump_json()
+
+        except Exception as e:
+            return ErrorResponse(error=f"Error adding table: {str(e)}").model_dump_json()
     
     @mcp.tool
     async def pptx_add_comparison_table(
         slide_index: int,
         title: str,
-        categories: List[str],
+        categories: list[str],
         option1_name: str,
-        option1_values: List[str],
+        option1_values: list[str],
         option2_name: str,
-        option2_values: List[str],
-        option3_name: Optional[str] = None,
-        option3_values: Optional[List[str]] = None,
+        option2_values: list[str],
+        option3_name: str | None = None,
+        option3_values: list[str] | None = None,
         left: float = 1.0,
         top: float = 2.0,
         width: float = 8.0,
         height: float = 4.0,
         style: str = "light",
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Add a comparison table for multiple options with layout validation.
@@ -224,26 +242,30 @@ def register_table_tools(mcp, manager):
                 style="medium"
             )
         """
-        def _add_comparison():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
-            
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+            prs, metadata = result
+
             if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
-            
+                return ErrorResponse(
+                    error=f"Slide index {slide_index} not found in presentation"
+                ).model_dump_json()
+
             # Build comparison table data
             headers = ["Category", option1_name, option2_name]
             if option3_name and option3_values:
                 headers.append(option3_name)
-            
+
             data = []
             for i, category in enumerate(categories):
                 row = [category, option1_values[i], option2_values[i]]
                 if option3_name and option3_values:
                     row.append(option3_values[i])
                 data.append(row)
-            
+
             slide = prs.slides[slide_index]
             
             # Get safe content area
@@ -275,47 +297,50 @@ def register_table_tools(mcp, manager):
             
             for placeholder in placeholders_to_remove:
                 slide.shapes._spTree.remove(placeholder.element)
-            
-            try:
-                # Get current theme
-                theme_manager = ThemeManager()
-                theme = theme_manager.get_theme(manager.current_theme) if hasattr(manager, 'current_theme') else None
 
-                # Map style to variant
-                variant_map = {
-                    "light": "minimal",
-                    "medium": "default",
-                    "dark": "bordered"
-                }
-                variant = variant_map.get(style, "default")
+            # Get current theme
+            theme_manager = ThemeManager()
+            theme = theme_manager.get_theme(metadata.theme) if metadata.theme else None
 
-                # Create and render table using new Table component
-                table_comp = Table(
-                    headers=headers,
-                    data=data,
-                    variant=variant,
-                    size="md",
-                    theme=theme
-                )
+            # Map style to variant
+            variant_map = {
+                "light": "minimal",
+                "medium": "default",
+                "dark": "bordered"
+            }
+            variant = variant_map.get(style, "default")
 
-                table_shape = table_comp.render(
-                    slide,
-                    left=validated_left,
-                    top=validated_top,
-                    width=validated_width,
-                    height=validated_height
-                )
+            # Create and render table using new Table component
+            table_comp = Table(
+                headers=headers,
+                data=data,
+                variant=variant,
+                size="md",
+                theme=theme
+            )
 
-                # Update in VFS if enabled
-                manager.update(presentation)
-                
-                num_options = 3 if option3_name else 2
-                return f"Added {num_options}-way comparison table to slide {slide_index}"
-                
-            except Exception as e:
-                return f"Error adding comparison table: {str(e)}"
-        
-        return await asyncio.get_event_loop().run_in_executor(None, _add_comparison)
+            table_shape = table_comp.render(
+                slide,
+                left=validated_left,
+                top=validated_top,
+                width=validated_width,
+                height=validated_height
+            )
+
+            # Update in VFS
+            await manager.update(presentation)
+
+            num_options = 3 if option3_name else 2
+            message = f"Added {num_options}-way comparison table '{title}' to slide {slide_index}"
+            return ComponentResponse(
+                presentation=metadata.name,
+                slide_index=slide_index,
+                message=message,
+                slide_count=metadata.slide_count
+            ).model_dump_json()
+
+        except Exception as e:
+            return ErrorResponse(error=f"Error adding comparison table: {str(e)}").model_dump_json()
     
     @mcp.tool
     async def pptx_update_table_cell(
@@ -324,9 +349,9 @@ def register_table_tools(mcp, manager):
         row: int,
         col: int,
         new_value: str,
-        bold: Optional[bool] = None,
-        color: Optional[str] = None,
-        presentation: Optional[str] = None
+        bold: bool | None = None,
+        color: str | None = None,
+        presentation: str | None = None
     ) -> str:
         """
         Update a specific cell in an existing table.
@@ -357,37 +382,47 @@ def register_table_tools(mcp, manager):
                 color="#008000"  # Green for positive numbers
             )
         """
-        def _update_cell():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
-            
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+            prs, metadata = result
+
             if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
-            
+                return ErrorResponse(
+                    error=f"Slide index {slide_index} not found in presentation"
+                ).model_dump_json()
+
             slide = prs.slides[slide_index]
-            
+
             # Find tables on the slide
             tables = []
             for shape in slide.shapes:
                 if shape.shape_type == MSO_SHAPE_TYPE.TABLE:
                     tables.append(shape)
-            
+
             if table_index >= len(tables):
-                return f"Error: Table index {table_index} out of range. Found {len(tables)} tables on slide"
-            
+                return ErrorResponse(
+                    error=f"Table index {table_index} out of range. Found {len(tables)} tables on slide"
+                ).model_dump_json()
+
             table = tables[table_index].table
-            
+
             if row >= len(table.rows):
-                return f"Error: Row {row} out of range. Table has {len(table.rows)} rows"
-            
+                return ErrorResponse(
+                    error=f"Row {row} out of range. Table has {len(table.rows)} rows"
+                ).model_dump_json()
+
             if col >= len(table.columns):
-                return f"Error: Column {col} out of range. Table has {len(table.columns)} columns"
-            
+                return ErrorResponse(
+                    error=f"Column {col} out of range. Table has {len(table.columns)} columns"
+                ).model_dump_json()
+
             # Update the cell
             cell = table.cell(row, col)
             cell.text = new_value
-            
+
             # Apply formatting if specified
             if bold is not None or color:
                 paragraph = cell.text_frame.paragraphs[0]
@@ -402,23 +437,25 @@ def register_table_tools(mcp, manager):
                         paragraph.font.color.rgb = RGBColor(r, g, b)
                     except:
                         pass
-            
-            # Update in VFS if enabled
-            manager.update(presentation)
-            
-            return f"Updated table cell [{row}, {col}] on slide {slide_index}"
-        
-        return await asyncio.get_event_loop().run_in_executor(None, _update_cell)
+
+            # Update in VFS
+            await manager.update(presentation)
+
+            message = f"Updated table cell [{row}, {col}] to '{new_value}' on slide {slide_index}"
+            return SuccessResponse(message=message).model_dump_json()
+
+        except Exception as e:
+            return ErrorResponse(error=f"Error updating table cell: {str(e)}").model_dump_json()
     
     @mcp.tool
     async def pptx_format_table(
         slide_index: int,
         table_index: int,
         header_bold: bool = True,
-        header_color: Optional[str] = None,
+        header_color: str | None = None,
         alternate_rows: bool = False,
-        border_width: Optional[float] = None,
-        presentation: Optional[str] = None
+        border_width: float | None = None,
+        presentation: str | None = None
     ) -> str:
         """
         Apply formatting to an entire table.
@@ -447,28 +484,34 @@ def register_table_tools(mcp, manager):
                 border_width=1.0
             )
         """
-        def _format_table():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
-            
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+            prs, metadata = result
+
             if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
-            
+                return ErrorResponse(
+                    error=f"Slide index {slide_index} not found in presentation"
+                ).model_dump_json()
+
             slide = prs.slides[slide_index]
-            
+
             # Find tables
             tables = []
             for shape in slide.shapes:
                 if shape.shape_type == MSO_SHAPE_TYPE.TABLE:
                     tables.append(shape)
-            
+
             if table_index >= len(tables):
-                return f"Error: Table index {table_index} out of range"
-            
+                return ErrorResponse(
+                    error=f"Table index {table_index} out of range. Found {len(tables)} tables on slide"
+                ).model_dump_json()
+
             table = tables[table_index].table
             formatting_applied = []
-            
+
             # Format header row
             if len(table.rows) > 0:
                 header_row = table.rows[0]
@@ -476,7 +519,7 @@ def register_table_tools(mcp, manager):
                     if header_bold:
                         for paragraph in cell.text_frame.paragraphs:
                             paragraph.font.bold = True
-                    
+
                     if header_color:
                         h_color = header_color[1:] if header_color.startswith("#") else header_color
                         try:
@@ -487,9 +530,9 @@ def register_table_tools(mcp, manager):
                             cell.fill.fore_color.rgb = RGBColor(r, g, b)
                         except:
                             pass
-                
+
                 formatting_applied.append("header formatting")
-            
+
             # Apply alternating row colors
             if alternate_rows:
                 for i, row in enumerate(table.rows):
@@ -498,23 +541,26 @@ def register_table_tools(mcp, manager):
                             cell.fill.solid()
                             cell.fill.fore_color.rgb = RGBColor(245, 245, 245)  # Light gray
                 formatting_applied.append("alternating rows")
-            
+
             # Set border width
             if border_width:
                 for row in table.rows:
                     for cell in row.cells:
                         cell.border_width = Pt(border_width)
                 formatting_applied.append(f"border width {border_width}pt")
-            
-            # Update in VFS if enabled
-            manager.update(presentation)
-            
+
+            # Update in VFS
+            await manager.update(presentation)
+
             if formatting_applied:
-                return f"Applied table formatting: {', '.join(formatting_applied)}"
+                message = f"Applied table formatting: {', '.join(formatting_applied)}"
             else:
-                return "No formatting changes applied"
-        
-        return await asyncio.get_event_loop().run_in_executor(None, _format_table)
+                message = "No formatting changes applied"
+
+            return SuccessResponse(message=message).model_dump_json()
+
+        except Exception as e:
+            return ErrorResponse(error=f"Error formatting table: {str(e)}").model_dump_json()
     
     # Return the tools for external access
     return {

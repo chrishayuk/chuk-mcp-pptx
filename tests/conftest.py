@@ -1,20 +1,37 @@
 """
 Pytest configuration and shared fixtures for PowerPoint MCP tests.
+
+Updated for Pydantic-native architecture with VFS integration.
 """
 
 import pytest
 import sys
 import os
+import json
 from pathlib import Path
-from typing import Dict, Any
-from unittest.mock import MagicMock, Mock
+from typing import Any
+from unittest.mock import MagicMock, Mock, AsyncMock
 from pptx import Presentation
 from pptx.slide import Slide
+from chuk_virtual_fs import AsyncVirtualFileSystem
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
+from chuk_mcp_pptx.models import (
+    ErrorResponse,
+    SuccessResponse,
+    PresentationResponse,
+    SlideResponse,
+    ComponentResponse,
+    ChartResponse,
+    ListPresentationsResponse,
+    PresentationInfo,
+    PresentationMetadata,
+    SlideMetadata,
+)
+from chuk_mcp_pptx.presentation_manager import PresentationManager
 
 
 @pytest.fixture
@@ -58,40 +75,21 @@ def mock_presentation():
 def sample_theme():
     """Get a sample theme for testing."""
     theme_manager = ThemeManager()
-    theme = theme_manager.get_theme("dark")
-    return theme.__dict__ if hasattr(theme, '__dict__') else {}
+    return theme_manager.get_theme("dark")  # Returns Theme model
 
 
 @pytest.fixture
 def dark_theme():
     """Get dark theme for testing."""
-    return {
-        "name": "dark",
-        "mode": "dark",
-        "primary_hue": "blue",
-        "background": {"DEFAULT": "#0f0f0f"},
-        "foreground": {"DEFAULT": "#f5f5f5"},
-        "primary": {"DEFAULT": "#3b82f6"},
-        "secondary": {"DEFAULT": "#64748b"},
-        "accent": {"DEFAULT": "#8b5cf6"},
-        "chart": ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]
-    }
+    theme_manager = ThemeManager()
+    return theme_manager.get_theme("dark")  # Returns Theme model
 
 
 @pytest.fixture
 def light_theme():
     """Get light theme for testing."""
-    return {
-        "name": "light",
-        "mode": "light",
-        "primary_hue": "blue",
-        "background": {"DEFAULT": "#ffffff"},
-        "foreground": {"DEFAULT": "#0f0f0f"},
-        "primary": {"DEFAULT": "#2563eb"},
-        "secondary": {"DEFAULT": "#64748b"},
-        "accent": {"DEFAULT": "#7c3aed"},
-        "chart": ["#2563eb", "#059669", "#d97706", "#dc2626", "#7c3aed", "#db2777"]
-    }
+    theme_manager = ThemeManager()
+    return theme_manager.get_theme("light")  # Returns Theme model
 
 
 @pytest.fixture
@@ -197,7 +195,121 @@ def temp_output_dir(tmp_path):
     return output_dir
 
 
+@pytest.fixture
+async def vfs():
+    """Create an async virtual filesystem with memory provider for testing."""
+    async with AsyncVirtualFileSystem(provider="memory") as fs:
+        yield fs
+
+
+@pytest.fixture
+async def presentation_manager(vfs):
+    """Create a PresentationManager with VFS for testing."""
+    manager = PresentationManager(vfs=vfs, base_path="test_presentations")
+    return manager
+
+
 # Test helper functions
+
+def assert_success_response(result: str) -> dict[str, Any]:
+    """Validate that tool returns successful Pydantic response (not an error).
+
+    Args:
+        result: JSON string returned from tool
+
+    Returns:
+        Parsed response data as dict
+
+    Raises:
+        AssertionError: If response contains an error field
+    """
+    data = json.loads(result)
+    assert "error" not in data, f"Expected success but got error: {data.get('error')}"
+    return data
+
+
+def assert_error_response(result: str) -> str:
+    """Validate that tool returns error response.
+
+    Args:
+        result: JSON string returned from tool
+
+    Returns:
+        The error message
+
+    Raises:
+        AssertionError: If response does not contain an error field
+    """
+    data = json.loads(result)
+    assert "error" in data, f"Expected error response but got: {data}"
+    return data["error"]
+
+
+def validate_presentation_response(result: str) -> PresentationResponse:
+    """Validate and parse PresentationResponse.
+
+    Args:
+        result: JSON string returned from tool
+
+    Returns:
+        Validated PresentationResponse model
+    """
+    data = json.loads(result)
+    return PresentationResponse.model_validate(data)
+
+
+def validate_slide_response(result: str) -> SlideResponse:
+    """Validate and parse SlideResponse.
+
+    Args:
+        result: JSON string returned from tool
+
+    Returns:
+        Validated SlideResponse model
+    """
+    data = json.loads(result)
+    return SlideResponse.model_validate(data)
+
+
+def validate_component_response(result: str) -> ComponentResponse:
+    """Validate and parse ComponentResponse.
+
+    Args:
+        result: JSON string returned from tool
+
+    Returns:
+        Validated ComponentResponse model
+    """
+    data = json.loads(result)
+    return ComponentResponse.model_validate(data)
+
+
+def validate_chart_response(result: str) -> ChartResponse:
+    """Validate and parse ChartResponse.
+
+    Args:
+        result: JSON string returned from tool
+
+    Returns:
+        Validated ChartResponse model
+    """
+    data = json.loads(result)
+    return ChartResponse.model_validate(data)
+
+
+def validate_list_presentations_response(result: str) -> ListPresentationsResponse:
+    """Validate and parse ListPresentationsResponse.
+
+    Args:
+        result: JSON string returned from tool
+
+    Returns:
+        Validated ListPresentationsResponse model
+    """
+    data = json.loads(result)
+    return ListPresentationsResponse.model_validate(data)
+
+
 def assert_color_valid(color):
     """Assert that a color value is valid hex format."""
     if isinstance(color, str):

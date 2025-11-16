@@ -14,10 +14,24 @@ Slide templates (dashboard, comparison, etc.) are in slide_templates/.
 """
 import asyncio
 import json
-from typing import Optional, List, Dict, Any
+
+from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
+from ..constants import (
+    SlideLayoutIndex,
+    ErrorMessages,
+    SuccessMessages,
+    ShapeType,
+    Spacing,
+    Defaults,
+)
+
+from typing import Any
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_SHAPE
+
+# Import design system typography tokens
+from ..tokens.typography import FONT_SIZES
 
 
 def register_layout_tools(mcp, manager):
@@ -34,7 +48,7 @@ def register_layout_tools(mcp, manager):
 
     @mcp.tool
     async def pptx_list_layouts(
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         List all available slide layouts in the presentation.
@@ -67,10 +81,12 @@ def register_layout_tools(mcp, manager):
             #  2: Section Header - Section dividers
             #  ..."
         """
-        def _list_layouts():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+            prs, metadata = result
             
             layouts = []
             layouts.append("=== AVAILABLE SLIDE LAYOUTS ===\n")
@@ -109,15 +125,16 @@ def register_layout_tools(mcp, manager):
             
             return "\n".join(layouts)
         
-        return await asyncio.get_event_loop().run_in_executor(None, _list_layouts)
+        except Exception as e:
+            return ErrorResponse(error=str(e)).model_dump_json()
     
     @mcp.tool
     async def pptx_add_slide_with_layout(
         layout_index: int,
-        title: Optional[str] = None,
-        content: Optional[List[str]] = None,
-        subtitle: Optional[str] = None,
-        presentation: Optional[str] = None
+        title: str | None = None,
+        content: list[str] | None = None,
+        subtitle: str | None = None,
+        presentation: str | None = None
     ) -> str:
         """
         Add a slide using a specific layout from the slide master.
@@ -148,13 +165,15 @@ def register_layout_tools(mcp, manager):
                 title="Part 2: Financial Analysis"
             )
         """
-        def _add_with_layout():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+            prs, metadata = result
             
             if layout_index >= len(prs.slide_master.slide_layouts):
-                return f"Error: Layout index {layout_index} out of range. Use pptx_list_layouts() to see available layouts"
+                return SuccessResponse(message=f"Error: Layout index {layout_index} out of range. Use pptx_list_layouts() to see available layouts").model_dump_json()
             
             # Get the layout
             layout = prs.slide_master.slide_layouts[layout_index]
@@ -192,24 +211,33 @@ def register_layout_tools(mcp, manager):
                             p.level = 0
                     else:
                         shape.text = str(content)
-            
+
+            # Apply presentation theme to the slide
+            if metadata and metadata.theme:
+                from ..themes.theme_manager import ThemeManager
+                theme_manager = ThemeManager()
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
+
             # Update in VFS if enabled
-            manager.update(presentation)
+            await manager.update(presentation)
 
             slide_idx = len(prs.slides) - 1
             layout_name = str(layout.name)
-            return f"Added slide {slide_idx} using layout '{layout_name}'"
+            return SuccessResponse(message=f"Added slide {slide_idx} using layout '{layout_name}'").model_dump_json()
         
-        return await asyncio.get_event_loop().run_in_executor(None, _add_with_layout)
+        except Exception as e:
+            return ErrorResponse(error=str(e)).model_dump_json()
     
     @mcp.tool
     async def pptx_customize_layout(
         slide_index: int,
-        background_color: Optional[str] = None,
-        add_footer: Optional[str] = None,
+        background_color: str | None = None,
+        add_footer: str | None = None,
         add_page_number: bool = False,
-        add_date: Optional[str] = None,
-        presentation: Optional[str] = None
+        add_date: str | None = None,
+        presentation: str | None = None
     ) -> str:
         """
         Customize the layout of an existing slide.
@@ -237,14 +265,18 @@ def register_layout_tools(mcp, manager):
                 add_date="2024-12-01"
             )
         """
-        def _customize_layout():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+            prs, metadata = result
             
             if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
-            
+                return ErrorResponse(
+                    error=f"Slide index {slide_index} not found in presentation"
+                ).model_dump_json()
+
             slide = prs.slides[slide_index]
             customizations = []
             
@@ -274,7 +306,7 @@ def register_layout_tools(mcp, manager):
                 )
                 footer_box.text_frame.text = add_footer
                 footer_box.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
-                footer_box.text_frame.paragraphs[0].font.size = Pt(10)
+                footer_box.text_frame.paragraphs[0].font.size = Pt(FONT_SIZES["xs"])
                 customizations.append("footer text")
             
             # Add page number
@@ -284,7 +316,7 @@ def register_layout_tools(mcp, manager):
                 )
                 page_box.text_frame.text = str(slide_index + 1)
                 page_box.text_frame.paragraphs[0].alignment = PP_ALIGN.RIGHT
-                page_box.text_frame.paragraphs[0].font.size = Pt(10)
+                page_box.text_frame.paragraphs[0].font.size = Pt(FONT_SIZES["xs"])
                 customizations.append("page number")
             
             # Add date
@@ -293,26 +325,27 @@ def register_layout_tools(mcp, manager):
                     Inches(0.5), Inches(0.3), Inches(2.0), Inches(0.5)
                 )
                 date_box.text_frame.text = add_date
-                date_box.text_frame.paragraphs[0].font.size = Pt(10)
+                date_box.text_frame.paragraphs[0].font.size = Pt(FONT_SIZES["xs"])
                 customizations.append("date")
             
             # Update in VFS if enabled
-            manager.update(presentation)
+            await manager.update(presentation)
             
             if customizations:
-                return f"Customized slide {slide_index}: {', '.join(customizations)}"
+                return SuccessResponse(message=f"Customized slide {slide_index}: {', '.join(customizations)}").model_dump_json()
             else:
-                return f"No customizations applied to slide {slide_index}"
+                return SuccessResponse(message=f"No customizations applied to slide {slide_index}").model_dump_json()
         
-        return await asyncio.get_event_loop().run_in_executor(None, _customize_layout)
+        except Exception as e:
+            return ErrorResponse(error=str(e)).model_dump_json()
     
     @mcp.tool
     async def pptx_apply_master_layout(
         layout_name: str,
-        font_name: Optional[str] = None,
-        title_color: Optional[str] = None,
-        body_color: Optional[str] = None,
-        presentation: Optional[str] = None
+        font_name: str | None = None,
+        title_color: str | None = None,
+        body_color: str | None = None,
+        presentation: str | None = None
     ) -> str:
         """
         Apply master layout settings to all slides.
@@ -338,10 +371,12 @@ def register_layout_tools(mcp, manager):
                 body_color="#333333"
             )
         """
-        def _apply_master():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+            prs, metadata = result
             
             from pptx.dml.color import RGBColor
             
@@ -395,7 +430,7 @@ def register_layout_tools(mcp, manager):
                 slides_updated += 1
             
             # Update in VFS if enabled
-            manager.update(presentation)
+            await manager.update(presentation)
             
             settings = []
             if font_name:
@@ -405,14 +440,15 @@ def register_layout_tools(mcp, manager):
             if body_color:
                 settings.append(f"body color: #{body_color}")
             
-            return f"Applied master layout '{layout_name}' to {slides_updated} slides ({', '.join(settings)})"
+            return SuccessResponse(message=f"Applied master layout '{layout_name}' to {slides_updated} slides ({', '.join(settings)})").model_dump_json()
         
-        return await asyncio.get_event_loop().run_in_executor(None, _apply_master)
+        except Exception as e:
+            return ErrorResponse(error=str(e)).model_dump_json()
     
     @mcp.tool
     async def pptx_duplicate_slide(
         slide_index: int,
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Duplicate an existing slide.
@@ -430,13 +466,15 @@ def register_layout_tools(mcp, manager):
             await pptx_duplicate_slide(slide_index=2)
             # Creates a copy of slide 2 as a new slide
         """
-        def _duplicate_slide():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+            prs, metadata = result
             
             if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
+                return ErrorResponse(error=f"Slide index {slide_index} not found in presentation").model_dump_json()
             
             # Get the source slide
             source_slide = prs.slides[slide_index]
@@ -469,18 +507,19 @@ def register_layout_tools(mcp, manager):
                 new_slide.shapes.title.text = source_slide.shapes.title.text
             
             # Update in VFS if enabled
-            manager.update(presentation)
+            await manager.update(presentation)
             
             new_idx = len(prs.slides) - 1
-            return f"Duplicated slide {slide_index} as new slide {new_idx}"
+            return SuccessResponse(message=f"Duplicated slide {slide_index} as new slide {new_idx}").model_dump_json()
         
-        return await asyncio.get_event_loop().run_in_executor(None, _duplicate_slide)
+        except Exception as e:
+            return ErrorResponse(error=str(e)).model_dump_json()
     
     @mcp.tool
     async def pptx_reorder_slides(
         slide_index: int,
         new_position: int,
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Move a slide to a different position in the presentation.
@@ -499,19 +538,21 @@ def register_layout_tools(mcp, manager):
             await pptx_reorder_slides(slide_index=5, new_position=2)
             # Moves slide 5 to position 2
         """
-        def _reorder_slides():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+            prs, metadata = result
             
             if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
+                return ErrorResponse(error=f"Slide index {slide_index} not found in presentation").model_dump_json()
             
             if new_position >= len(prs.slides):
-                return f"Error: New position {new_position} out of range"
+                return SuccessResponse(message=f"Error: New position {new_position} out of range").model_dump_json()
             
             if slide_index == new_position:
-                return f"Slide {slide_index} is already at position {new_position}"
+                return SuccessResponse(message=f"Slide {slide_index} is already at position {new_position}").model_dump_json()
             
             # Get the XML parts
             slides = prs.slides._sldIdLst
@@ -524,11 +565,12 @@ def register_layout_tools(mcp, manager):
             slides.insert(new_position, slide_id)
             
             # Update in VFS if enabled
-            manager.update(presentation)
+            await manager.update(presentation)
             
-            return f"Moved slide from position {slide_index} to position {new_position}"
+            return SuccessResponse(message=f"Moved slide from position {slide_index} to position {new_position}").model_dump_json()
         
-        return await asyncio.get_event_loop().run_in_executor(None, _reorder_slides)
+        except Exception as e:
+            return ErrorResponse(error=str(e)).model_dump_json()
 
     # ========================================================================
     # NOTE: Grid layout is handled internally by component tools

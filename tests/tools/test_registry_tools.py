@@ -11,7 +11,7 @@ from chuk_mcp_pptx.tools.registry_tools import register_registry_tools
 
 
 @pytest.fixture
-def registry_tools(mock_mcp_server, mock_presentation_manager):
+async def registry_tools(mock_mcp_server, mock_presentation_manager):
     """Register registry tools and return them."""
     tools = register_registry_tools(mock_mcp_server, mock_presentation_manager)
     return tools

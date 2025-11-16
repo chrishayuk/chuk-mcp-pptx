@@ -244,25 +244,33 @@ class Theme:
             return RGBColor(*self.hex_to_rgb(value))
         return RGBColor(0, 0, 0)
     
-    def apply_to_slide(self, slide):
-        """Apply theme to slide."""
+    def apply_to_slide(self, slide, override_text_colors: bool = True):
+        """
+        Apply theme to slide.
+
+        Args:
+            slide: PowerPoint slide object
+            override_text_colors: If True, override all text colors with theme foreground.
+                                 If False, only set background (useful for slides with pre-styled components).
+        """
         # Set background
         background = slide.background
         fill = background.fill
         fill.solid()
         fill.fore_color.rgb = self.get_color("background.DEFAULT")
 
-        # Set default text color for all existing text shapes
-        foreground_color = self.get_color("foreground.DEFAULT")
-        for shape in slide.shapes:
-            if shape.has_text_frame:
-                # Set color for existing text
-                for paragraph in shape.text_frame.paragraphs:
-                    # Set default font for paragraph
-                    paragraph.font.color.rgb = foreground_color
-                    # Also set for any existing runs
-                    for run in paragraph.runs:
-                        run.font.color.rgb = foreground_color
+        # Optionally set default text color for all existing text shapes
+        if override_text_colors:
+            foreground_color = self.get_color("foreground.DEFAULT")
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    # Set color for existing text
+                    for paragraph in shape.text_frame.paragraphs:
+                        # Set default font for paragraph
+                        paragraph.font.color.rgb = foreground_color
+                        # Also set for any existing runs
+                        for run in paragraph.runs:
+                            run.font.color.rgb = foreground_color
     
     def apply_to_shape(self, shape, style: str = "card"):
         """Apply theme to shape."""

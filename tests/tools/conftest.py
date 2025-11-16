@@ -1,11 +1,21 @@
 """
 Shared fixtures for tools tests.
+
+Updated for Pydantic-native architecture with VFS integration.
 """
 
 import pytest
+import sys
+import os
 from unittest.mock import MagicMock, AsyncMock, Mock
 from pptx import Presentation
 from pptx.slide import Slide
+from chuk_virtual_fs import AsyncVirtualFileSystem
+
+# Add src to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
+
+from chuk_mcp_pptx.presentation_manager import PresentationManager
 
 
 @pytest.fixture
@@ -17,62 +27,39 @@ def mock_mcp_server():
 
 
 @pytest.fixture
-def mock_presentation_manager():
-    """Create a mock presentation manager."""
-    manager = MagicMock()
+async def vfs_for_tools():
+    """Create an async virtual filesystem with memory provider for tool testing."""
+    async with AsyncVirtualFileSystem(provider="memory") as fs:
+        yield fs
 
-    # Mock get method to return a presentation
-    prs = MagicMock(spec=Presentation)
 
-    # Create mock slides collection with add_slide method
-    slides_list = []
+@pytest.fixture
+async def presentation_manager_for_tools(vfs_for_tools):
+    """Create a PresentationManager with VFS for tool testing.
 
-    def mock_add_slide(layout):
-        """Mock add_slide method."""
-        slide = MagicMock(spec=Slide)
-        slide.shapes = MagicMock()
-        slide.shapes.title = MagicMock()
-        slide.shapes.title.text = ""
-        slide.shapes.add_shape = MagicMock(return_value=MagicMock())
-        slide.shapes.add_textbox = MagicMock(return_value=MagicMock())
-        slide.shapes.add_chart = MagicMock()
-        slide.shapes.add_picture = MagicMock()
-        slide.shapes.add_connector = MagicMock()
-        slide.shapes._spTree = MagicMock()
-        slide.slide_layout = layout
-        slide.placeholders = [MagicMock() for _ in range(3)]
-        slide.background = MagicMock()
-        slide.background.fill = MagicMock()
-        slide.background.fill.solid = MagicMock()
-        slide.background.fill.fore_color = MagicMock()
-        slide.background.fill.fore_color.rgb = None
-        slides_list.append(slide)
-        return slide
+    Pre-creates a test presentation with 3 slides.
+    """
+    manager = PresentationManager(vfs=vfs_for_tools, base_path="test_presentations")
 
-    prs.slides = MagicMock()
-    prs.slides.__len__ = lambda self: len(slides_list)
-    prs.slides.__getitem__ = lambda self, idx: slides_list[idx]
-    prs.slides.__iter__ = lambda self: iter(slides_list)
-    prs.slides.add_slide = mock_add_slide
+    # Create a test presentation with 3 slides
+    metadata = await manager.create(name="test_presentation", theme=None)
 
-    prs.slide_layouts = [MagicMock() for _ in range(11)]
-    prs.slide_master = MagicMock()
-    prs.slide_master.slide_layouts = prs.slide_layouts
-    prs.slide_width = 9144000
-    prs.slide_height = 5143500
-
-    # Create initial mock slides
-    for i in range(3):
-        mock_add_slide(prs.slide_layouts[1])
-
-    manager.get = MagicMock(return_value=prs)
-    manager.get_current = MagicMock(return_value=prs)
-    manager.get_current_name = MagicMock(return_value="test_presentation")
-    manager.create = MagicMock(return_value="Created presentation")
-    manager.update = MagicMock()
-    manager._presentations = {"test_presentation": prs}
+    # Add 3 slides to the presentation
+    result = await manager.get(name="test_presentation")
+    if result:
+        prs, _ = result
+        # Add slides using the presentation object directly
+        for i in range(3):
+            prs.slides.add_slide(prs.slide_layouts[1])  # TITLE_AND_CONTENT layout
 
     return manager
+
+
+# Keep old name for backward compatibility
+@pytest.fixture
+async def mock_presentation_manager(presentation_manager_for_tools):
+    """Alias for backward compatibility with existing tests."""
+    return presentation_manager_for_tools
 
 
 @pytest.fixture

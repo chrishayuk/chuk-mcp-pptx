@@ -3,8 +3,8 @@
 Async PowerPoint MCP Server using chuk-mcp-server
 
 This server provides async MCP tools for creating and managing PowerPoint presentations
-using the python-pptx library. It supports multiple presentations with optional
-virtual filesystem integration for persistence and multi-server access.
+using the python-pptx library. It supports multiple presentations with virtual filesystem
+integration for flexible storage (file, memory, sqlite, s3).
 """
 import asyncio
 import json
@@ -16,8 +16,22 @@ import base64
 import io
 
 from chuk_mcp_server import ChukMCPServer
+from chuk_virtual_fs import AsyncVirtualFileSystem
 from pptx.util import Inches
 from .presentation_manager import PresentationManager
+from .models import (
+    ErrorResponse,
+    SuccessResponse,
+    PresentationResponse,
+    SlideResponse,
+    ListPresentationsResponse,
+)
+from .constants import (
+    SlideLayoutIndex,
+    ErrorMessages,
+    SuccessMessages,
+    ShapeType,
+)
 # Text utilities now handled by tools/text.py via register_text_tools()
 from .utilities.chart_utils import (
     add_chart, add_pie_chart, add_scatter_chart, add_data_table
@@ -36,6 +50,7 @@ from .tools.registry_tools import register_registry_tools
 from .tools.token_tools import register_token_tools
 from .tools.semantic_tools import register_semantic_tools
 from .tools.theme_tools import register_theme_tools
+from .themes.theme_manager import ThemeManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -43,13 +58,19 @@ logger = logging.getLogger(__name__)
 # Create the MCP server instance
 mcp = ChukMCPServer("chuk-mcp-pptx-async")
 
-# Initialize presentation manager
-# Check environment variable to enable VFS mode
-USE_VFS = os.getenv("PPTX_USE_VFS", "false").lower() == "true"
-VFS_BASE_PATH = os.getenv("PPTX_VFS_PATH", "vfs://presentations")
+# Initialize virtual filesystem with memory provider for fast in-memory storage
+# You can change provider to "sqlite" or "s3" as needed
+# Note: "file" provider requires additional configuration
+vfs = AsyncVirtualFileSystem(provider="memory")
 
-# Create a single manager instance for the server
-manager = PresentationManager(use_vfs=USE_VFS, vfs_base_path=VFS_BASE_PATH)
+# VFS will be initialized on first use by PresentationManager
+# This avoids blocking during module import
+
+# Create presentation manager instance with virtual filesystem
+manager = PresentationManager(vfs=vfs, base_path="presentations")
+
+# Create theme manager instance
+theme_manager = ThemeManager()
 
 # Register all modular tools
 chart_tools = register_chart_tools(mcp, manager)
@@ -116,119 +137,140 @@ if theme_tools:
     pptx_apply_component_theme = theme_tools['pptx_apply_component_theme']
     pptx_list_component_themes = theme_tools['pptx_list_component_themes']
 
-# Create backward compatibility references for chart and image tools
-def _create_function_references():
-    """Create references to chart and image functions for backward compatibility."""
-    # Create a temporary MCP instance to get the function references
-    temp_mcp = type('TempMCP', (), {})()
-    temp_tools = {}
-    
-    def tool_decorator(func):
-        temp_tools[func.__name__] = func
-        return func
-    
-    temp_mcp.tool = tool_decorator
-    
-    # Register both chart and image tools to get all function references
-    register_chart_tools(temp_mcp, manager)
-    register_image_tools(temp_mcp, manager)
-    
-    # Make the functions available in this module's namespace
-    for name, func in temp_tools.items():
-        globals()[name] = func
-
-_create_function_references()
+# Note: Function references are already created by the register_*_tools() calls above
+# No need for backward compatibility layer as tools are registered directly with mcp
 
 
 @mcp.tool
-async def pptx_create(name: str) -> str:
+async def pptx_create(name: str, theme: str | None = None) -> str:
     """
     Create a new PowerPoint presentation.
-    
+
     Creates a new blank presentation and sets it as the current active presentation.
-    If VFS mode is enabled, the presentation is automatically saved to the virtual filesystem.
-    
+    Automatically saves to the virtual filesystem for persistence.
+
     Args:
         name: Unique name for the presentation (used for reference in other commands)
-        
+        theme: Optional theme to apply (e.g., "dark-violet", "tech-blue")
+
     Returns:
-        Success message confirming presentation creation
-        
+        JSON string with PresentationResponse model
+
     Example:
-        await pptx_create(name="quarterly_report")
-        # Returns: "Created presentation 'quarterly_report'"
+        await pptx_create(name="quarterly_report", theme="tech-blue")
     """
-    # Run synchronous operation in thread pool
-    return await asyncio.get_event_loop().run_in_executor(None, manager.create, name)
+    try:
+        logger.info(f"🎯 pptx_create called: name={name!r}, theme={theme!r}")
+        logger.info(f"   name type: {type(name)}, theme type: {type(theme)}")
+
+        # Create presentation (returns PresentationMetadata model)
+        metadata = await manager.create(name=name, theme=theme)
+        logger.info(f"✓ Presentation created successfully: {metadata.name}")
+
+        # Return PresentationResponse as JSON
+        return PresentationResponse(
+            name=metadata.name,
+            message=f"Created presentation '{metadata.name}'",
+            slide_count=metadata.slide_count,
+            is_current=True,
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to create presentation: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
 
 
 @mcp.tool
 async def pptx_add_title_slide(
     title: str,
     subtitle: str = "",
-    presentation: Optional[str] = None
+    presentation: str | None = None
 ) -> str:
     """
     Add a title slide to the current presentation.
-    
+
     Creates a standard title slide with a main title and optional subtitle.
     This is typically used as the first slide in a presentation.
-    
+
     Args:
         title: Main title text for the slide
         subtitle: Optional subtitle text (appears below the title)
         presentation: Name of presentation to add slide to (uses current if not specified)
-        
+
     Returns:
-        Success message confirming slide addition
-        
+        JSON string with SlideResponse model
+
     Example:
         await pptx_add_title_slide(
             title="Annual Report 2024",
             subtitle="Financial Results and Strategic Outlook"
         )
     """
-    def _add_title_slide():
-        prs = manager.get(presentation)
+    try:
+        prs = manager.get_presentation(presentation)
         if not prs:
-            return "Error: No presentation found. Create one first with pptx_create()"
-        
-        slide_layout = prs.slide_layouts[0]  # Title slide layout
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        slide_layout = prs.slide_layouts[SlideLayoutIndex.TITLE]
         slide = prs.slides.add_slide(slide_layout)
-        
+
         slide.shapes.title.text = title
         if subtitle and len(slide.placeholders) > 1:
             slide.placeholders[1].text = subtitle
-        
-        # Update in VFS if enabled
-        manager.update(presentation)
-        
-        pres_name = presentation or manager.get_current_name()
-        return f"Added title slide to '{pres_name}'"
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _add_title_slide)
+
+        # Apply presentation theme to the slide
+        metadata = manager.get_metadata(presentation)
+        if metadata and metadata.theme:
+            theme_obj = theme_manager.get_theme(metadata.theme)
+            if theme_obj:
+                theme_obj.apply_to_slide(slide)
+
+        slide_index = len(prs.slides) - 1
+
+        # Update metadata
+        manager.update_slide_metadata(slide_index)
+
+        # Update in VFS
+        await manager.update(presentation)
+
+        pres_name = presentation or manager.get_current_name() or "presentation"
+
+        return SlideResponse(
+            presentation=pres_name,
+            slide_index=slide_index,
+            message=SuccessMessages.SLIDE_ADDED.format(
+                slide_type="title", presentation=pres_name
+            ),
+            slide_count=len(prs.slides),
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to add title slide: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
 
 
 @mcp.tool
 async def pptx_add_slide(
     title: str,
-    content: List[str],
-    presentation: Optional[str] = None
+    content: list[str],
+    presentation: str | None = None
 ) -> str:
     """
-    Add a content slide with title and bullet points.
-    
-    Creates a slide with a title and bulleted list. Perfect for agendas,
-    key points, or any structured list content.
-    
+    Add a text content slide with title and bullet points.
+
+    Creates a slide with a title and bulleted text list.
+
+    ⚠️  For CHARTS use pptx_add_chart instead - this only creates text bullets.
+
+    Perfect for: agendas, key points, lists, text content.
+    NOT for: charts, graphs, data visualizations (use pptx_add_chart).
+
     Args:
         title: Title text for the slide
-        content: List of strings, each becoming a bullet point
+        content: List of strings, each becoming a bullet point (TEXT only)
         presentation: Name of presentation to add slide to (uses current if not specified)
-        
+
     Returns:
-        Success message confirming slide addition
-        
+        JSON string with SlideResponse model
+
     Example:
         await pptx_add_slide(
             title="Project Milestones",
@@ -239,16 +281,16 @@ async def pptx_add_slide(
             ]
         )
     """
-    def _add_slide():
-        prs = manager.get(presentation)
+    try:
+        prs = manager.get_presentation(presentation)
         if not prs:
-            return "Error: No presentation found. Create one first with pptx_create()"
-        
-        slide_layout = prs.slide_layouts[1]  # Title and content layout
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        slide_layout = prs.slide_layouts[SlideLayoutIndex.TITLE_AND_CONTENT]
         slide = prs.slides.add_slide(slide_layout)
-        
+
         slide.shapes.title.text = title
-        
+
         if len(slide.placeholders) > 1:
             text_frame = slide.placeholders[1].text_frame
             for idx, bullet in enumerate(content):
@@ -258,14 +300,35 @@ async def pptx_add_slide(
                     p = text_frame.add_paragraph()
                 p.text = bullet
                 p.level = 0  # First level bullet
-        
-        # Update in VFS if enabled
-        manager.update(presentation)
-        
-        pres_name = presentation or manager.get_current_name()
-        return f"Added content slide to '{pres_name}'"
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _add_slide)
+
+        # Apply presentation theme to the slide
+        metadata = manager.get_metadata(presentation)
+        if metadata and metadata.theme:
+            theme_obj = theme_manager.get_theme(metadata.theme)
+            if theme_obj:
+                theme_obj.apply_to_slide(slide)
+
+        slide_index = len(prs.slides) - 1
+
+        # Update metadata
+        manager.update_slide_metadata(slide_index)
+
+        # Update in VFS
+        await manager.update(presentation)
+
+        pres_name = presentation or manager.get_current_name() or "presentation"
+
+        return SlideResponse(
+            presentation=pres_name,
+            slide_index=slide_index,
+            message=SuccessMessages.SLIDE_ADDED.format(
+                slide_type="content", presentation=pres_name
+            ),
+            slide_count=len(prs.slides),
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to add slide: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
 
 
 # Note: pptx_add_text_slide is now provided by text_tools.py
@@ -275,249 +338,239 @@ async def pptx_add_slide(
 @mcp.tool
 async def pptx_save(
     path: str,
-    presentation: Optional[str] = None
+    presentation: str | None = None
 ) -> str:
     """
     Save the presentation to a PowerPoint file.
-    
+
     Saves the current or specified presentation to a .pptx file on disk.
-    
+
     Args:
         path: File path where to save the .pptx file
         presentation: Name of presentation to save (uses current if not specified)
-        
+
     Returns:
-        Success message with the save path, or error message if save fails
-        
+        JSON string with ExportResponse model
+
     Example:
         await pptx_save(path="reports/quarterly_report.pptx")
-        # Returns: "Saved presentation to: reports/quarterly_report.pptx"
     """
-    def _save():
-        prs = manager.get(presentation)
+    try:
+        prs = manager.get_presentation(presentation)
         if not prs:
-            return "Error: No presentation found. Create one first with pptx_create()"
-        
-        try:
-            prs.save(path)
-            return f"Saved presentation to: {path}"
-        except Exception as e:
-            return f"Error: Failed to save presentation: {str(e)}"
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _save)
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        prs.save(path)
+
+        # Get file size
+        from pathlib import Path
+        size_bytes = Path(path).stat().st_size if Path(path).exists() else None
+
+        pres_name = presentation or manager.get_current_name() or "presentation"
+
+        from .models import ExportResponse
+        return ExportResponse(
+            name=pres_name,
+            format="file",
+            path=path,
+            size_bytes=size_bytes,
+            message=SuccessMessages.PRESENTATION_SAVED.format(path=path),
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to save presentation: {e}")
+        return ErrorResponse(
+            error=ErrorMessages.SAVE_FAILED.format(error=str(e))
+        ).model_dump_json()
 
 
 @mcp.tool
-async def pptx_export_base64(presentation: Optional[str] = None) -> str:
+async def pptx_export_base64(presentation: str | None = None) -> str:
     """
     Export the presentation as a base64-encoded string.
-    
+
     Exports the current or specified presentation as a base64 string that can be
-    saved, transmitted, or imported later. Useful for transferring presentations
-    between systems or storing in databases.
-    
+    saved, transmitted, or imported later.
+
     Args:
         presentation: Name of presentation to export (uses current if not specified)
-        
+
     Returns:
-        JSON string containing presentation name, base64 data, and MIME type
-        
+        JSON string with ExportResponse model including base64 data
+
     Example:
         result = await pptx_export_base64()
-        # Returns JSON with structure:
-        # {
-        #   "presentation": "my_pres",
-        #   "data": "UEsDBAoAAA...", 
-        #   "mime_type": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-        # }
     """
-    def _export():
+    try:
         data = manager.export_base64(presentation)
         if not data:
-            return json.dumps({"error": "No presentation found"})
-        return json.dumps(data)
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _export)
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        pres_name = presentation or manager.get_current_name() or "presentation"
+
+        from .models import ExportResponse
+        return ExportResponse(
+            name=pres_name,
+            format="base64",
+            path=None,
+            size_bytes=len(data),
+            message=f"Exported presentation '{pres_name}' as base64 ({len(data)} bytes)",
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to export presentation: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
 
 
 @mcp.tool
 async def pptx_import_base64(data: str, name: str) -> str:
     """
     Import a presentation from a base64-encoded string.
-    
+
     Imports a presentation from a base64 string and creates it with the given name.
     The imported presentation becomes the current active presentation.
-    
+
     Args:
         data: Base64-encoded string of the .pptx file
         name: Name to give to the imported presentation
-        
+
     Returns:
-        Success message confirming import
-        
+        JSON string with ImportResponse model
+
     Example:
         await pptx_import_base64(
             data="UEsDBBQABgAIAAAAIQA...",
             name="imported_presentation"
         )
-        # Returns: "Imported presentation 'imported_presentation'"
     """
-    def _import():
-        if manager.import_base64(data, name):
-            return f"Imported presentation '{name}'"
-        else:
-            return "Error: Failed to import presentation"
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _import)
+    try:
+        success = await manager.import_base64(data, name)
+        if not success:
+            return ErrorResponse(error="Failed to import presentation").model_dump_json()
+
+        prs = manager.get_presentation(name)
+        slide_count = len(prs.slides) if prs else 0
+
+        from .models import ImportResponse
+        return ImportResponse(
+            name=name,
+            source="base64",
+            slide_count=slide_count,
+            message=f"Imported presentation '{name}' with {slide_count} slides",
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to import presentation: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
 
 
 @mcp.tool
 async def pptx_list() -> str:
     """
-    List all presentations currently in memory.
-    
-    Returns a JSON array of presentation names that are currently loaded.
-    Useful for managing multiple presentations in a session.
-    
+    List all presentations currently in memory and VFS.
+
+    Returns a JSON array of presentation names with metadata.
+
     Returns:
-        Formatted list of presentations with slide counts and status
-        
+        JSON string with ListPresentationsResponse model
+
     Example:
         presentations = await pptx_list()
-        # Returns formatted list of presentations
     """
-    def _list():
-        if not manager._presentations:
-            return "No presentations currently in memory"
-        
-        lines = ["Current presentations:"]
-        for name in manager._presentations:
-            prs = manager.get(name)
-            if prs:
-                slide_count = len(prs.slides)
-                is_current = name == manager.get_current_name()
-                status = " (current)" if is_current else ""
-                lines.append(f"  - {name}: {slide_count} slides{status}")
-        
-        return "\n".join(lines)
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _list)
+    try:
+        response = await manager.list_presentations()
+        return response.model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to list presentations: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
 
 
 @mcp.tool
 async def pptx_switch(name: str) -> str:
     """
     Switch to a different presentation.
-    
+
     Changes the current active presentation to the specified one.
-    All subsequent operations will affect this presentation unless
-    explicitly specified otherwise.
-    
+
     Args:
         name: Name of the presentation to switch to
-        
+
     Returns:
-        Success message confirming the switch
-        
+        JSON string with SuccessResponse model
+
     Example:
         await pptx_switch(name="sales_pitch")
-        # Returns: "Switched to presentation 'sales_pitch'"
     """
-    def _switch():
-        if name not in manager._presentations:
-            return f"Error: Presentation '{name}' not found"
-        manager._current_presentation = name
-        return f"Switched to presentation '{name}'"
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _switch)
+    try:
+        success = await manager.set_current(name)
+        if not success:
+            return ErrorResponse(
+                error=ErrorMessages.PRESENTATION_NOT_FOUND.format(name=name)
+            ).model_dump_json()
+
+        return SuccessResponse(
+            message=f"Switched to presentation '{name}'"
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to switch presentation: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
 
 
 @mcp.tool
 async def pptx_delete(name: str) -> str:
     """
-    Delete a presentation from memory.
-    
-    Removes the specified presentation from memory. If it's the current
-    presentation, you'll need to switch to or create another one.
-    
+    Delete a presentation from memory and VFS.
+
+    Removes the specified presentation from memory and VFS storage.
+
     Args:
         name: Name of the presentation to delete
-        
+
     Returns:
-        Success message confirming deletion
-        
+        JSON string with SuccessResponse model
+
     Example:
         await pptx_delete(name="old_presentation")
-        # Returns: "Deleted presentation 'old_presentation'"
     """
-    def _delete():
-        if name not in manager._presentations:
-            return f"Error: Presentation '{name}' not found"
-        
-        del manager._presentations[name]
-        
-        # Clear current if it was deleted
-        if manager._current_presentation == name:
-            manager._current_presentation = None
-        
-        # Delete from VFS if enabled
-        if manager.use_vfs:
-            vfs_path = f"{manager.vfs_base_path}/{name}.pptx"
-            # In real implementation, would delete from VFS here
-        
-        return f"Deleted presentation '{name}'"
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _delete)
+    try:
+        success = await manager.delete(name)
+        if not success:
+            return ErrorResponse(
+                error=ErrorMessages.PRESENTATION_NOT_FOUND.format(name=name)
+            ).model_dump_json()
+
+        return SuccessResponse(
+            message=f"Deleted presentation '{name}'"
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to delete presentation: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
 
 
 @mcp.tool
-async def pptx_get_info(presentation: Optional[str] = None) -> str:
+async def pptx_get_info(presentation: str | None = None) -> str:
     """
     Get information about a presentation.
-    
-    Returns detailed information about the specified presentation including
-    number of slides, slide titles, and slide content summaries.
-    
+
+    Returns detailed metadata about the specified presentation including
+    slide count, metadata, and storage status.
+
     Args:
         presentation: Name of presentation to get info for (uses current if not specified)
-        
+
     Returns:
-        JSON object with presentation information
-        
+        JSON string with PresentationMetadata model
+
     Example:
         info = await pptx_get_info()
-        # Returns JSON with structure:
-        # {
-        #   "name": "quarterly_report",
-        #   "slides": 10,
-        #   "slide_details": [
-        #     {"index": 0, "title": "Q4 Report", "shapes": 2},
-        #     ...
-        #   ]
-        # }
     """
-    def _get_info():
-        prs = manager.get(presentation)
-        if not prs:
-            return json.dumps({"error": "No presentation found"})
-        
-        info = {
-            "name": presentation or manager.get_current_name(),
-            "slides": len(prs.slides),
-            "slide_details": []
-        }
-        
-        for idx, slide in enumerate(prs.slides):
-            slide_info = {
-                "index": idx,
-                "title": slide.shapes.title.text if slide.shapes.title else "No title",
-                "shapes": len(slide.shapes)
-            }
-            info["slide_details"].append(slide_info)
-        
-        return json.dumps(info, indent=2)
-    
-    return await asyncio.get_event_loop().run_in_executor(None, _get_info)
+    try:
+        result = await manager.get(presentation)
+        if not result:
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        prs, metadata = result
+        return metadata.model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to get presentation info: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
 
 
 # Additional async tools for shapes, text extraction, etc.
@@ -531,13 +584,9 @@ async def pptx_get_info(presentation: Optional[str] = None) -> str:
 
 # Run the server
 if __name__ == "__main__":
-    import sys
-    
-    # When run directly, default to stdio mode for testing
-    print(f"Starting PowerPoint MCP Server...", file=sys.stderr)
-    print(f"VFS Mode: {USE_VFS}", file=sys.stderr)
-    if USE_VFS:
-        print(f"VFS Path: {VFS_BASE_PATH}", file=sys.stderr)
-    
+    logger.info("Starting PowerPoint MCP Server...")
+    logger.info(f"VFS Provider: {vfs.provider}")
+    logger.info(f"Base Path: {manager.base_path}")
+
     # Run in stdio mode when executed directly
     mcp.run(stdio=True)

@@ -13,24 +13,33 @@ from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 
+# Import design system typography tokens
+from ..tokens.typography import FONT_SIZES, FONT_FAMILIES
+
 
 def configure_legend(
     chart,
     position: str = "right",
     show: bool = True,
-    font_family: str = "Inter",
-    font_size: int = 10
+    font_family: str = None,
+    font_size: int = None
 ):
     """
-    Configure chart legend with consistent styling.
+    Configure chart legend with consistent styling using design tokens.
 
     Args:
         chart: PowerPoint chart object
         position: Legend position (right, left, top, bottom, corner)
         show: Whether to show legend
-        font_family: Font family for legend text
-        font_size: Font size in points
+        font_family: Font family for legend text (uses design token default if None)
+        font_size: Font size in points (uses design token default if None)
     """
+    # Use design system defaults
+    if font_family is None:
+        font_family = FONT_FAMILIES["sans"][0]
+    if font_size is None:
+        font_size = FONT_SIZES["xs"]  # 10pt for legends
+
     chart.has_legend = show
 
     if show:
@@ -55,21 +64,27 @@ def configure_axes(
     chart,
     show_gridlines: bool = True,
     gridline_color: Optional[RGBColor] = None,
-    label_font_family: str = "Inter",
-    label_font_size: int = 9,
+    label_font_family: str = None,
+    label_font_size: int = None,
     label_color: Optional[RGBColor] = None
 ):
     """
-    Configure chart axes with consistent styling.
+    Configure chart axes with consistent styling using design tokens.
 
     Args:
         chart: PowerPoint chart object
         show_gridlines: Whether to show gridlines
         gridline_color: Color for gridlines
-        label_font_family: Font family for axis labels
-        label_font_size: Font size for axis labels
+        label_font_family: Font family for axis labels (uses design token default if None)
+        label_font_size: Font size for axis labels (uses design token default if None)
         label_color: Color for axis labels
     """
+    # Use design system defaults
+    if label_font_family is None:
+        label_font_family = FONT_FAMILIES["sans"][0]
+    if label_font_size is None:
+        label_font_size = FONT_SIZES["xs"]  # 10pt for axis labels
+
     try:
         # Configure value axis
         if hasattr(chart, 'value_axis'):
@@ -103,19 +118,19 @@ def configure_axes(
 def set_chart_title(
     chart,
     title: str,
-    font_family: str = "Inter",
-    font_size: int = 16,
+    font_family: str = None,
+    font_size: int = None,
     font_color: Optional[RGBColor] = None,
     bold: bool = True
 ):
     """
-    Set and style chart title consistently.
+    Set and style chart title consistently using design tokens.
 
     Args:
         chart: PowerPoint chart object
         title: Chart title text
-        font_family: Font family for title
-        font_size: Font size in points
+        font_family: Font family for title (uses design token default if None)
+        font_size: Font size in points (auto-reduced for long titles, uses design tokens)
         font_color: Title color
         bold: Whether to make title bold
     """
@@ -124,6 +139,20 @@ def set_chart_title(
         chart_title = chart.chart_title
         chart_title.text_frame.text = title
 
+        # Use design system defaults if not specified
+        if font_family is None:
+            font_family = FONT_FAMILIES["sans"][0]
+
+        # Auto-scale font size based on title length using design tokens
+        # Approximate character thresholds based on typical chart widths
+        if font_size is None:
+            if len(title) > 60:
+                font_size = FONT_SIZES["sm"]  # 12pt - Very long title
+            elif len(title) > 45:
+                font_size = FONT_SIZES["base"]  # 14pt - Long title
+            else:
+                font_size = FONT_SIZES["lg"]  # 16pt - Default chart title size
+
         # Style the title
         para = chart_title.text_frame.paragraphs[0]
         para.font.name = font_family
@@ -131,6 +160,9 @@ def set_chart_title(
         para.font.bold = bold
         if font_color:
             para.font.color.rgb = font_color
+
+        # Disable text wrapping to prevent multi-line titles that overlap charts
+        chart_title.text_frame.word_wrap = False
 
 
 def apply_chart_colors(
@@ -214,14 +246,14 @@ def add_chart(slide, chart_type: str, left: float, top: float,
     chart = chart_shape.chart
 
     if title:
-        set_chart_title(chart, title, font_family="Calibri", font_size=18)
+        # Use design tokens (xl = 18pt for legacy compatibility)
+        set_chart_title(chart, title, font_size=FONT_SIZES["xl"])
 
     configure_legend(
         chart,
         position=legend_position,
-        show=has_legend,
-        font_family="Calibri",
-        font_size=10
+        show=has_legend
+        # Uses design token defaults: Inter font, 10pt
     )
 
     return chart_shape
@@ -268,9 +300,11 @@ def add_scatter_chart(slide, left: float, top: float,
     chart = chart_shape.chart
 
     if title:
-        set_chart_title(chart, title, font_family="Calibri", font_size=18)
+        # Use design tokens (xl = 18pt for legacy compatibility)
+        set_chart_title(chart, title, font_size=FONT_SIZES["xl"])
 
-    configure_legend(chart, position="right", show=has_legend, font_family="Calibri")
+    configure_legend(chart, position="right", show=has_legend)
+    # Uses design token defaults
 
     return chart_shape
 

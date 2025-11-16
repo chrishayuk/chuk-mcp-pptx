@@ -71,45 +71,44 @@ def register_shape_tools(mcp, manager):
                 arrow_end=True
             )
         """
-        def _add_arrow():
-            prs = manager.get(presentation)
-            if not prs:
+        try:
+            result = await manager.get(presentation)
+            if not result:
                 return "Error: No presentation found"
-            
+
+            prs, metadata = result
+
             if slide_index >= len(prs.slides):
                 return f"Error: Slide index {slide_index} out of range"
-            
-            slide = prs.slides[slide_index]
-            
-            try:
-                # Get theme for connector
-                theme_manager = ThemeManager()
-                theme_obj = theme_manager.get_default_theme()
 
-                # Create connector using component
-                connector_comp = Connector(
-                    start_x=start_x,
-                    start_y=start_y,
-                    end_x=end_x,
-                    end_y=end_y,
-                    connector_type=connector_type,
-                    line_color=line_color,  # Component handles hex colors
-                    line_width=line_width,
-                    arrow_start=arrow_start,
-                    arrow_end=arrow_end,
-                    theme=theme_obj
-                )
-                connector = connector_comp.render(slide)
-                
-                # Update in VFS if enabled
-                manager.update(presentation)
-                
-                return f"Added {connector_type} arrow to slide {slide_index}"
-                
-            except Exception as e:
-                return f"Error adding arrow: {str(e)}"
-        
-        return await asyncio.get_event_loop().run_in_executor(None, _add_arrow)
+            slide = prs.slides[slide_index]
+
+            # Get theme for connector
+            theme_manager = ThemeManager()
+            theme_obj = theme_manager.get_default_theme()
+
+            # Create connector using component
+            connector_comp = Connector(
+                start_x=start_x,
+                start_y=start_y,
+                end_x=end_x,
+                end_y=end_y,
+                connector_type=connector_type,
+                line_color=line_color,  # Component handles hex colors
+                line_width=line_width,
+                arrow_start=arrow_start,
+                arrow_end=arrow_end,
+                theme=theme_obj
+            )
+            connector = connector_comp.render(slide)
+
+            # Update in VFS
+            await manager.update(presentation)
+
+            return f"Added {connector_type} arrow to slide {slide_index}"
+
+        except Exception as e:
+            return f"Error adding arrow: {str(e)}"
     
     @mcp.tool
     async def pptx_add_smart_art(
@@ -159,14 +158,16 @@ def register_shape_tools(mcp, manager):
                 color_scheme="modern_blue"
             )
         """
-        def _add_smart():
-            prs = manager.get(presentation)
-            if not prs:
+        try:
+            result = await manager.get(presentation)
+            if not result:
                 return "Error: No presentation found"
-            
+
+            prs, metadata = result
+
             if slide_index >= len(prs.slides):
                 return f"Error: Slide index {slide_index} out of range"
-            
+
             slide = prs.slides[slide_index]
             
             # Remove content placeholders that might interfere with SmartArt
@@ -214,51 +215,48 @@ def register_shape_tools(mcp, manager):
                 # Adjust top position for the SmartArt
                 validated_top += 0.2
                 validated_height -= 0.7
-            
-            try:
-                # Get theme for SmartArt
-                theme_manager = ThemeManager()
-                theme_obj = theme_manager.get_default_theme()
 
-                # Map art_type to component
-                art_components = {
-                    "process": ProcessFlow,
-                    "cycle": CycleDiagram,
-                    "hierarchy": HierarchyDiagram,
-                }
+            # Get theme for SmartArt
+            theme_manager = ThemeManager()
+            theme_obj = theme_manager.get_default_theme()
 
-                component_class = art_components.get(art_type)
-                if not component_class:
-                    return f"Error: Unsupported art type '{art_type}'. Supported: {', '.join(art_components.keys())}"
+            # Map art_type to component
+            art_components = {
+                "process": ProcessFlow,
+                "cycle": CycleDiagram,
+                "hierarchy": HierarchyDiagram,
+            }
 
-                # Create SmartArt using component
-                smart_art_comp = component_class(
-                    items=items,
-                    theme=theme_obj
-                )
-                shapes = smart_art_comp.render(
-                    slide,
-                    validated_left,
-                    validated_top,
-                    validated_width,
-                    validated_height
-                )
-                
-                # Update in VFS if enabled
-                manager.update(presentation)
-                
-                # Report if position was adjusted
-                position_note = ""
-                if (validated_left != left or validated_top != top or 
-                    validated_width != width or validated_height != height):
-                    position_note = f" (position adjusted)"
-                
-                return f"Added {art_type} SmartArt with {len(items)} items to slide {slide_index}{position_note}"
-                
-            except Exception as e:
-                return f"Error adding SmartArt: {str(e)}"
-        
-        return await asyncio.get_event_loop().run_in_executor(None, _add_smart)
+            component_class = art_components.get(art_type)
+            if not component_class:
+                return f"Error: Unsupported art type '{art_type}'. Supported: {', '.join(art_components.keys())}"
+
+            # Create SmartArt using component
+            smart_art_comp = component_class(
+                items=items,
+                theme=theme_obj
+            )
+            shapes = smart_art_comp.render(
+                slide,
+                validated_left,
+                validated_top,
+                validated_width,
+                validated_height
+            )
+
+            # Update in VFS
+            await manager.update(presentation)
+
+            # Report if position was adjusted
+            position_note = ""
+            if (validated_left != left or validated_top != top or
+                validated_width != width or validated_height != height):
+                position_note = f" (position adjusted)"
+
+            return f"Added {art_type} SmartArt with {len(items)} items to slide {slide_index}{position_note}"
+
+        except Exception as e:
+            return f"Error adding SmartArt: {str(e)}"
     
     @mcp.tool
     async def pptx_add_code_block(
@@ -299,58 +297,57 @@ def register_shape_tools(mcp, manager):
                 theme="dark_purple"
             )
         """
-        def _add_code():
-            prs = manager.get(presentation)
-            if not prs:
+        try:
+            result = await manager.get(presentation)
+            if not result:
                 return "Error: No presentation found"
-            
+
+            prs, metadata = result
+
             if slide_index >= len(prs.slides):
                 return f"Error: Slide index {slide_index} out of range"
-            
+
             slide = prs.slides[slide_index]
-            
-            try:
-                # Remove content placeholders
-                from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
-                placeholders_to_remove = []
-                for shape in slide.shapes:
-                    if hasattr(shape, 'shape_type'):
-                        if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
-                            if hasattr(shape, 'placeholder_format'):
-                                if shape.placeholder_format.type in [PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE]:
-                                    continue
-                            placeholders_to_remove.append(shape)
-                
-                for shape in placeholders_to_remove:
-                    sp = shape.element
-                    sp.getparent().remove(sp)
-                
-                # Add code block using CodeBlock component
-                theme_manager = ThemeManager()
-                theme_obj = theme_manager.get_theme(theme) if theme else None
 
-                code_component = CodeBlock(
-                    code=code,
-                    language=language,
-                    theme=theme_obj
-                )
-                code_shape = code_component.render(
-                    slide,
-                    left=left,
-                    top=top,
-                    width=width,
-                    height=height
-                )
+            # Remove content placeholders
+            from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
+            placeholders_to_remove = []
+            for shape in slide.shapes:
+                if hasattr(shape, 'shape_type'):
+                    if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
+                        if hasattr(shape, 'placeholder_format'):
+                            if shape.placeholder_format.type in [PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE]:
+                                continue
+                        placeholders_to_remove.append(shape)
 
-                # Update in VFS if enabled
-                manager.update(presentation)
+            for shape in placeholders_to_remove:
+                sp = shape.element
+                sp.getparent().remove(sp)
 
-                return f"Added {language} code block to slide {slide_index}"
-                
-            except Exception as e:
-                return f"Error adding code block: {str(e)}"
-        
-        return await asyncio.get_event_loop().run_in_executor(None, _add_code)
+            # Add code block using CodeBlock component
+            theme_manager = ThemeManager()
+            theme_obj = theme_manager.get_theme(theme) if theme else None
+
+            code_component = CodeBlock(
+                code=code,
+                language=language,
+                theme=theme_obj
+            )
+            code_shape = code_component.render(
+                slide,
+                left=left,
+                top=top,
+                width=width,
+                height=height
+            )
+
+            # Update in VFS
+            await manager.update(presentation)
+
+            return f"Added {language} code block to slide {slide_index}"
+
+        except Exception as e:
+            return f"Error adding code block: {str(e)}"
 
     # Theme tools have been moved to tools/theme_tools.py for better organization
     # Use: pptx_apply_theme, pptx_list_themes, pptx_create_custom_theme

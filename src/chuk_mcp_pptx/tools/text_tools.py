@@ -6,9 +6,10 @@ Provides async MCP tools for handling text in presentations.
 Supports text extraction, formatting, and component-based text creation.
 """
 import asyncio
-from typing import Optional
 
 from ..utilities.text_utils import extract_presentation_text
+from ..models import ErrorResponse, SlideResponse
+from ..constants import SlideLayoutIndex, ErrorMessages, SuccessMessages
 
 
 def register_text_tools(mcp, manager):
@@ -21,11 +22,13 @@ def register_text_tools(mcp, manager):
     from ..components.core import TextBox, BulletList
     from ..themes.theme_manager import ThemeManager
 
+    theme_manager = ThemeManager()
+
     @mcp.tool
     async def pptx_add_text_slide(
         title: str,
         text: str,
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Add a slide with title and text content.
@@ -39,7 +42,7 @@ def register_text_tools(mcp, manager):
             presentation: Name of presentation to add slide to (uses current if not specified)
 
         Returns:
-            Success message confirming slide addition
+            JSON string with SlideResponse model
 
         Example:
             await pptx_add_text_slide(
@@ -49,12 +52,12 @@ def register_text_tools(mcp, manager):
                      "services division."
             )
         """
-        def _add_text_slide():
-            prs = manager.get(presentation)
+        try:
+            prs = manager.get_presentation(presentation)
             if not prs:
-                return "Error: No presentation found. Create one first with pptx_create()"
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
-            slide_layout = prs.slide_layouts[1]  # Title and content layout
+            slide_layout = prs.slide_layouts[SlideLayoutIndex.TITLE_AND_CONTENT]
             slide = prs.slides.add_slide(slide_layout)
 
             slide.shapes.title.text = title
@@ -62,15 +65,36 @@ def register_text_tools(mcp, manager):
             if len(slide.placeholders) > 1:
                 slide.placeholders[1].text_frame.text = text
 
-            # Update in VFS if enabled
-            manager.update(presentation)
+            # Apply presentation theme to the slide
+            metadata = manager.get_metadata(presentation)
+            if metadata and metadata.theme:
+                theme_obj = theme_manager.get_theme(metadata.theme)
+                if theme_obj:
+                    theme_obj.apply_to_slide(slide)
 
-            return f"Added text slide '{title}' to '{presentation or manager.get_current_name()}'"
+            slide_index = len(prs.slides) - 1
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_text_slide)
+            # Update metadata
+            manager.update_slide_metadata(slide_index)
+
+            # Update in VFS
+            await manager.update(presentation)
+
+            pres_name = presentation or manager.get_current_name() or "presentation"
+
+            return SlideResponse(
+                presentation=pres_name,
+                slide_index=slide_index,
+                message=SuccessMessages.SLIDE_ADDED.format(
+                    slide_type="text", presentation=pres_name
+                ),
+                slide_count=len(prs.slides),
+            ).model_dump_json()
+        except Exception as e:
+            return ErrorResponse(error=str(e)).model_dump_json()
 
     @mcp.tool
-    async def pptx_extract_all_text(presentation: Optional[str] = None) -> str:
+    async def pptx_extract_all_text(presentation: str | None = None) -> str:
         """
         Extract all text content from a presentation.
 
@@ -87,14 +111,17 @@ def register_text_tools(mcp, manager):
             text = await pptx_extract_all_text()
             # Returns JSON with all text content from the presentation
         """
-        def _extract():
-            prs = manager.get(presentation)
+        try:
+            prs = manager.get_presentation(presentation)
             if not prs:
-                return {"error": "No presentation found"}
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
-            return extract_presentation_text(prs)
-
-        return await asyncio.get_event_loop().run_in_executor(None, _extract)
+            text_data = extract_presentation_text(prs)
+            # Return as JSON string
+            import json
+            return json.dumps(text_data)
+        except Exception as e:
+            return ErrorResponse(error=str(e)).model_dump_json()
 
     @mcp.tool
     async def pptx_add_text_box(
@@ -106,9 +133,9 @@ def register_text_tools(mcp, manager):
         height: float = 1.0,
         font_size: int = 18,
         bold: bool = False,
-        color: Optional[str] = None,
+        color: str | None = None,
         alignment: str = "left",
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Add a formatted text box to a slide.
@@ -142,13 +169,15 @@ def register_text_tools(mcp, manager):
                 alignment="center"
             )
         """
-        def _add_text_box():
-            prs = manager.get(presentation)
+        try:
+            prs = manager.get_presentation(presentation)
             if not prs:
-                return "Error: No presentation found"
+                return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
             if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
+                return ErrorResponse(
+                    error=ErrorMessages.SLIDE_NOT_FOUND.format(index=slide_index)
+                ).model_dump_json()
 
             slide = prs.slides[slide_index]
 
@@ -171,12 +200,25 @@ def register_text_tools(mcp, manager):
             # Render to slide
             text_comp.render(slide, left=left, top=top, width=width, height=height)
 
-            # Update in VFS if enabled
-            manager.update(presentation)
+            # Update metadata
+            manager.update_slide_metadata(slide_index)
 
-            return f"Added text box to slide {slide_index}"
+            # Update in VFS
+            await manager.update(presentation)
 
-        return await asyncio.get_event_loop().run_in_executor(None, _add_text_box)
+            pres_name = presentation or manager.get_current_name() or "presentation"
+
+            from ..models import ComponentResponse
+            return ComponentResponse(
+                presentation=pres_name,
+                slide_index=slide_index,
+                component="text_box",
+                message=SuccessMessages.COMPONENT_ADDED.format(
+                    component="text box", index=slide_index
+                ),
+            ).model_dump_json()
+        except Exception as e:
+            return ErrorResponse(error=str(e)).model_dump_json()
 
     # pptx_add_bullet_list removed - now in component_tools.py as part of design system
 

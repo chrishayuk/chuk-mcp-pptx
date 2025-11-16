@@ -8,9 +8,10 @@ requires-python = ">=3.11"
 dependencies = [
     "mcp>=0.9.1",
     "python-pptx>=1.0.2",
-    "chuk-mcp-server @ git+https://github.com/chrishayuk/chuk-mcp-server.git",
     "Pillow>=10.0.0",
     "aiofiles>=23.0.0",
+    "chuk-mcp-server>=0.7.5",
+    "chuk-virtual-fs>=0.2.2",
 ]
 
 [project.optional-dependencies]

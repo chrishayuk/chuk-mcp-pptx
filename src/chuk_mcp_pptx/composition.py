@@ -2,6 +2,8 @@
 Composition patterns for PowerPoint components.
 Inspired by shadcn/ui's compositional API (Card.Header, Card.Content, etc.)
 """
+from __future__ import annotations
+
 
 from typing import Optional, Dict, Any, List, Type, TypeVar
 from pptx.util import Inches, Pt
@@ -21,9 +23,9 @@ class ComposableComponent(Component):
     Allows nested subcomponents like Card.Header, Card.Content, etc.
     """
 
-    def __init__(self, theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, theme: dict[str, Any | None] = None):
         super().__init__(theme)
-        self._children: List['SubComponent'] = []
+        self._children: list['SubComponent'] = []
 
     def add_child(self, child: 'SubComponent'):
         """Add a child subcomponent."""
@@ -32,7 +34,7 @@ class ComposableComponent(Component):
         self._children.append(child)
         return self
 
-    def get_children(self) -> List['SubComponent']:
+    def get_children(self) -> list['SubComponent']:
         """Get all child components."""
         return self._children
 
@@ -47,12 +49,12 @@ class SubComponent(Component, ABC):
     Must be used within a parent ComposableComponent.
     """
 
-    def __init__(self, theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, theme: dict[str, Any | None] = None):
         super().__init__(theme)
-        self.parent: Optional[ComposableComponent] = None
+        self.parent: ComposableComponent | None = None
 
     @abstractmethod
-    def render_into(self, parent_shape, theme: Optional[Dict[str, Any]] = None) -> Any:
+    def render_into(self, parent_shape, theme: dict[str, Any | None] = None) -> Any:
         """
         Render this subcomponent into the parent's shape.
 
@@ -71,13 +73,13 @@ class SubComponent(Component, ABC):
 class CardHeader(SubComponent):
     """Card header subcomponent."""
 
-    def __init__(self, title: str, description: Optional[str] = None,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, title: str, description: str | None = None,
+                 theme: dict[str, Any | None] = None):
         super().__init__(theme)
         self.title = title
         self.description = description
 
-    def render_into(self, text_frame, theme: Optional[Dict[str, Any]] = None) -> Any:
+    def render_into(self, text_frame, theme: dict[str, Any | None] = None) -> Any:
         """Render header into text frame."""
         theme = theme or self.theme
 
@@ -110,11 +112,11 @@ class CardHeader(SubComponent):
 class CardContent(SubComponent):
     """Card content subcomponent."""
 
-    def __init__(self, content: str, theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, content: str, theme: dict[str, Any | None] = None):
         super().__init__(theme)
         self.content = content
 
-    def render_into(self, text_frame, theme: Optional[Dict[str, Any]] = None) -> Any:
+    def render_into(self, text_frame, theme: dict[str, Any | None] = None) -> Any:
         """Render content into text frame."""
         theme = theme or self.theme
 
@@ -133,12 +135,12 @@ class CardFooter(SubComponent):
     """Card footer subcomponent."""
 
     def __init__(self, text: str, align: str = "left",
-                 theme: Optional[Dict[str, Any]] = None):
+                 theme: dict[str, Any | None] = None):
         super().__init__(theme)
         self.text = text
         self.align = align
 
-    def render_into(self, text_frame, theme: Optional[Dict[str, Any]] = None) -> Any:
+    def render_into(self, text_frame, theme: dict[str, Any | None] = None) -> Any:
         """Render footer into text frame."""
         theme = theme or self.theme
 
@@ -163,11 +165,11 @@ class CardFooter(SubComponent):
 class CardTitle(SubComponent):
     """Standalone card title subcomponent."""
 
-    def __init__(self, text: str, theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, text: str, theme: dict[str, Any | None] = None):
         super().__init__(theme)
         self.text = text
 
-    def render_into(self, text_frame, theme: Optional[Dict[str, Any]] = None) -> Any:
+    def render_into(self, text_frame, theme: dict[str, Any | None] = None) -> Any:
         """Render title into text frame."""
         theme = theme or self.theme
 
@@ -186,11 +188,11 @@ class CardTitle(SubComponent):
 class CardDescription(SubComponent):
     """Standalone card description subcomponent."""
 
-    def __init__(self, text: str, theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, text: str, theme: dict[str, Any | None] = None):
         super().__init__(theme)
         self.text = text
 
-    def render_into(self, text_frame, theme: Optional[Dict[str, Any]] = None) -> Any:
+    def render_into(self, text_frame, theme: dict[str, Any | None] = None) -> Any:
         """Render description into text frame."""
         theme = theme or self.theme
 
@@ -211,13 +213,13 @@ class CardDescription(SubComponent):
 class Stack(SubComponent):
     """Vertical stack layout."""
 
-    def __init__(self, children: List[SubComponent], spacing: float = 0.1,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, children: list[SubComponent], spacing: float = 0.1,
+                 theme: dict[str, Any | None] = None):
         super().__init__(theme)
         self.children = children
         self.spacing = spacing
 
-    def render_into(self, text_frame, theme: Optional[Dict[str, Any]] = None) -> Any:
+    def render_into(self, text_frame, theme: dict[str, Any | None] = None) -> Any:
         """Render stacked children."""
         theme = theme or self.theme
 
@@ -235,10 +237,10 @@ class Stack(SubComponent):
 class Separator(SubComponent):
     """Visual separator line."""
 
-    def __init__(self, theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, theme: dict[str, Any | None] = None):
         super().__init__(theme)
 
-    def render_into(self, text_frame, theme: Optional[Dict[str, Any]] = None) -> Any:
+    def render_into(self, text_frame, theme: dict[str, Any | None] = None) -> Any:
         """Render separator as text."""
         theme = theme or self.theme
 
@@ -256,12 +258,12 @@ class Badge(SubComponent):
     """Badge/label component."""
 
     def __init__(self, text: str, variant: str = "default",
-                 theme: Optional[Dict[str, Any]] = None):
+                 theme: dict[str, Any | None] = None):
         super().__init__(theme)
         self.text = text
         self.variant = variant
 
-    def render_into(self, text_frame, theme: Optional[Dict[str, Any]] = None) -> Any:
+    def render_into(self, text_frame, theme: dict[str, Any | None] = None) -> Any:
         """Render badge inline."""
         theme = theme or self.theme
 
@@ -285,7 +287,7 @@ class Badge(SubComponent):
 
 # Composition helper functions
 
-def compose(*children: SubComponent) -> List[SubComponent]:
+def compose(*children: SubComponent) -> list[SubComponent]:
     """
     Helper function to compose multiple subcomponents.
 
@@ -300,7 +302,7 @@ def compose(*children: SubComponent) -> List[SubComponent]:
     return list(children)
 
 
-def with_separator(*children: SubComponent) -> List[SubComponent]:
+def with_separator(*children: SubComponent) -> list[SubComponent]:
     """
     Compose children with separators between them.
 
@@ -333,11 +335,11 @@ class CompositionBuilder:
             .build())
     """
 
-    def __init__(self, theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, theme: dict[str, Any | None] = None):
         self.theme = theme
-        self._children: List[SubComponent] = []
+        self._children: list[SubComponent] = []
 
-    def header(self, title: str, description: Optional[str] = None) -> 'CompositionBuilder':
+    def header(self, title: str, description: str | None = None) -> 'CompositionBuilder':
         """Add header."""
         self._children.append(CardHeader(title, description, self.theme))
         return self
@@ -377,6 +379,6 @@ class CompositionBuilder:
         self._children.append(component)
         return self
 
-    def build(self) -> List[SubComponent]:
+    def build(self) -> list[SubComponent]:
         """Build the composition."""
         return self._children

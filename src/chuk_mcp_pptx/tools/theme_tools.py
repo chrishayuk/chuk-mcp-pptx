@@ -8,11 +8,20 @@ Consolidates all theme-related functionality in one place.
 
 import asyncio
 import json
-from typing import Optional
-
 from ..tokens.colors import PALETTE, get_semantic_tokens
 from ..tokens.typography import FONT_FAMILIES, get_text_style
 from ..tokens.spacing import PADDING, RADIUS
+
+from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
+from ..constants import (
+    SlideLayoutIndex,
+    ErrorMessages,
+    SuccessMessages,
+    ShapeType,
+    Spacing,
+    Defaults,
+)
+
 
 
 def register_theme_tools(mcp, manager):
@@ -194,9 +203,9 @@ def register_theme_tools(mcp, manager):
 
     @mcp.tool
     async def pptx_apply_theme(
-        slide_index: Optional[int] = None,
+        slide_index: int | None = None,
         theme: str = "dark",
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Apply a theme to slides.
@@ -219,10 +228,12 @@ def register_theme_tools(mcp, manager):
             # Apply to specific slide
             await pptx_apply_theme(slide_index=0, theme="corporate")
         """
-        def _apply_theme():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorMessages.NO_PRESENTATION
+
+            prs, metadata = result
 
             theme_manager = ThemeManager()
             available_themes = theme_manager.list_themes()
@@ -230,37 +241,34 @@ def register_theme_tools(mcp, manager):
             if theme not in available_themes:
                 return f"Error: Unknown theme '{theme}'. Available: {', '.join(available_themes[:10])}"
 
-            try:
-                theme_obj = theme_manager.get_theme(theme)
+            theme_obj = theme_manager.get_theme(theme)
 
-                if slide_index is not None:
-                    if slide_index >= len(prs.slides):
-                        return f"Error: Slide index {slide_index} out of range"
-                    slides = [prs.slides[slide_index]]
-                else:
-                    slides = prs.slides
+            if slide_index is not None:
+                if slide_index >= len(prs.slides):
+                    return f"Error: Slide index {slide_index} out of range"
+                slides = [prs.slides[slide_index]]
+            else:
+                slides = prs.slides
 
-                # Apply theme to slides using the theme's built-in method
-                for slide in slides:
-                    theme_obj.apply_to_slide(slide)
+            # Apply theme to slides using the theme's built-in method
+            for slide in slides:
+                theme_obj.apply_to_slide(slide)
 
-                # Update in VFS if enabled
-                manager.update(presentation)
+            # Update in VFS
+            await manager.update(presentation)
 
-                slide_msg = f"slide {slide_index}" if slide_index is not None else "all slides"
-                return f"Applied {theme} theme to {slide_msg}"
+            slide_msg = f"slide {slide_index}" if slide_index is not None else "all slides"
+            return f"Applied {theme} theme to {slide_msg}"
 
-            except Exception as e:
-                return f"Error applying theme: {str(e)}"
-
-        return await asyncio.get_event_loop().run_in_executor(None, _apply_theme)
+        except Exception as e:
+            return f"Error applying theme: {str(e)}"
 
     @mcp.tool
     async def pptx_apply_component_theme(
         slide_index: int,
         shape_index: int,
         theme_style: str = "card",
-        presentation: Optional[str] = None
+        presentation: str | None = None
     ) -> str:
         """
         Apply a theme style to a specific component/shape.
@@ -289,10 +297,12 @@ def register_theme_tools(mcp, manager):
                 theme_style="primary"
             )
         """
-        def _apply_component_theme():
-            prs = manager.get(presentation)
-            if not prs:
-                return "Error: No presentation found"
+        try:
+            result = await manager.get(presentation)
+            if not result:
+                return ErrorMessages.NO_PRESENTATION
+
+            prs, metadata = result
 
             if slide_index >= len(prs.slides):
                 return f"Error: Slide index {slide_index} out of range"
@@ -304,21 +314,18 @@ def register_theme_tools(mcp, manager):
 
             shape = slide.shapes[shape_index]
 
-            try:
-                theme_manager = ThemeManager()
-                theme_obj = theme_manager.get_theme("dark")  # Get default theme
+            theme_manager = ThemeManager()
+            theme_obj = theme_manager.get_theme("dark")  # Get default theme
 
-                if theme_obj:
-                    theme_obj.apply_to_shape(shape, style=theme_style)
-                    manager.update(presentation)
-                    return f"Applied {theme_style} theme to shape {shape_index} on slide {slide_index}"
-                else:
-                    return "Error: No default theme available"
+            if theme_obj:
+                theme_obj.apply_to_shape(shape, style=theme_style)
+                await manager.update(presentation)
+                return f"Applied {theme_style} theme to shape {shape_index} on slide {slide_index}"
+            else:
+                return "Error: No default theme available"
 
-            except Exception as e:
-                return f"Error applying component theme: {str(e)}"
-
-        return await asyncio.get_event_loop().run_in_executor(None, _apply_component_theme)
+        except Exception as e:
+            return f"Error applying component theme: {str(e)}"
 
     @mcp.tool
     async def pptx_list_component_themes() -> str:

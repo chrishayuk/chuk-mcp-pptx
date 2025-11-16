@@ -2,6 +2,8 @@
 Variant system inspired by class-variance-authority (cva).
 Provides composable variants for PowerPoint components.
 """
+from __future__ import annotations
+
 
 from typing import Dict, Any, Optional, List, Callable, TypeVar, Generic
 from dataclasses import dataclass
@@ -14,8 +16,8 @@ T = TypeVar('T')
 @dataclass
 class VariantConfig:
     """Configuration for a single variant option."""
-    props: Dict[str, Any]
-    description: Optional[str] = None
+    props: dict[str, Any]
+    description: str | None = None
 
 
 class VariantDefinition:
@@ -29,7 +31,7 @@ class VariantDefinition:
         })
     """
 
-    def __init__(self, options: Dict[str, VariantConfig]):
+    def __init__(self, options: dict[str, VariantConfig]):
         self.options = options
 
     def get(self, key: str, default: str = "default") -> VariantConfig:
@@ -48,11 +50,11 @@ class CompoundVariant:
         )
     """
 
-    def __init__(self, conditions: Dict[str, str], props: Dict[str, Any]):
+    def __init__(self, conditions: dict[str, str], props: dict[str, Any]):
         self.conditions = conditions
         self.props = props
 
-    def matches(self, active_variants: Dict[str, str]) -> bool:
+    def matches(self, active_variants: dict[str, str]) -> bool:
         """Check if conditions match active variants."""
         for key, value in self.conditions.items():
             if active_variants.get(key) != value:
@@ -66,7 +68,7 @@ class VariantBuilder:
     Inspired by shadcn/ui's cva pattern.
     """
 
-    def __init__(self, base_props: Optional[Dict[str, Any]] = None):
+    def __init__(self, base_props: dict[str, Any | None] = None):
         """
         Initialize variant builder.
 
@@ -74,11 +76,11 @@ class VariantBuilder:
             base_props: Base properties applied to all variants
         """
         self.base_props = base_props or {}
-        self.variants: Dict[str, VariantDefinition] = {}
-        self.default_variants: Dict[str, str] = {}
-        self.compound_variants: List[CompoundVariant] = []
+        self.variants: dict[str, VariantDefinition] = {}
+        self.default_variants: dict[str, str] = {}
+        self.compound_variants: list[CompoundVariant] = []
 
-    def add_variant(self, name: str, options: Dict[str, Dict[str, Any]]) -> 'VariantBuilder':
+    def add_variant(self, name: str, options: dict[str, dict[str, Any]]) -> 'VariantBuilder':
         """
         Add a variant type.
 
@@ -106,7 +108,7 @@ class VariantBuilder:
         self.default_variants.update(defaults)
         return self
 
-    def add_compound(self, conditions: Dict[str, str], props: Dict[str, Any]) -> 'VariantBuilder':
+    def add_compound(self, conditions: dict[str, str], props: dict[str, Any]) -> 'VariantBuilder':
         """
         Add compound variant.
 
@@ -117,7 +119,7 @@ class VariantBuilder:
         self.compound_variants.append(CompoundVariant(conditions, props))
         return self
 
-    def build(self, **selected_variants) -> Dict[str, Any]:
+    def build(self, **selected_variants) -> dict[str, Any]:
         """
         Build final props based on selected variants.
 
@@ -151,7 +153,7 @@ class VariantBuilder:
 
         return result
 
-    def get_schema(self) -> Dict[str, Any]:
+    def get_schema(self) -> dict[str, Any]:
         """
         Get JSON schema for this variant configuration.
         Useful for LLM consumption.
@@ -176,10 +178,10 @@ class VariantBuilder:
 
 
 def create_variants(
-    base: Optional[Dict[str, Any]] = None,
-    variants: Optional[Dict[str, Dict[str, Dict[str, Any]]]] = None,
-    default_variants: Optional[Dict[str, str]] = None,
-    compound_variants: Optional[List[Dict[str, Any]]] = None
+    base: dict[str, Any | None] = None,
+    variants: dict[str, dict[str, dict[str, Any | None]]] = None,
+    default_variants: dict[str, str | None] = None,
+    compound_variants: list[dict[str, Any | None]] = None
 ) -> VariantBuilder:
     """
     Factory function for creating variant builders.

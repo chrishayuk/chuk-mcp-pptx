@@ -96,7 +96,14 @@ class ComparisonSlide(SlideTemplate):
         # Left column
         left_pos = positions["left"]
         left_card = Card(variant="default", theme=self.theme)
-        left_card.render(slide, **left_pos)
+        # Ensure card gets explicit dimensions including height
+        left_card.render(
+            slide,
+            left=left_pos["left"],
+            top=left_pos["top"],
+            width=left_pos["width"],
+            height=left_pos["height"]
+        )
 
         # Left title
         left_title_text = TextBox(
@@ -120,13 +127,20 @@ class ComparisonSlide(SlideTemplate):
             left=left_pos["left"] + 0.3,
             top=left_pos["top"] + 0.7,
             width=left_pos["width"] - 0.6,
-            height=left_pos.get("height", 4.0) - 1.0
+            height=left_pos["height"] - 1.0  # Use actual height from position
         )
 
         # Right column
         right_pos = positions["right"]
         right_card = Card(variant="default", theme=self.theme)
-        right_card.render(slide, **right_pos)
+        # Ensure card gets explicit dimensions including height
+        right_card.render(
+            slide,
+            left=right_pos["left"],
+            top=right_pos["top"],
+            width=right_pos["width"],
+            height=right_pos["height"]
+        )
 
         # Right title
         right_title_text = TextBox(
@@ -150,7 +164,7 @@ class ComparisonSlide(SlideTemplate):
             left=right_pos["left"] + 0.3,
             top=right_pos["top"] + 0.7,
             width=right_pos["width"] - 0.6,
-            height=right_pos.get("height", 4.0) - 1.0
+            height=right_pos["height"] - 1.0  # Use actual height from position
         )
 
         return len(prs.slides) - 1

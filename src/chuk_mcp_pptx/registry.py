@@ -2,9 +2,9 @@
 Component registry with schema support for LLM consumption.
 Provides discovery, documentation, and validation for PowerPoint components.
 """
+from __future__ import annotations
 
-from typing import Dict, Any, Optional, List, Type, Callable
-from dataclasses import dataclass, field
+from typing import Any, Type, Callable
 from enum import Enum
 import json
 import inspect
@@ -23,31 +23,36 @@ class ComponentCategory(str, Enum):
     CONTAINER = "container"
 
 
-@dataclass
-class PropDefinition:
+class PropDefinition(BaseModel):
     """Definition of a component property."""
-    name: str
-    type: str
-    description: str
-    required: bool = False
-    default: Any = None
-    options: Optional[List[Any]] = None
-    example: Optional[Any] = None
+    name: str = Field(..., description="Property name")
+    type: str = Field(..., description="Property type")
+    description: str = Field(..., description="Property description")
+    required: bool = Field(default=False, description="Whether property is required")
+    default: Any | None = Field(None, description="Default value if any")
+    options: list[Any] | None = Field(None, description="Valid options/choices")
+    example: Any | None = Field(None, description="Example value")
+
+    class Config:
+        extra = "forbid"
 
 
-@dataclass
-class ComponentMetadata:
+class ComponentMetadata(BaseModel):
     """Metadata for a registered component."""
-    name: str
-    component_class: Type
-    category: ComponentCategory
-    description: str
-    props: List[PropDefinition] = field(default_factory=list)
-    examples: List[Dict[str, Any]] = field(default_factory=list)
-    variants: Optional[Dict[str, List[str]]] = None
-    composition: Optional[Dict[str, Any]] = None
-    tags: List[str] = field(default_factory=list)
-    version: str = "1.0.0"
+    name: str = Field(..., description="Component name")
+    component_class: Type = Field(..., description="Component class reference")
+    category: ComponentCategory = Field(..., description="Component category")
+    description: str = Field(..., description="Component description")
+    props: list[PropDefinition] = Field(default_factory=list, description="Component properties")
+    examples: list[dict[str, Any]] = Field(default_factory=list, description="Usage examples")
+    variants: dict[str, list[str]] | None = Field(None, description="Available variants")
+    composition: dict[str, Any] | None = Field(None, description="Composition patterns")
+    tags: list[str] = Field(default_factory=list, description="Searchable tags")
+    version: str = Field(default="1.0.0", description="Component version")
+
+    class Config:
+        extra = "forbid"
+        arbitrary_types_allowed = True  # Allow Type in component_class
 
 
 class ComponentRegistry:
@@ -57,9 +62,9 @@ class ComponentRegistry:
     """
 
     def __init__(self):
-        self._components: Dict[str, ComponentMetadata] = {}
-        self._categories: Dict[ComponentCategory, List[str]] = defaultdict(list)
-        self._tags: Dict[str, List[str]] = defaultdict(list)
+        self._components: dict[str, ComponentMetadata] = {}
+        self._categories: dict[ComponentCategory, list[str]] = defaultdict(list)
+        self._tags: dict[str, list[str]] = defaultdict(list)
 
     def register(
         self,
@@ -67,11 +72,11 @@ class ComponentRegistry:
         component_class: Type,
         category: ComponentCategory,
         description: str,
-        props: List[PropDefinition],
-        examples: Optional[List[Dict[str, Any]]] = None,
-        variants: Optional[Dict[str, List[str]]] = None,
-        composition: Optional[Dict[str, Any]] = None,
-        tags: Optional[List[str]] = None,
+        props: list[PropDefinition],
+        examples: list[dict[str, Any]] | None = None,
+        variants: dict[str, list[str]] | None = None,
+        composition: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         version: str = "1.0.0"
     ) -> ComponentMetadata:
         """
@@ -113,19 +118,19 @@ class ComponentRegistry:
 
         return metadata
 
-    def get(self, name: str) -> Optional[ComponentMetadata]:
+    def get(self, name: str) -> ComponentMetadata | None:
         """Get component metadata by name."""
         return self._components.get(name)
 
-    def list_components(self) -> List[str]:
+    def list_components(self) -> list[str]:
         """List all registered component names."""
         return list(self._components.keys())
 
-    def list_by_category(self, category: ComponentCategory) -> List[str]:
+    def list_by_category(self, category: ComponentCategory) -> list[str]:
         """List components in a category."""
         return self._categories.get(category, [])
 
-    def search(self, query: str) -> List[ComponentMetadata]:
+    def search(self, query: str) -> list[ComponentMetadata]:
         """
         Search components by name, description, or tags.
 
@@ -156,7 +161,7 @@ class ComponentRegistry:
 
         return results
 
-    def get_schema(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_schema(self, name: str) -> dict[str, Any] | None:
         """
         Get JSON schema for a component.
 
@@ -220,7 +225,7 @@ class ComponentRegistry:
             "tags": metadata.tags,
         }
 
-    def get_all_schemas(self) -> Dict[str, Any]:
+    def get_all_schemas(self) -> dict[str, Any]:
         """Get schemas for all components."""
         return {
             name: self.get_schema(name)
@@ -247,7 +252,7 @@ class ComponentRegistry:
 
         return json.dumps(llm_docs, indent=2)
 
-    def get_component_signature(self, name: str) -> Optional[str]:
+    def get_component_signature(self, name: str) -> str | None:
         """
         Get the component's __init__ signature for LLM reference.
 
@@ -267,12 +272,12 @@ class ComponentRegistry:
         except Exception:
             return None
 
-    def list_variants(self, name: str) -> Optional[Dict[str, List[str]]]:
+    def list_variants(self, name: str) -> dict[str, list[str]] | None:
         """Get available variants for a component."""
         metadata = self.get(name)
         return metadata.variants if metadata else None
 
-    def get_examples(self, name: str) -> List[Dict[str, Any]]:
+    def get_examples(self, name: str) -> list[dict[str, Any]]:
         """Get usage examples for a component."""
         metadata = self.get(name)
         return metadata.examples if metadata else []
@@ -288,7 +293,7 @@ def component(
     name: str,
     category: ComponentCategory,
     description: str,
-    props: List[PropDefinition],
+    props: list[PropDefinition],
     **kwargs
 ):
     """
@@ -330,7 +335,7 @@ def prop(name: str, type: str, description: str, **kwargs) -> PropDefinition:
     return PropDefinition(name=name, type=type, description=description, **kwargs)
 
 
-def example(description: str, code: str, **props) -> Dict[str, Any]:
+def example(description: str, code: str, **props) -> dict[str, Any]:
     """Create an example entry."""
     return {
         "description": description,
@@ -341,7 +346,7 @@ def example(description: str, code: str, **props) -> Dict[str, Any]:
 
 # Public API functions for accessing the registry
 
-def get_component_schema(name: str) -> Optional[Dict[str, Any]]:
+def get_component_schema(name: str) -> dict[str, Any] | None:
     """
     Get the schema for a registered component.
 
@@ -355,7 +360,7 @@ def get_component_schema(name: str) -> Optional[Dict[str, Any]]:
     return registry.get_schema(name) if metadata else None
 
 
-def list_components() -> List[str]:
+def list_components() -> list[str]:
     """
     List all registered component names.
 
