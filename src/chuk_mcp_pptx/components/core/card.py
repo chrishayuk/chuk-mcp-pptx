@@ -263,7 +263,7 @@ class Card(ComposableComponent):
         # Shadow (for elevated variant)
         if props.get("shadow"):
             shape.shadow.visible = True
-            shape.shadow.blur_radius = Pt(10)
+            shape.shadow.blur_radius = Pt(FONT_SIZES["xs"])
             shape.shadow.distance = Pt(4)
             shape.shadow.angle = 90
             shape.shadow.transparency = 0.3

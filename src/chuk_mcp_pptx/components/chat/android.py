@@ -11,6 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
+from ...constants import MessageVariant, ComponentSizing, Theme, Platform
 
 
 class AndroidMessageBubble(Component):
@@ -68,20 +71,16 @@ class AndroidMessageBubble(Component):
 
     def _get_bubble_color(self) -> RGBColor:
         """Get Android Messages bubble color."""
-        if self.variant == "sent":
-            # RCS blue (#0b57d0) - Updated Android Messages uses blue for RCS
-            # or green (#006e52) for SMS - using RCS blue as default
-            return RGBColor(11, 87, 208)
-        else:
-            # Material Gray (#E7EDF3) - Lighter, more accurate gray
-            return RGBColor(231, 237, 243)
+        hex_color = get_chat_color(Platform.ANDROID, self.variant, Theme.LIGHT)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
         if self.variant == "sent":
-            return RGBColor(255, 255, 255)  # White
+            hex_color = CHAT_COLORS[Platform.ANDROID]["text_sent"]
         else:
-            return RGBColor(32, 33, 36)  # Material dark gray
+            hex_color = CHAT_COLORS[Platform.ANDROID]["text_received"]
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_bubble_height(self, width: float) -> float:
         """Estimate bubble height."""
@@ -122,8 +121,8 @@ class AndroidMessageBubble(Component):
 
         # Subtle shadow for Material Design
         bubble.shadow.visible = True
-        bubble.shadow.blur_radius = Pt(4)
-        bubble.shadow.distance = Pt(2)
+        bubble.shadow.blur_radius = Pt(ComponentSizing.SHADOW_BLUR_MD)
+        bubble.shadow.distance = Pt(ComponentSizing.SHADOW_DISTANCE_MD)
         bubble.shadow.angle = 90
         bubble.shadow.transparency = 0.4
 
@@ -145,17 +144,17 @@ class AndroidMessageBubble(Component):
         if self.sender and self.variant == "received":
             current_p.text = self.sender
             current_p.alignment = PP_ALIGN.LEFT
-            current_p.font.size = Pt(11)
+            current_p.font.size = Pt(FONT_SIZES["sm"])
             current_p.font.bold = True
-            current_p.font.color.rgb = RGBColor(95, 99, 104)  # Material medium gray
+            current_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.ANDROID]["timestamp"]))
             current_p = text_frame.add_paragraph()
-            current_p.space_before = Pt(3)
+            current_p.space_before = Pt(ComponentSizing.SPACE_SM)
 
         # Message text
         current_p.text = self.text
         current_p.alignment = PP_ALIGN.LEFT
-        current_p.font.size = Pt(14)
-        current_p.font.name = "Roboto"  # Material Design font
+        current_p.font.size = Pt(FONT_SIZES["base"])
+        current_p.font.name = FONT_FAMILIES["sans"][0]
         current_p.font.color.rgb = self._get_text_color()
 
         shapes.append(bubble)
@@ -178,8 +177,8 @@ class AndroidMessageBubble(Component):
             ts_frame.text = self.timestamp
             ts_p = ts_frame.paragraphs[0]
             ts_p.alignment = PP_ALIGN.LEFT if self.variant == "received" else PP_ALIGN.RIGHT
-            ts_p.font.size = Pt(10)
-            ts_p.font.color.rgb = RGBColor(95, 99, 104)
+            ts_p.font.size = Pt(FONT_SIZES["xs"])
+            ts_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.ANDROID]["timestamp"]))
             shapes.append(ts_box)
 
         return shapes

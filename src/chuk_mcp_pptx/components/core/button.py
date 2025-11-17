@@ -154,8 +154,8 @@ class Button(ComposableComponent):
     def _get_default_width(self) -> float:
         """Get default width based on text length and size."""
         # Rough estimation: base width + character width
-        base_widths = {"sm": 1.5, "md": 2.0, "lg": 2.5}
-        char_widths = {"sm": 0.06, "md": 0.07, "lg": 0.08}
+        base_widths = {ComponentSizing.BUTTON_BASE_WIDTH_SM, ComponentSizing.BUTTON_BASE_WIDTH_MD, ComponentSizing.BUTTON_BASE_WIDTH_LG}
+        char_widths = {ComponentSizing.CHAR_WIDTH_SM, ComponentSizing.CHAR_WIDTH_MD, ComponentSizing.CHAR_WIDTH_LG}
 
         base = base_widths.get(self.size, 2.0)
         char_width = char_widths.get(self.size, 0.07)

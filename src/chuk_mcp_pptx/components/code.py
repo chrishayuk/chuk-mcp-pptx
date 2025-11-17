@@ -10,41 +10,22 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
 
 from .base import Component
+from ..tokens.typography import FONT_FAMILIES, FONT_SIZES
+from ..tokens.platform_colors import get_language_color, TERMINAL_COLORS
+from ..constants import CodeLanguage, ComponentSizing
 
 
 class CodeBlock(Component):
     """
     Code block component with syntax highlighting appearance.
-    
+
     Features:
     - Language label
     - Monospace font
     - Theme-aware colors
     - Line numbers (optional)
     """
-    
-    # Language color schemes
-    LANGUAGE_COLORS = {
-        "python": "#3776ab",
-        "javascript": "#f7df1e",
-        "typescript": "#3178c6",
-        "java": "#007396",
-        "csharp": "#239120",
-        "cpp": "#00599C",
-        "go": "#00ADD8",
-        "rust": "#000000",
-        "ruby": "#CC342D",
-        "php": "#777BB4",
-        "swift": "#FA7343",
-        "kotlin": "#7F52FF",
-        "sql": "#336791",
-        "html": "#E34C26",
-        "css": "#1572B6",
-        "shell": "#4EAA25",
-        "yaml": "#CB171E",
-        "json": "#000000",
-    }
-    
+
     def __init__(self,
                  code: str,
                  language: str = "text",
@@ -83,7 +64,7 @@ class CodeBlock(Component):
     
     def get_language_color(self) -> Any:
         """Get color for language badge."""
-        hex_color = self.LANGUAGE_COLORS.get(self.language, "#666666")
+        hex_color = get_language_color(self.language)
         return self.hex_to_rgb(hex_color)
     
     def render(self, slide, left: float, top: float,
@@ -120,7 +101,7 @@ class CodeBlock(Component):
         
         # Add subtle border
         container.line.color.rgb = self.get_color("border.DEFAULT")
-        container.line.width = Pt(0.5)
+        container.line.width = Pt(ComponentSizing.BORDER_WIDTH_THIN)
         
         # Add language badge (as part of text)
         text_frame = container.text_frame
@@ -133,21 +114,22 @@ class CodeBlock(Component):
         # Add language label
         p = text_frame.paragraphs[0]
         p.text = f"// {self.language}"
-        p.font.name = "Cascadia Code"
-        p.font.size = Pt(10)
+        p.font.name = FONT_FAMILIES["mono"][0]  # Use design system mono font
+        p.font.size = Pt(FONT_SIZES["xs"])
         p.font.color.rgb = self.get_color("muted.foreground")
-        
+
         # Add formatted code
         formatted_code = self._format_code()
         for line in formatted_code.split('\n'):
             p = text_frame.add_paragraph()
             p.text = line
-            p.font.name = "Cascadia Code"
-            p.font.size = Pt(11)
-            
+            p.font.name = FONT_FAMILIES["mono"][0]  # Use design system mono font
+            p.font.size = Pt(FONT_SIZES["sm"])
+
             # Use light text on dark background
             if self.get_theme_attr("mode") == "light":
-                p.font.color.rgb = RGBColor(*self.hex_to_rgb("#e0e0e0"))
+                # Use design system foreground instead of hardcoded hex
+                p.font.color.rgb = self.get_color("foreground.DEFAULT")
             else:
                 p.font.color.rgb = self.get_color("foreground.DEFAULT")
             
@@ -223,8 +205,8 @@ class InlineCode(Component):
         
         p = text_frame.paragraphs[0]
         p.text = self.code
-        p.font.name = "Cascadia Code"
-        p.font.size = Pt(12)
+        p.font.name = FONT_FAMILIES["mono"][0]  # Use design system mono font
+        p.font.size = Pt(FONT_SIZES["sm"])
         p.font.color.rgb = self.get_color("muted.foreground")
         p.alignment = PP_ALIGN.CENTER
         
@@ -265,12 +247,12 @@ class Terminal(CodeBlock):
         
         # Black background for terminal
         container.fill.solid()
-        container.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb("#000000"))
-        
+        container.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(TERMINAL_COLORS["background"]))
+
         # Green border for classic terminal look
-        container.line.color.rgb = RGBColor(*self.hex_to_rgb("#00ff00"))
-        container.line.width = Pt(1)
-        
+        container.line.color.rgb = RGBColor(*self.hex_to_rgb(TERMINAL_COLORS["border"]))
+        container.line.width = Pt(ComponentSizing.BORDER_WIDTH_MEDIUM)
+
         # Add terminal content
         text_frame = container.text_frame
         text_frame.clear()
@@ -278,15 +260,15 @@ class Terminal(CodeBlock):
         text_frame.margin_right = Inches(0.2)
         text_frame.margin_top = Inches(0.15)
         text_frame.margin_bottom = Inches(0.15)
-        
+
         # Add terminal header
         p = text_frame.paragraphs[0]
         p.text = "Terminal"
-        p.font.name = "Cascadia Code"
-        p.font.size = Pt(10)
-        p.font.color.rgb = RGBColor(*self.hex_to_rgb("#00ff00"))
+        p.font.name = FONT_FAMILIES["mono"][0]  # Use design system mono font
+        p.font.size = Pt(FONT_SIZES["xs"])
+        p.font.color.rgb = RGBColor(*self.hex_to_rgb(TERMINAL_COLORS["text"]))
         p.font.bold = True
-        
+
         # Add output lines
         for line in self.code.split('\n'):
             p = text_frame.add_paragraph()
@@ -295,10 +277,10 @@ class Terminal(CodeBlock):
                 p.text = f"{self.prompt} {line}"
             else:
                 p.text = line
-            
-            p.font.name = "Cascadia Code"
-            p.font.size = Pt(11)
-            p.font.color.rgb = RGBColor(*self.hex_to_rgb("#00ff00"))
+
+            p.font.name = FONT_FAMILIES["mono"][0]  # Use design system mono font
+            p.font.size = Pt(FONT_SIZES["sm"])
+            p.font.color.rgb = RGBColor(*self.hex_to_rgb(TERMINAL_COLORS["text"]))
             p.level = 0
             p.space_before = Pt(0)
             p.space_after = Pt(0)

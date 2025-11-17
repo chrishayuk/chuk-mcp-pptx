@@ -11,6 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
+from ...constants import MessageVariant
 
 
 class SlackMessage(Component):
@@ -116,7 +119,7 @@ class SlackMessage(Component):
             Inches(avatar_size)
         )
         avatar.fill.solid()
-        avatar.fill.fore_color.rgb = RGBColor(97, 31, 105)  # Slack purple
+        avatar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["avatar"]))
         avatar.line.fill.background()
 
         # Avatar text
@@ -125,9 +128,9 @@ class SlackMessage(Component):
         av_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
         av_p = av_frame.paragraphs[0]
         av_p.alignment = PP_ALIGN.CENTER
-        av_p.font.size = Pt(12)  # Smaller like Teams
+        av_p.font.size = Pt(FONT_SIZES["sm"])
         av_p.font.bold = True
-        av_p.font.color.rgb = RGBColor(255, 255, 255)
+        av_p.font.color.rgb = self.get_color("primary.foreground")
         shapes.append(avatar)
 
         current_top = top
@@ -145,9 +148,9 @@ class SlackMessage(Component):
         sender_frame.vertical_anchor = MSO_ANCHOR.TOP
         sender_p = sender_frame.paragraphs[0]
         sender_p.alignment = PP_ALIGN.LEFT
-        sender_p.font.size = Pt(14)  # Slightly larger
+        sender_p.font.size = Pt(FONT_SIZES["base"])
         sender_p.font.bold = True
-        sender_p.font.color.rgb = RGBColor(29, 28, 29)  # Slack dark
+        sender_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["text"]))
         shapes.append(sender_box)
         current_top += 0.18
 
@@ -163,8 +166,8 @@ class SlackMessage(Component):
         timestamp_frame.word_wrap = False
         timestamp_p = timestamp_frame.paragraphs[0]
         timestamp_p.alignment = PP_ALIGN.LEFT
-        timestamp_p.font.size = Pt(12)  # Smaller for timestamp
-        timestamp_p.font.color.rgb = RGBColor(97, 96, 97)  # Slack medium gray
+        timestamp_p.font.size = Pt(FONT_SIZES["sm"])
+        timestamp_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["secondary_text"]))
         shapes.append(timestamp_box)
         current_top += 0.18
 
@@ -173,7 +176,7 @@ class SlackMessage(Component):
             Inches(content_left),
             Inches(current_top),
             Inches(content_width),
-            Inches(0.5)  # Will auto-expand
+            Inches(0.5)
         )
         text_frame = text_box.text_frame
         text_frame.text = self.text
@@ -181,8 +184,8 @@ class SlackMessage(Component):
         text_frame.vertical_anchor = MSO_ANCHOR.TOP
         text_p = text_frame.paragraphs[0]
         text_p.alignment = PP_ALIGN.LEFT
-        text_p.font.size = Pt(13)
-        text_p.font.color.rgb = RGBColor(29, 28, 29)
+        text_p.font.size = Pt(FONT_SIZES["sm"])
+        text_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["text"]))
         shapes.append(text_box)
 
         # Calculate actual text height
@@ -204,8 +207,8 @@ class SlackMessage(Component):
             reactions_frame.text = reactions_text
             reactions_p = reactions_frame.paragraphs[0]
             reactions_p.alignment = PP_ALIGN.LEFT
-            reactions_p.font.size = Pt(11)
-            reactions_p.font.color.rgb = RGBColor(97, 96, 97)
+            reactions_p.font.size = Pt(FONT_SIZES["sm"])
+            reactions_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["secondary_text"]))
             shapes.append(reactions_box)
             current_top += 0.25
 
@@ -221,8 +224,8 @@ class SlackMessage(Component):
             thread_frame.text = f"💬 {self.thread_count} {'reply' if self.thread_count == 1 else 'replies'}"
             thread_p = thread_frame.paragraphs[0]
             thread_p.alignment = PP_ALIGN.LEFT
-            thread_p.font.size = Pt(11)
-            thread_p.font.color.rgb = RGBColor(29, 155, 209)  # Slack blue
+            thread_p.font.size = Pt(FONT_SIZES["sm"])
+            thread_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["link"]))
             shapes.append(thread_box)
 
         return shapes

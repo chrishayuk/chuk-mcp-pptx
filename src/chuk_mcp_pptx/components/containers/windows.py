@@ -11,6 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import MACOS_CONTROLS, WINDOWS_CONTROLS, DEVICE_COLORS, get_container_ui_color
+from ...constants import ContainerPlatform, Theme
 
 
 class WindowsWindow(Component):
@@ -65,15 +68,15 @@ class WindowsWindow(Component):
 
     def _get_titlebar_color(self) -> RGBColor:
         """Get title bar color based on theme."""
-        if self._is_dark_mode():
-            return RGBColor(32, 32, 32)  # Dark mode title bar
-        return RGBColor(255, 255, 255)  # Light mode title bar
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_container_ui_color("windows", "titlebar", theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color based on theme."""
-        if self._is_dark_mode():
-            return RGBColor(255, 255, 255)
-        return RGBColor(0, 0, 0)
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_container_ui_color("windows", "text", theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_content_bg_color(self) -> RGBColor:
         """Get content background color."""
@@ -82,9 +85,9 @@ class WindowsWindow(Component):
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
 
-        if self._is_dark_mode():
-            return RGBColor(30, 30, 30)
-        return RGBColor(240, 240, 240)
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_container_ui_color("windows", "menubar", theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def render(self, slide, left: float, top: float,
                width: float = 7.0, height: float = 5.0) -> Dict[str, float]:
@@ -154,7 +157,7 @@ class WindowsWindow(Component):
 
         title_p = title_frame.paragraphs[0]
         title_p.alignment = PP_ALIGN.LEFT
-        title_p.font.size = Pt(11)
+        title_p.font.size = Pt(FONT_SIZES["sm"])
         title_p.font.color.rgb = self._get_text_color()
         shapes.append(title_box)
 
@@ -226,7 +229,7 @@ class WindowsWindow(Component):
             Inches(control_height)
         )
         close_btn.fill.solid()
-        close_btn.fill.fore_color.rgb = RGBColor(232, 17, 35)  # Windows red
+        close_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(WINDOWS_CONTROLS["close"]))  # Windows red
         close_btn.line.fill.background()
 
         # Close icon (X)
@@ -280,7 +283,7 @@ class WindowsWindow(Component):
             menu_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
             menu_p = menu_frame.paragraphs[0]
             menu_p.alignment = PP_ALIGN.LEFT
-            menu_p.font.size = Pt(10)
+            menu_p.font.size = Pt(FONT_SIZES["xs"])
             menu_p.font.color.rgb = self._get_text_color()
             shapes.append(menu_text)
 

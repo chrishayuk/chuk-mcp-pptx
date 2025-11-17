@@ -11,7 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import FONT_SIZES
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
+from ...constants import MessageVariant, Theme, Platform
 
 
 class iMessageBubble(Component):
@@ -66,19 +68,16 @@ class iMessageBubble(Component):
 
     def _get_bubble_color(self) -> RGBColor:
         """Get iMessage-specific bubble color."""
-        if self.variant == "sent":
-            # iOS blue (#0B93F6) - Updated to more accurate iOS blue
-            return RGBColor(11, 147, 246)
-        else:
-            # iOS light gray (#E8E8ED) - More accurate gray
-            return RGBColor(232, 232, 237)
+        hex_color = get_chat_color(Platform.IOS, self.variant, Theme.LIGHT)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
         if self.variant == "sent":
-            return RGBColor(255, 255, 255)  # White
+            hex_color = CHAT_COLORS["ios"]["text_sent"]
         else:
-            return RGBColor(0, 0, 0)  # Black
+            hex_color = CHAT_COLORS["ios"]["text_received"]
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_bubble_height(self, width: float) -> float:
         """Estimate bubble height based on text length."""
@@ -133,7 +132,7 @@ class iMessageBubble(Component):
         p.text = self.text
         p.alignment = PP_ALIGN.LEFT  # All text left-aligned within bubble
         p.font.size = Pt(FONT_SIZES["lg"])  # 16pt (was 15pt, using closest design token)
-        p.font.name = "SF Pro Text"  # iOS system font (fallback to system)
+        p.font.name = FONT_FAMILIES["sans"][0]  # Use design system sans font
         p.font.color.rgb = self._get_text_color()
 
         shapes.append(bubble)
@@ -151,7 +150,8 @@ class iMessageBubble(Component):
             ts_p = ts_frame.paragraphs[0]
             ts_p.alignment = PP_ALIGN.CENTER
             ts_p.font.size = Pt(FONT_SIZES["xs"])
-            ts_p.font.color.rgb = RGBColor(142, 142, 147)  # iOS gray
+            # Use muted text color from design system
+            ts_p.font.color.rgb = self.get_color("muted.foreground")
             shapes.append(ts_box)
 
         return shapes

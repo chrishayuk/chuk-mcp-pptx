@@ -12,6 +12,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
+from ...constants import MessageVariant, ComponentSizing
 from ..core.avatar import Avatar
 from ...tokens.typography import get_text_style
 
@@ -209,7 +212,7 @@ class ChatMessage(Component):
         # Border for received messages
         if self.variant == "received":
             bubble.line.color.rgb = self.get_color("border.DEFAULT")
-            bubble.line.width = Pt(0.5)
+            bubble.line.width = Pt(ComponentSizing.BORDER_WIDTH_THIN)
         else:
             bubble.line.fill.background()
 
@@ -235,13 +238,13 @@ class ChatMessage(Component):
                 # Both sent and received should be left-aligned within bubble
                 current_p.alignment = PP_ALIGN.LEFT
 
-            current_p.font.size = Pt(10)
+            current_p.font.size = Pt(FONT_SIZES["xs"])
             current_p.font.bold = True
             current_p.font.color.rgb = self._get_meta_color()
 
             # Add new paragraph for message text
             current_p = text_frame.add_paragraph()
-            current_p.space_before = Pt(4)
+            current_p.space_before = Pt(ComponentSizing.SPACE_MD)
 
         # Message text
         current_p.text = self.text
@@ -259,7 +262,7 @@ class ChatMessage(Component):
         if self.timestamp:
             p = text_frame.add_paragraph()
             p.text = self.timestamp
-            p.space_before = Pt(6)
+            p.space_before = Pt(ComponentSizing.SPACE_LG)
             if self.variant == "system":
                 p.alignment = PP_ALIGN.CENTER
             elif self.variant == "sent":
@@ -267,7 +270,7 @@ class ChatMessage(Component):
             else:
                 p.alignment = PP_ALIGN.RIGHT  # Timestamp typically right-aligned
 
-            p.font.size = Pt(9)
+            p.font.size = Pt(FONT_SIZES["xs"])
             p.font.color.rgb = self._get_meta_color()
 
         shapes.append(bubble)

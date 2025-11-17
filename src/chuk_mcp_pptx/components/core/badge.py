@@ -10,6 +10,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.spacing import SPACING
+from ...constants import ComponentSizing
 from ...variants import BADGE_VARIANTS
 from ...registry import component, ComponentCategory, prop, example
 
@@ -139,9 +142,9 @@ class Badge(Component):
     def _calculate_width(self) -> float:
         """Calculate width based on text length."""
         # More generous estimation to prevent text cutoff
-        char_width = 0.08  # inches per character (increased from 0.05)
+        char_width = ComponentSizing.BADGE_CHAR_WIDTH  # inches per character (increased from 0.05)
         min_width = 0.6
-        padding = 0.5  # More padding (increased from 0.3)
+        padding = ComponentSizing.BADGE_PADDING  # More padding (increased from 0.3)
 
         calculated = len(self.text) * char_width + padding
         return max(min_width, calculated)

@@ -11,6 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import CHAT_COLORS
+from ...constants import MessageVariant
 
 
 class ChatGPTMessage(Component):
@@ -61,17 +64,17 @@ class ChatGPTMessage(Component):
     def _get_bg_color(self) -> Optional[RGBColor]:
         """Get background color."""
         if self.variant == "user":
-            # Light background for user messages
-            return RGBColor(247, 247, 248)
+            hex_color = CHAT_COLORS["chatgpt"]["user"]
         elif self.variant == "system":
-            return RGBColor(236, 236, 241)
+            hex_color = CHAT_COLORS["chatgpt"]["system"]
         else:
-            # Transparent/white for assistant
-            return RGBColor(255, 255, 255)
+            hex_color = CHAT_COLORS["chatgpt"]["assistant"]
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
-        return RGBColor(52, 53, 65)  # ChatGPT dark text
+        hex_color = CHAT_COLORS["chatgpt"]["text"]
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_content_height(self, width: float) -> float:
         """Estimate content height."""
@@ -116,9 +119,9 @@ class ChatGPTMessage(Component):
                 Inches(avatar_size)
             )
 
-            # ChatGPT green (#10A37F)
+            # ChatGPT green
             avatar_shape.fill.solid()
-            avatar_shape.fill.fore_color.rgb = RGBColor(16, 163, 127)
+            avatar_shape.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["chatgpt"]["avatar"]))
             avatar_shape.line.fill.background()
 
             # Add "AI" text in avatar
@@ -127,9 +130,9 @@ class ChatGPTMessage(Component):
             av_p = av_text.paragraphs[0]
             av_p.alignment = PP_ALIGN.CENTER
             av_text.vertical_anchor = MSO_ANCHOR.MIDDLE
-            av_p.font.size = Pt(12)
+            av_p.font.size = Pt(FONT_SIZES["sm"])
             av_p.font.bold = True
-            av_p.font.color.rgb = RGBColor(255, 255, 255)
+            av_p.font.color.rgb = self.get_color("primary.foreground")
 
             shapes.append(avatar_shape)
 
@@ -162,8 +165,8 @@ class ChatGPTMessage(Component):
 
         p = text_frame.paragraphs[0]
         p.alignment = PP_ALIGN.LEFT
-        p.font.size = Pt(14)
-        p.font.name = "Söhne"  # ChatGPT font (fallback to system)
+        p.font.size = Pt(FONT_SIZES["base"])
+        p.font.name = FONT_FAMILIES["sans"][0]
         p.font.color.rgb = self._get_text_color()
         p.line_spacing = 1.35
 

@@ -11,7 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING
+from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING, FONT_FAMILIES
+from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
+from ...constants import MessageVariant, ComponentSizing, Theme, Platform
 
 
 class WhatsAppBubble(Component):
@@ -73,16 +75,13 @@ class WhatsAppBubble(Component):
 
     def _get_bubble_color(self) -> RGBColor:
         """Get WhatsApp bubble color."""
-        if self.variant == "sent":
-            # WhatsApp green (#DCF8C6) - light green for sent
-            return RGBColor(220, 248, 198)
-        else:
-            # White for received
-            return RGBColor(255, 255, 255)
+        hex_color = get_chat_color(Platform.WHATSAPP, self.variant, Theme.LIGHT)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
-        return RGBColor(0, 0, 0)  # Black text for both
+        hex_color = CHAT_COLORS[Platform.WHATSAPP]["text"]
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_bubble_height(self, width: float) -> float:
         """Estimate bubble height."""
@@ -123,15 +122,15 @@ class WhatsAppBubble(Component):
 
         # Light border for white bubbles
         if self.variant == "received":
-            bubble.line.color.rgb = RGBColor(230, 230, 230)
-            bubble.line.width = Pt(0.5)
+            bubble.line.color.rgb = self.get_color("border.DEFAULT")
+            bubble.line.width = Pt(ComponentSizing.BORDER_WIDTH_THIN)
         else:
             bubble.line.fill.background()
 
         # Subtle shadow
         bubble.shadow.visible = True
-        bubble.shadow.blur_radius = Pt(2)
-        bubble.shadow.distance = Pt(1)
+        bubble.shadow.blur_radius = Pt(ComponentSizing.SHADOW_BLUR_SM)
+        bubble.shadow.distance = Pt(ComponentSizing.SHADOW_DISTANCE_SM)
         bubble.shadow.angle = 90
         bubble.shadow.transparency = 0.5
 
@@ -153,19 +152,19 @@ class WhatsAppBubble(Component):
         if self.sender and self.variant == "received":
             current_p.text = self.sender
             current_p.alignment = PP_ALIGN.LEFT
-            current_p.font.size = Pt(FONT_SIZES["sm"])  # 12pt (was 13pt, using closest design token)
+            current_p.font.size = Pt(FONT_SIZES["sm"])
             current_p.font.bold = True
-            current_p.font.color.rgb = RGBColor(6, 124, 98)  # Stronger WhatsApp teal
-            current_p.space_after = Pt(PARAGRAPH_SPACING["xs"])  # More space after sender
+            current_p.font.color.rgb = self.get_color("success.DEFAULT")
+            current_p.space_after = Pt(PARAGRAPH_SPACING["xs"])
             current_p = text_frame.add_paragraph()
 
         # Message text
         current_p.text = self.text
         current_p.alignment = PP_ALIGN.LEFT
-        current_p.font.size = Pt(FONT_SIZES["lg"])  # 16pt (was 15pt, using closest design token)
-        current_p.font.name = "Helvetica Neue"  # WhatsApp font
+        current_p.font.size = Pt(FONT_SIZES["lg"])
+        current_p.font.name = FONT_FAMILIES["sans"][0]
         current_p.font.color.rgb = self._get_text_color()
-        current_p.line_spacing = 1.3  # Better line spacing
+        current_p.line_spacing = 1.3
 
         shapes.append(bubble)
 
@@ -175,7 +174,7 @@ class WhatsAppBubble(Component):
             if self.timestamp:
                 ts_text = self.timestamp
             if self.variant == "sent" and self.show_checkmarks:
-                ts_text += " ✓✓"  # Double checkmark
+                ts_text += " ✓✓"
 
             if ts_text:
                 ts_box = slide.shapes.add_textbox(
@@ -190,8 +189,8 @@ class WhatsAppBubble(Component):
                 ts_frame.margin_right = Inches(0.05)
                 ts_p = ts_frame.paragraphs[0]
                 ts_p.alignment = PP_ALIGN.RIGHT
-                ts_p.font.size = Pt(FONT_SIZES["xs"])  # 10pt (was 9pt, using closest design token)
-                ts_p.font.color.rgb = RGBColor(150, 150, 150)  # Gray
+                ts_p.font.size = Pt(FONT_SIZES["xs"])
+                ts_p.font.color.rgb = self.get_color("muted.foreground")
                 shapes.append(ts_box)
 
         return shapes

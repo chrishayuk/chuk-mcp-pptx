@@ -12,6 +12,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import get_browser_color, BROWSER_COLORS, MACOS_CONTROLS, get_container_ui_color
+from ...constants import BrowserType, ThemeMode
 
 
 class BrowserWindow(Component):
@@ -79,13 +82,9 @@ class BrowserWindow(Component):
     def _get_chrome_color(self) -> RGBColor:
         """Get browser chrome color based on theme and browser type."""
         is_dark = self._is_dark_mode()
-
-        if self.browser_type == "chrome":
-            return RGBColor(50, 50, 50) if is_dark else RGBColor(240, 240, 240)
-        elif self.browser_type == "safari":
-            return RGBColor(55, 55, 55) if is_dark else RGBColor(246, 246, 246)
-        else:  # firefox
-            return RGBColor(56, 56, 61) if is_dark else RGBColor(242, 242, 242)
+        theme_mode = "dark" if is_dark else "light"
+        hex_color = get_browser_color(self.browser_type, "chrome", theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color based on theme."""
@@ -161,7 +160,7 @@ class BrowserWindow(Component):
                 Inches(control_size)
             )
             close_btn.fill.solid()
-            close_btn.fill.fore_color.rgb = RGBColor(255, 95, 86)
+            close_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["close"]))
             close_btn.line.fill.background()
             shapes.append(close_btn)
 
@@ -174,7 +173,7 @@ class BrowserWindow(Component):
                 Inches(control_size)
             )
             min_btn.fill.solid()
-            min_btn.fill.fore_color.rgb = RGBColor(255, 189, 46)
+            min_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["minimize"]))
             min_btn.line.fill.background()
             shapes.append(min_btn)
 
@@ -187,7 +186,7 @@ class BrowserWindow(Component):
                 Inches(control_size)
             )
             max_btn.fill.solid()
-            max_btn.fill.fore_color.rgb = RGBColor(40, 201, 64)
+            max_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["maximize"]))
             max_btn.line.fill.background()
             shapes.append(max_btn)
 
@@ -215,7 +214,7 @@ class BrowserWindow(Component):
             tab_text.vertical_anchor = MSO_ANCHOR.MIDDLE
             tab_p = tab_text.paragraphs[0]
             tab_p.alignment = PP_ALIGN.CENTER
-            tab_p.font.size = Pt(9)
+            tab_p.font.size = Pt(FONT_SIZES["xs"])
             tab_p.font.color.rgb = self._get_text_color()
             shapes.append(tab)
 
@@ -234,7 +233,7 @@ class BrowserWindow(Component):
         )
         address_bar.fill.solid()
         address_bar.fill.fore_color.rgb = self._get_address_bar_color()
-        address_bar.line.color.rgb = RGBColor(200, 200, 200)
+        address_bar.line.color.rgb = self.get_color("border.DEFAULT")
         address_bar.line.width = Pt(0.5)
 
         # Address bar text
@@ -243,8 +242,8 @@ class BrowserWindow(Component):
         address_text.vertical_anchor = MSO_ANCHOR.MIDDLE
         address_p = address_text.paragraphs[0]
         address_p.alignment = PP_ALIGN.LEFT
-        address_p.font.size = Pt(10)
-        address_p.font.color.rgb = self._get_text_color() if not self._is_dark_mode() else RGBColor(200, 200, 200)
+        address_p.font.size = Pt(FONT_SIZES["xs"])
+        address_p.font.color.rgb = self._get_text_color() if not self._is_dark_mode() else self.get_color("muted.foreground")
         shapes.append(address_bar)
 
         current_y += address_bar_height + 0.1

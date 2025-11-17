@@ -11,6 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import MACOS_CONTROLS, WINDOWS_CONTROLS, DEVICE_COLORS, get_container_ui_color
+from ...constants import ContainerPlatform, Theme
 
 
 class MacOSWindow(Component):
@@ -65,15 +68,15 @@ class MacOSWindow(Component):
 
     def _get_titlebar_color(self) -> RGBColor:
         """Get title bar color based on theme."""
-        if self._is_dark_mode():
-            return RGBColor(50, 50, 50)  # Dark mode title bar
-        return RGBColor(236, 236, 236)  # Light mode title bar
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_container_ui_color("macos", "titlebar", theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color based on theme."""
-        if self._is_dark_mode():
-            return RGBColor(255, 255, 255)
-        return RGBColor(0, 0, 0)
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_container_ui_color("macos", "text", theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_content_bg_color(self) -> RGBColor:
         """Get content background color."""
@@ -81,7 +84,8 @@ class MacOSWindow(Component):
             bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
-        return RGBColor(255, 255, 255)
+        hex_color = get_container_ui_color("macos", "content_bg", Theme.LIGHT)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def render(self, slide, left: float, top: float,
                width: float = 7.0, height: float = 5.0) -> Dict[str, float]:
@@ -110,7 +114,8 @@ class MacOSWindow(Component):
         )
         window_frame.fill.solid()
         window_frame.fill.fore_color.rgb = self._get_content_bg_color()
-        window_frame.line.color.rgb = RGBColor(180, 180, 180)
+        hex_color = get_container_ui_color("macos", "border", Theme.LIGHT)
+        window_frame.line.color.rgb = RGBColor(*self.hex_to_rgb(hex_color))
         window_frame.line.width = Pt(0.5)
 
         # macOS-style shadow
@@ -151,7 +156,8 @@ class MacOSWindow(Component):
             Inches(control_size)
         )
         close_btn.fill.solid()
-        close_btn.fill.fore_color.rgb = RGBColor(255, 95, 86)
+        close_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["close"]))
+        # Border is slightly darker than fill
         close_btn.line.color.rgb = RGBColor(220, 85, 76)
         close_btn.line.width = Pt(0.5)
         shapes.append(close_btn)
@@ -165,7 +171,8 @@ class MacOSWindow(Component):
             Inches(control_size)
         )
         min_btn.fill.solid()
-        min_btn.fill.fore_color.rgb = RGBColor(255, 189, 46)
+        min_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["minimize"]))
+        # Border is slightly darker than fill
         min_btn.line.color.rgb = RGBColor(225, 169, 41)
         min_btn.line.width = Pt(0.5)
         shapes.append(min_btn)
@@ -179,7 +186,8 @@ class MacOSWindow(Component):
             Inches(control_size)
         )
         max_btn.fill.solid()
-        max_btn.fill.fore_color.rgb = RGBColor(40, 201, 64)
+        max_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["maximize"]))
+        # Border is slightly darker than fill
         max_btn.line.color.rgb = RGBColor(35, 181, 57)
         max_btn.line.width = Pt(0.5)
         shapes.append(max_btn)
@@ -199,7 +207,7 @@ class MacOSWindow(Component):
 
         title_p = title_frame.paragraphs[0]
         title_p.alignment = PP_ALIGN.CENTER
-        title_p.font.size = Pt(12)
+        title_p.font.size = Pt(FONT_SIZES["sm"])
         title_p.font.bold = False
         title_p.font.color.rgb = self._get_text_color()
         shapes.append(title_box)
@@ -221,10 +229,9 @@ class MacOSWindow(Component):
             toolbar.fill.solid()
 
             # Toolbar is slightly lighter/darker than title bar
-            if self._is_dark_mode():
-                toolbar.fill.fore_color.rgb = RGBColor(60, 60, 60)
-            else:
-                toolbar.fill.fore_color.rgb = RGBColor(246, 246, 246)
+            theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+            hex_color = get_container_ui_color("macos", "toolbar", theme_mode)
+            toolbar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(hex_color))
 
             toolbar.line.fill.background()
             shapes.append(toolbar)

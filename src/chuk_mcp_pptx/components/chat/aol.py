@@ -12,6 +12,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
+from ...constants import MessageVariant
 
 
 class AIMBubble(Component):
@@ -71,15 +74,15 @@ class AIMBubble(Component):
         """Get screen name color."""
         if self.variant == "sent":
             # Classic AIM red for sent
-            return RGBColor(255, 0, 0)
+            return self.get_color("destructive.DEFAULT")
         else:
             # Classic AIM blue for received
-            return RGBColor(0, 0, 255)
+            return self.get_color("primary.DEFAULT")
 
     def _get_text_color(self) -> RGBColor:
         """Get message text color."""
         # Classic black text
-        return RGBColor(0, 0, 0)
+        return self.get_color("foreground.DEFAULT")
 
     def _calculate_message_height(self, width: float) -> float:
         """Estimate message height."""
@@ -113,9 +116,9 @@ class AIMBubble(Component):
         sn_frame.word_wrap = False
         sn_p = sn_frame.paragraphs[0]
         sn_p.alignment = PP_ALIGN.LEFT
-        sn_p.font.size = Pt(12)  # Larger
+        sn_p.font.size = Pt(FONT_SIZES["sm"])  # Larger
         sn_p.font.bold = True
-        sn_p.font.name = "Arial"  # Classic AIM font
+        sn_p.font.name = FONT_FAMILIES["sans"][0]  # Classic AIM font
         sn_p.font.color.rgb = self._get_screen_name_color()
         shapes.append(sn_box)
         current_top += 0.20  # More spacing
@@ -133,8 +136,8 @@ class AIMBubble(Component):
         text_frame.vertical_anchor = MSO_ANCHOR.TOP
         text_p = text_frame.paragraphs[0]
         text_p.alignment = PP_ALIGN.LEFT
-        text_p.font.size = Pt(12)  # Larger
-        text_p.font.name = "Arial"
+        text_p.font.size = Pt(FONT_SIZES["sm"])  # Larger
+        text_p.font.name = FONT_FAMILIES["sans"][0]
         text_p.font.color.rgb = self._get_text_color()
         text_p.line_spacing = 1.3  # Better line spacing
         shapes.append(text_box)
@@ -157,8 +160,8 @@ class AIMBubble(Component):
             ts_frame.text = self.timestamp
             ts_p = ts_frame.paragraphs[0]
             ts_p.alignment = PP_ALIGN.LEFT
-            ts_p.font.size = Pt(9)
-            ts_p.font.color.rgb = RGBColor(128, 128, 128)  # Gray
+            ts_p.font.size = Pt(FONT_SIZES["xs"])
+            ts_p.font.color.rgb = self.get_color("muted.foreground")  # Gray
             shapes.append(ts_box)
 
         return shapes

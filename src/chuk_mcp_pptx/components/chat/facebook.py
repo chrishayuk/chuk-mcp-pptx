@@ -11,6 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
+from ...constants import MessageVariant, Theme, Platform
 
 
 class FacebookMessengerBubble(Component):
@@ -64,19 +67,13 @@ class FacebookMessengerBubble(Component):
 
     def _get_bubble_color(self) -> RGBColor:
         """Get Facebook Messenger bubble color."""
-        if self.variant == "sent":
-            # Facebook Messenger blue (#0084FF)
-            return RGBColor(0, 132, 255)
-        else:
-            # Light gray for received
-            return RGBColor(233, 234, 237)
+        hex_color = get_chat_color(Platform.FACEBOOK, self.variant, Theme.LIGHT)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
-        if self.variant == "sent":
-            return RGBColor(255, 255, 255)  # White
-        else:
-            return RGBColor(0, 0, 0)  # Black
+        hex_color = CHAT_COLORS["facebook"]["text"]
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_bubble_height(self, width: float) -> float:
         """Estimate bubble height."""
@@ -122,7 +119,7 @@ class FacebookMessengerBubble(Component):
                 Inches(avatar_size)
             )
             avatar.fill.solid()
-            avatar.fill.fore_color.rgb = RGBColor(0, 132, 255)  # FB blue
+            avatar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["facebook"]["sent"]))
             avatar.line.fill.background()
 
             # Avatar text
@@ -131,9 +128,9 @@ class FacebookMessengerBubble(Component):
             av_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
             av_p = av_frame.paragraphs[0]
             av_p.alignment = PP_ALIGN.CENTER
-            av_p.font.size = Pt(11)
+            av_p.font.size = Pt(FONT_SIZES["sm"])
             av_p.font.bold = True
-            av_p.font.color.rgb = RGBColor(255, 255, 255)
+            av_p.font.color.rgb = self.get_color("primary.foreground")
             shapes.append(avatar)
 
         # Create bubble
@@ -156,7 +153,7 @@ class FacebookMessengerBubble(Component):
         text_frame.word_wrap = True
         text_frame.vertical_anchor = MSO_ANCHOR.TOP
 
-        padding = 0.13  # More padding
+        padding = 0.13
         text_frame.margin_left = Inches(padding)
         text_frame.margin_right = Inches(padding)
         text_frame.margin_top = Inches(padding)
@@ -166,10 +163,10 @@ class FacebookMessengerBubble(Component):
         p = text_frame.paragraphs[0]
         p.text = self.text
         p.alignment = PP_ALIGN.LEFT
-        p.font.size = Pt(15)  # Larger font
-        p.font.name = "Helvetica Neue"  # Facebook font
+        p.font.size = Pt(FONT_SIZES["lg"])
+        p.font.name = FONT_FAMILIES["sans"][0]
         p.font.color.rgb = self._get_text_color()
-        p.line_spacing = 1.3  # Better line spacing
+        p.line_spacing = 1.3
 
         shapes.append(bubble)
 

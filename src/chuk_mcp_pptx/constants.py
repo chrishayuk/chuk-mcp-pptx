@@ -102,6 +102,148 @@ ComponentType = Literal[
 ]
 
 
+# Chat Message Variants
+MessageVariant = Literal["sent", "received", "user", "assistant", "system"]
+
+
+# Chat Platform Types
+ChatPlatform = Literal[
+    "android",
+    "ios",
+    "chatgpt",
+    "slack",
+    "teams",
+    "whatsapp",
+    "facebook",
+    "msn",
+    "aol",
+    "generic",
+]
+
+
+# Browser Types
+BrowserType = Literal["chrome", "safari", "firefox"]
+
+
+# Container Platform Types
+ContainerPlatform = Literal["iphone", "samsung", "windows", "macos", "generic"]
+
+
+# Device Variants
+DeviceVariant = Literal["pro", "pro-max", "standard"]
+
+
+# Code Language Types
+CodeLanguage = Literal[
+    "python",
+    "javascript",
+    "typescript",
+    "java",
+    "csharp",
+    "cpp",
+    "go",
+    "rust",
+    "ruby",
+    "php",
+    "swift",
+    "kotlin",
+    "sql",
+    "html",
+    "css",
+    "shell",
+    "yaml",
+    "json",
+    "text",
+]
+
+
+# Text Alignment Types
+TextAlignment = Literal["left", "center", "right", "justify"]
+
+
+# Theme Mode
+ThemeMode = Literal["light", "dark"]
+
+# Theme Mode Constants
+class Theme:
+    """Theme mode constants to avoid hardcoded strings."""
+    LIGHT = "light"
+    DARK = "dark"
+
+
+# Platform Name Constants
+class Platform:
+    """Platform name constants to avoid hardcoded strings."""
+
+    # Chat Platforms
+    IOS = "ios"
+    ANDROID = "android"
+    WHATSAPP = "whatsapp"
+    CHATGPT = "chatgpt"
+    SLACK = "slack"
+    TEAMS = "teams"
+    FACEBOOK = "facebook"
+    MSN = "msn"
+    AOL = "aol"
+    GENERIC = "generic"
+
+    # OS Platforms
+    MACOS = "macos"
+    WINDOWS = "windows"
+
+    # Browser Platforms
+    CHROME = "chrome"
+    SAFARI = "safari"
+    FIREFOX = "firefox"
+
+    # Device Platforms
+    IPHONE = "iphone"
+    SAMSUNG = "samsung"
+
+
+# Component Sizing Constants
+class ComponentSizing:
+    """Component sizing constants for width/height calculations."""
+
+    # Character width estimations (in inches) for text sizing
+    CHAR_WIDTH_SM = 0.06
+    CHAR_WIDTH_MD = 0.07
+    CHAR_WIDTH_LG = 0.08
+
+    # Base widths for button components
+    BUTTON_BASE_WIDTH_SM = 1.5
+    BUTTON_BASE_WIDTH_MD = 2.0
+    BUTTON_BASE_WIDTH_LG = 2.5
+
+    # Badge component sizing
+    BADGE_CHAR_WIDTH = 0.08
+    BADGE_PADDING = 0.5
+
+    # Card component line heights
+    LINE_HEIGHT_INCHES = 0.35
+    PARAGRAPH_GAP = 0.08
+    TITLE_GAP = 0.22
+
+    # UI element sizing (in points)
+    BORDER_WIDTH_THIN = 0.5
+    BORDER_WIDTH_MEDIUM = 1
+    BORDER_WIDTH_THICK = 2
+
+    # Shadow properties (in points)
+    SHADOW_BLUR_SM = 2
+    SHADOW_BLUR_MD = 4
+    SHADOW_BLUR_LG = 6
+    SHADOW_DISTANCE_SM = 1
+    SHADOW_DISTANCE_MD = 2
+    SHADOW_DISTANCE_LG = 4
+
+    # Spacing (in points)
+    SPACE_XS = 2
+    SPACE_SM = 3
+    SPACE_MD = 4
+    SPACE_LG = 6
+
+
 # Theme Names
 ThemeName = Literal[
     "default",

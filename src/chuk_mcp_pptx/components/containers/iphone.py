@@ -12,6 +12,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import MACOS_CONTROLS, WINDOWS_CONTROLS, DEVICE_COLORS
+from ...constants import ContainerPlatform
 
 
 class iPhoneContainer(Component):
@@ -194,7 +197,7 @@ class iPhoneContainer(Component):
 
         status_p = status_frame.paragraphs[0]
         status_p.alignment = PP_ALIGN.CENTER
-        status_p.font.size = Pt(9)
+        status_p.font.size = Pt(FONT_SIZES["xs"])
         status_p.font.bold = True
         status_p.font.color.rgb = self._get_text_color()
         shapes.append(status_bar)
