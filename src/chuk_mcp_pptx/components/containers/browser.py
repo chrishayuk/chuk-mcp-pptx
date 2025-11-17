@@ -14,7 +14,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import get_browser_color, BROWSER_COLORS, MACOS_CONTROLS, get_container_ui_color
-from ...constants import BrowserType, ThemeMode
+from ...constants import BrowserType, ThemeMode, Platform, ColorKey, Theme
 
 
 class BrowserWindow(Component):
@@ -81,23 +81,21 @@ class BrowserWindow(Component):
 
     def _get_chrome_color(self) -> RGBColor:
         """Get browser chrome color based on theme and browser type."""
-        is_dark = self._is_dark_mode()
-        theme_mode = "dark" if is_dark else "light"
-        hex_color = get_browser_color(self.browser_type, "chrome", theme_mode)
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_browser_color(self.browser_type, ColorKey.BORDER, theme_mode)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color based on theme."""
-        if self._is_dark_mode():
-            return RGBColor(255, 255, 255)
-        return RGBColor(0, 0, 0)
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_container_ui_color(Platform.CHROME, ColorKey.TEXT, theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_address_bar_color(self) -> RGBColor:
         """Get address bar color."""
-        is_dark = self._is_dark_mode()
-        if is_dark:
-            return RGBColor(70, 70, 70)
-        return RGBColor(255, 255, 255)
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_container_ui_color(Platform.CHROME, ColorKey.ADDRESSBAR, theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_content_bg_color(self) -> RGBColor:
         """Get content background color from theme."""
@@ -105,7 +103,8 @@ class BrowserWindow(Component):
             bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
-        return RGBColor(255, 255, 255)
+        hex_color = get_container_ui_color(Platform.CHROME, ColorKey.PLACEHOLDER, Theme.LIGHT)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def render(self, slide, left: float, top: float,
                width: float = 8.0, height: float = 6.0) -> Dict[str, float]:
@@ -134,7 +133,8 @@ class BrowserWindow(Component):
         )
         window_frame.fill.solid()
         window_frame.fill.fore_color.rgb = self._get_chrome_color()
-        window_frame.line.color.rgb = RGBColor(180, 180, 180)
+        hex_color = get_container_ui_color(Platform.CHROME, ColorKey.BORDER, Theme.LIGHT)
+        window_frame.line.color.rgb = RGBColor(*self.hex_to_rgb(hex_color))
         window_frame.line.width = Pt(0.5)
         shapes.append(window_frame)
 

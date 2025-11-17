@@ -12,6 +12,8 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.platform_colors import get_container_ui_color
+from ...constants import Platform, ColorKey, Theme
 
 
 class ChatContainer(Component):
@@ -91,7 +93,8 @@ class ChatContainer(Component):
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
 
-        return RGBColor(255, 255, 255)
+        hex_color = get_container_ui_color(Platform.GENERIC, ColorKey.CONTENT_BG, Theme.LIGHT)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_border_color(self) -> RGBColor:
         """Get border color."""
@@ -100,9 +103,9 @@ class ChatContainer(Component):
             if border and isinstance(border, (list, tuple)) and len(border) >= 3:
                 return RGBColor(border[0], border[1], border[2])
 
-        if self._is_dark_mode():
-            return RGBColor(60, 60, 60)
-        return RGBColor(220, 220, 220)
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_container_ui_color(Platform.GENERIC, ColorKey.BORDER, theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_header_bg_color(self) -> RGBColor:
         """Get header background color."""
@@ -111,9 +114,9 @@ class ChatContainer(Component):
             if muted and isinstance(muted, (list, tuple)) and len(muted) >= 3:
                 return RGBColor(muted[0], muted[1], muted[2])
 
-        if self._is_dark_mode():
-            return RGBColor(50, 50, 50)
-        return RGBColor(245, 245, 245)
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_container_ui_color(Platform.GENERIC, ColorKey.HEADER_BG, theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
@@ -122,9 +125,9 @@ class ChatContainer(Component):
             if fg and isinstance(fg, (list, tuple)) and len(fg) >= 3:
                 return RGBColor(fg[0], fg[1], fg[2])
 
-        if self._is_dark_mode():
-            return RGBColor(255, 255, 255)
-        return RGBColor(0, 0, 0)
+        theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
+        hex_color = get_container_ui_color(Platform.GENERIC, ColorKey.HEADER_TEXT, theme_mode)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def render(self, slide, left: float, top: float,
                width: float = 6.0, height: float = 5.0) -> Dict[str, float]:

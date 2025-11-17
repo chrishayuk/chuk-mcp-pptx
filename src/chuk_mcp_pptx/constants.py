@@ -201,6 +201,44 @@ class Platform:
     SAMSUNG = "samsung"
 
 
+# Color/Element Key Constants
+class ColorKey:
+    """Dictionary key constants for platform colors to avoid hardcoded strings."""
+
+    # Message variants
+    SENT = "sent"
+    RECEIVED = "received"
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+
+    # Text colors
+    TEXT = "text"
+    TEXT_SENT = "text_sent"
+    TEXT_RECEIVED = "text_received"
+    SECONDARY_TEXT = "secondary_text"
+
+    # Links and interactive elements
+    LINK = "link"
+
+    # UI elements
+    AVATAR = "avatar"
+    TIMESTAMP = "timestamp"
+    BORDER = "border"
+
+    # Brand/theme specific colors
+    PURPLE = "purple"
+    TITLEBAR = "titlebar"
+    TOOLBAR = "toolbar"
+    CONTENT_BG = "content_bg"
+    MENUBAR = "menubar"
+    ADDRESSBAR = "addressbar"
+    PLACEHOLDER = "placeholder"
+    HEADER_BG = "header_bg"
+    HEADER_TEXT = "header_text"
+    TITLEBAR_BG = "titlebar_bg"
+
+
 # Component Sizing Constants
 class ComponentSizing:
     """Component sizing constants for width/height calculations."""

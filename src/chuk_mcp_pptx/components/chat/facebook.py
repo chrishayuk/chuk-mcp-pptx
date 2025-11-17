@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant, Theme, Platform
+from ...constants import MessageVariant, Theme, Platform, ColorKey
 
 
 class FacebookMessengerBubble(Component):
@@ -72,7 +72,7 @@ class FacebookMessengerBubble(Component):
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
-        hex_color = CHAT_COLORS["facebook"]["text"]
+        hex_color = CHAT_COLORS[Platform.FACEBOOK][ColorKey.TEXT]
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_bubble_height(self, width: float) -> float:
@@ -119,7 +119,7 @@ class FacebookMessengerBubble(Component):
                 Inches(avatar_size)
             )
             avatar.fill.solid()
-            avatar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["facebook"]["sent"]))
+            avatar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.FACEBOOK][ColorKey.SENT]))
             avatar.line.fill.background()
 
             # Avatar text

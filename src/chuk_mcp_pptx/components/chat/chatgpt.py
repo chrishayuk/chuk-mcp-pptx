@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import CHAT_COLORS
-from ...constants import MessageVariant
+from ...constants import MessageVariant, Platform, ColorKey
 
 
 class ChatGPTMessage(Component):
@@ -63,17 +63,17 @@ class ChatGPTMessage(Component):
 
     def _get_bg_color(self) -> Optional[RGBColor]:
         """Get background color."""
-        if self.variant == "user":
-            hex_color = CHAT_COLORS["chatgpt"]["user"]
-        elif self.variant == "system":
-            hex_color = CHAT_COLORS["chatgpt"]["system"]
+        if self.variant == ColorKey.USER:
+            hex_color = CHAT_COLORS[Platform.CHATGPT][ColorKey.USER]
+        elif self.variant == ColorKey.SYSTEM:
+            hex_color = CHAT_COLORS[Platform.CHATGPT][ColorKey.SYSTEM]
         else:
-            hex_color = CHAT_COLORS["chatgpt"]["assistant"]
+            hex_color = CHAT_COLORS[Platform.CHATGPT][ColorKey.ASSISTANT]
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
-        hex_color = CHAT_COLORS["chatgpt"]["text"]
+        hex_color = CHAT_COLORS[Platform.CHATGPT][ColorKey.TEXT]
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_content_height(self, width: float) -> float:
@@ -121,7 +121,7 @@ class ChatGPTMessage(Component):
 
             # ChatGPT green
             avatar_shape.fill.solid()
-            avatar_shape.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["chatgpt"]["avatar"]))
+            avatar_shape.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.CHATGPT][ColorKey.AVATAR]))
             avatar_shape.line.fill.background()
 
             # Add "AI" text in avatar

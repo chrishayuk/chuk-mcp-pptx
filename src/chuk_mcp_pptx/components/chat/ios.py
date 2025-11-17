@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant, Theme, Platform
+from ...constants import MessageVariant, Theme, Platform, ColorKey
 
 
 class iMessageBubble(Component):
@@ -73,10 +73,10 @@ class iMessageBubble(Component):
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
-        if self.variant == "sent":
-            hex_color = CHAT_COLORS["ios"]["text_sent"]
+        if self.variant == ColorKey.SENT:
+            hex_color = CHAT_COLORS[Platform.IOS][ColorKey.TEXT_SENT]
         else:
-            hex_color = CHAT_COLORS["ios"]["text_received"]
+            hex_color = CHAT_COLORS[Platform.IOS][ColorKey.TEXT_RECEIVED]
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_bubble_height(self, width: float) -> float:

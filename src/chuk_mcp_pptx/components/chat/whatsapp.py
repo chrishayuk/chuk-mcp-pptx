@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING, FONT_FAMILIES
 from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant, ComponentSizing, Theme, Platform
+from ...constants import MessageVariant, ComponentSizing, Theme, Platform, ColorKey
 
 
 class WhatsAppBubble(Component):
@@ -80,7 +80,7 @@ class WhatsAppBubble(Component):
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
-        hex_color = CHAT_COLORS[Platform.WHATSAPP]["text"]
+        hex_color = CHAT_COLORS[Platform.WHATSAPP][ColorKey.TEXT]
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_bubble_height(self, width: float) -> float:

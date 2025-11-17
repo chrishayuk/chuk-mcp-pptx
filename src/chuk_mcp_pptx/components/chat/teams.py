@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant
+from ...constants import MessageVariant, Platform, ColorKey
 
 
 class TeamsMessage(Component):
@@ -118,7 +118,7 @@ class TeamsMessage(Component):
             Inches(avatar_size)
         )
         avatar.fill.solid()
-        avatar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["teams"]["purple"]))  # Teams purple
+        avatar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.PURPLE]))  # Teams purple
         avatar.line.fill.background()
 
         # Avatar text
@@ -149,7 +149,7 @@ class TeamsMessage(Component):
         sender_p.alignment = PP_ALIGN.LEFT
         sender_p.font.size = Pt(FONT_SIZES["sm"])
         sender_p.font.bold = True
-        sender_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["teams"]["text"]))  # Teams dark gray
+        sender_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.TEXT]))  # Teams dark gray
         shapes.append(sender_box)
         current_top += 0.18
 
@@ -166,7 +166,7 @@ class TeamsMessage(Component):
         timestamp_p = timestamp_frame.paragraphs[0]
         timestamp_p.alignment = PP_ALIGN.LEFT
         timestamp_p.font.size = Pt(FONT_SIZES["xs"])
-        timestamp_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["teams"]["secondary_text"]))  # Teams medium gray
+        timestamp_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.SECONDARY_TEXT]))  # Teams medium gray
         shapes.append(timestamp_box)
         current_top += 0.18
 
@@ -184,7 +184,7 @@ class TeamsMessage(Component):
         text_p = text_frame.paragraphs[0]
         text_p.alignment = PP_ALIGN.LEFT
         text_p.font.size = Pt(FONT_SIZES["sm"])
-        text_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["teams"]["text"]))
+        text_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.TEXT]))
         shapes.append(text_box)
 
         # Calculate actual text height
@@ -207,7 +207,7 @@ class TeamsMessage(Component):
             reactions_p = reactions_frame.paragraphs[0]
             reactions_p.alignment = PP_ALIGN.LEFT
             reactions_p.font.size = Pt(FONT_SIZES["sm"])
-            reactions_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["teams"]["secondary_text"]))
+            reactions_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.SECONDARY_TEXT]))
             shapes.append(reactions_box)
             current_top += 0.22
 
@@ -224,7 +224,7 @@ class TeamsMessage(Component):
             reply_p = reply_frame.paragraphs[0]
             reply_p.alignment = PP_ALIGN.LEFT
             reply_p.font.size = Pt(FONT_SIZES["sm"])
-            reply_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["teams"]["purple"]))  # Teams purple
+            reply_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.PURPLE]))  # Teams purple
             shapes.append(reply_box)
 
         return shapes

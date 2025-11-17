@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant, ComponentSizing, Theme, Platform
+from ...constants import MessageVariant, ComponentSizing, Theme, Platform, ColorKey
 
 
 class AndroidMessageBubble(Component):
@@ -76,10 +76,10 @@ class AndroidMessageBubble(Component):
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
-        if self.variant == "sent":
-            hex_color = CHAT_COLORS[Platform.ANDROID]["text_sent"]
+        if self.variant == ColorKey.SENT:
+            hex_color = CHAT_COLORS[Platform.ANDROID][ColorKey.TEXT_SENT]
         else:
-            hex_color = CHAT_COLORS[Platform.ANDROID]["text_received"]
+            hex_color = CHAT_COLORS[Platform.ANDROID][ColorKey.TEXT_RECEIVED]
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_bubble_height(self, width: float) -> float:
@@ -146,7 +146,7 @@ class AndroidMessageBubble(Component):
             current_p.alignment = PP_ALIGN.LEFT
             current_p.font.size = Pt(FONT_SIZES["sm"])
             current_p.font.bold = True
-            current_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.ANDROID]["timestamp"]))
+            current_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.ANDROID][ColorKey.TIMESTAMP]))
             current_p = text_frame.add_paragraph()
             current_p.space_before = Pt(ComponentSizing.SPACE_SM)
 
@@ -176,9 +176,9 @@ class AndroidMessageBubble(Component):
             ts_frame = ts_box.text_frame
             ts_frame.text = self.timestamp
             ts_p = ts_frame.paragraphs[0]
-            ts_p.alignment = PP_ALIGN.LEFT if self.variant == "received" else PP_ALIGN.RIGHT
+            ts_p.alignment = PP_ALIGN.LEFT if self.variant == ColorKey.RECEIVED else PP_ALIGN.RIGHT
             ts_p.font.size = Pt(FONT_SIZES["xs"])
-            ts_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.ANDROID]["timestamp"]))
+            ts_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.ANDROID][ColorKey.TIMESTAMP]))
             shapes.append(ts_box)
 
         return shapes

@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import MACOS_CONTROLS, WINDOWS_CONTROLS, DEVICE_COLORS, get_container_ui_color
-from ...constants import ContainerPlatform, Theme
+from ...constants import ContainerPlatform, Theme, Platform, ColorKey
 
 
 class MacOSWindow(Component):
@@ -69,13 +69,13 @@ class MacOSWindow(Component):
     def _get_titlebar_color(self) -> RGBColor:
         """Get title bar color based on theme."""
         theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
-        hex_color = get_container_ui_color("macos", "titlebar", theme_mode)
+        hex_color = get_container_ui_color(Platform.MACOS, ColorKey.TITLEBAR, theme_mode)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color based on theme."""
         theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
-        hex_color = get_container_ui_color("macos", "text", theme_mode)
+        hex_color = get_container_ui_color(Platform.MACOS, ColorKey.TEXT, theme_mode)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_content_bg_color(self) -> RGBColor:
@@ -84,7 +84,7 @@ class MacOSWindow(Component):
             bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
-        hex_color = get_container_ui_color("macos", "content_bg", Theme.LIGHT)
+        hex_color = get_container_ui_color(Platform.MACOS, ColorKey.CONTENT_BG, Theme.LIGHT)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def render(self, slide, left: float, top: float,
@@ -114,7 +114,7 @@ class MacOSWindow(Component):
         )
         window_frame.fill.solid()
         window_frame.fill.fore_color.rgb = self._get_content_bg_color()
-        hex_color = get_container_ui_color("macos", "border", Theme.LIGHT)
+        hex_color = get_container_ui_color(Platform.MACOS, ColorKey.BORDER, Theme.LIGHT)
         window_frame.line.color.rgb = RGBColor(*self.hex_to_rgb(hex_color))
         window_frame.line.width = Pt(0.5)
 
@@ -230,7 +230,7 @@ class MacOSWindow(Component):
 
             # Toolbar is slightly lighter/darker than title bar
             theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
-            hex_color = get_container_ui_color("macos", "toolbar", theme_mode)
+            hex_color = get_container_ui_color(Platform.MACOS, ColorKey.TOOLBAR, theme_mode)
             toolbar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(hex_color))
 
             toolbar.line.fill.background()

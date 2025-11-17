@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import MACOS_CONTROLS, WINDOWS_CONTROLS, DEVICE_COLORS, get_container_ui_color
-from ...constants import ContainerPlatform, Theme
+from ...constants import ContainerPlatform, Theme, Platform, ColorKey
 
 
 class WindowsWindow(Component):
@@ -69,13 +69,13 @@ class WindowsWindow(Component):
     def _get_titlebar_color(self) -> RGBColor:
         """Get title bar color based on theme."""
         theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
-        hex_color = get_container_ui_color("windows", "titlebar", theme_mode)
+        hex_color = get_container_ui_color(Platform.WINDOWS, ColorKey.TITLEBAR, theme_mode)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color based on theme."""
         theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
-        hex_color = get_container_ui_color("windows", "text", theme_mode)
+        hex_color = get_container_ui_color(Platform.WINDOWS, ColorKey.TEXT, theme_mode)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_content_bg_color(self) -> RGBColor:
@@ -86,7 +86,7 @@ class WindowsWindow(Component):
                 return RGBColor(bg[0], bg[1], bg[2])
 
         theme_mode = Theme.DARK if self._is_dark_mode() else Theme.LIGHT
-        hex_color = get_container_ui_color("windows", "menubar", theme_mode)
+        hex_color = get_container_ui_color(Platform.WINDOWS, ColorKey.MENUBAR, theme_mode)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
     def render(self, slide, left: float, top: float,

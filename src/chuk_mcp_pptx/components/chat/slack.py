@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant
+from ...constants import MessageVariant, Platform, ColorKey
 
 
 class SlackMessage(Component):
@@ -119,7 +119,7 @@ class SlackMessage(Component):
             Inches(avatar_size)
         )
         avatar.fill.solid()
-        avatar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["avatar"]))
+        avatar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.AVATAR]))
         avatar.line.fill.background()
 
         # Avatar text
@@ -150,7 +150,7 @@ class SlackMessage(Component):
         sender_p.alignment = PP_ALIGN.LEFT
         sender_p.font.size = Pt(FONT_SIZES["base"])
         sender_p.font.bold = True
-        sender_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["text"]))
+        sender_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.TEXT]))
         shapes.append(sender_box)
         current_top += 0.18
 
@@ -167,7 +167,7 @@ class SlackMessage(Component):
         timestamp_p = timestamp_frame.paragraphs[0]
         timestamp_p.alignment = PP_ALIGN.LEFT
         timestamp_p.font.size = Pt(FONT_SIZES["sm"])
-        timestamp_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["secondary_text"]))
+        timestamp_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.SECONDARY_TEXT]))
         shapes.append(timestamp_box)
         current_top += 0.18
 
@@ -185,7 +185,7 @@ class SlackMessage(Component):
         text_p = text_frame.paragraphs[0]
         text_p.alignment = PP_ALIGN.LEFT
         text_p.font.size = Pt(FONT_SIZES["sm"])
-        text_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["text"]))
+        text_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.TEXT]))
         shapes.append(text_box)
 
         # Calculate actual text height
@@ -208,7 +208,7 @@ class SlackMessage(Component):
             reactions_p = reactions_frame.paragraphs[0]
             reactions_p.alignment = PP_ALIGN.LEFT
             reactions_p.font.size = Pt(FONT_SIZES["sm"])
-            reactions_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["secondary_text"]))
+            reactions_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.SECONDARY_TEXT]))
             shapes.append(reactions_box)
             current_top += 0.25
 
@@ -225,7 +225,7 @@ class SlackMessage(Component):
             thread_p = thread_frame.paragraphs[0]
             thread_p.alignment = PP_ALIGN.LEFT
             thread_p.font.size = Pt(FONT_SIZES["sm"])
-            thread_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS["slack"]["link"]))
+            thread_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.LINK]))
             shapes.append(thread_box)
 
         return shapes
