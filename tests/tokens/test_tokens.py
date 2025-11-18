@@ -4,13 +4,29 @@ Comprehensive tests for the token system.
 
 import pytest
 from chuk_mcp_pptx.tokens import (
-    PALETTE, get_semantic_tokens, GRADIENTS,
-    FONT_FAMILIES, FONT_SIZES, FONT_WEIGHTS,
-    LINE_HEIGHTS, LETTER_SPACING, get_text_style, TYPOGRAPHY_SCALE,
-    SPACING, MARGINS, PADDING, GAPS,
-    RADIUS, BORDER_WIDTH, SHADOWS,
-    GRID, CONTAINERS, ASPECT_RATIOS,
-    get_layout_spacing, get_all_tokens, export_tokens_json
+    PALETTE,
+    get_semantic_tokens,
+    GRADIENTS,
+    FONT_FAMILIES,
+    FONT_SIZES,
+    FONT_WEIGHTS,
+    LINE_HEIGHTS,
+    LETTER_SPACING,
+    get_text_style,
+    TYPOGRAPHY_SCALE,
+    SPACING,
+    MARGINS,
+    PADDING,
+    GAPS,
+    RADIUS,
+    BORDER_WIDTH,
+    SHADOWS,
+    GRID,
+    CONTAINERS,
+    ASPECT_RATIOS,
+    get_layout_spacing,
+    get_all_tokens,
+    export_tokens_json,
 )
 
 
@@ -20,9 +36,25 @@ class TestColorTokens:
     def test_palette_has_all_colors(self):
         """Test that palette includes all expected color families."""
         expected_colors = [
-            "slate", "zinc", "red", "orange", "amber", "yellow",
-            "lime", "green", "emerald", "teal", "cyan", "sky",
-            "blue", "indigo", "violet", "purple", "fuchsia", "pink", "rose"
+            "slate",
+            "zinc",
+            "red",
+            "orange",
+            "amber",
+            "yellow",
+            "lime",
+            "green",
+            "emerald",
+            "teal",
+            "cyan",
+            "sky",
+            "blue",
+            "indigo",
+            "violet",
+            "purple",
+            "fuchsia",
+            "pink",
+            "rose",
         ]
 
         for color in expected_colors:
@@ -76,7 +108,16 @@ class TestColorTokens:
 
     def test_gradients_exist(self):
         """Test that gradient definitions exist."""
-        expected_gradients = ["sunset", "ocean", "forest", "flame", "aurora", "cosmic", "mint", "lavender"]
+        expected_gradients = [
+            "sunset",
+            "ocean",
+            "forest",
+            "flame",
+            "aurora",
+            "cosmic",
+            "mint",
+            "lavender",
+        ]
 
         for grad in expected_gradients:
             assert grad in GRADIENTS
@@ -101,7 +142,21 @@ class TestTypographyTokens:
 
     def test_font_sizes(self):
         """Test font size scale."""
-        expected_sizes = ["xs", "sm", "base", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl"]
+        expected_sizes = [
+            "xs",
+            "sm",
+            "base",
+            "lg",
+            "xl",
+            "2xl",
+            "3xl",
+            "4xl",
+            "5xl",
+            "6xl",
+            "7xl",
+            "8xl",
+            "9xl",
+        ]
 
         for size in expected_sizes:
             assert size in FONT_SIZES
@@ -113,7 +168,17 @@ class TestTypographyTokens:
 
     def test_font_weights(self):
         """Test font weight definitions."""
-        expected_weights = ["thin", "extralight", "light", "normal", "medium", "semibold", "bold", "extrabold", "black"]
+        expected_weights = [
+            "thin",
+            "extralight",
+            "light",
+            "normal",
+            "medium",
+            "semibold",
+            "bold",
+            "extrabold",
+            "black",
+        ]
 
         for weight in expected_weights:
             assert weight in FONT_WEIGHTS
@@ -280,7 +345,7 @@ class TestSpacingTokens:
         assert "padding" in compact
         assert "gap" in compact
 
-        default = get_layout_spacing("default")
+        get_layout_spacing("default")
         comfortable = get_layout_spacing("comfortable")
 
         # Comfortable should have larger values than compact
@@ -316,6 +381,7 @@ class TestTokenUtilities:
 
         # Should be valid JSON
         import json
+
         data = json.loads(json_str)
         assert "colors" in data
         assert "typography" in data

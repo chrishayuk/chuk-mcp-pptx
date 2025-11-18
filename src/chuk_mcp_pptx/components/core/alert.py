@@ -56,9 +56,7 @@ ALERT_VARIANTS = create_variants(
             },
         }
     },
-    default_variants={
-        "variant": "default"
-    }
+    default_variants={"variant": "default"},
 )
 
 
@@ -67,9 +65,14 @@ ALERT_VARIANTS = create_variants(
     category=ComponentCategory.UI,
     description="Alert/notification component for displaying important messages",
     props=[
-        prop("variant", "string", "Alert type",
-             options=["default", "info", "success", "warning", "error"],
-             default="info", example="success"),
+        prop(
+            "variant",
+            "string",
+            "Alert type",
+            options=["default", "info", "success", "warning", "error"],
+            default="info",
+            example="success",
+        ),
         prop("title", "string", "Alert title", example="Success!"),
         prop("description", "string", "Alert description", example="Your changes have been saved."),
         prop("show_icon", "boolean", "Show icon indicator", default=True),
@@ -78,12 +81,10 @@ ALERT_VARIANTS = create_variants(
         prop("width", "number", "Width in inches", default=5.0),
         prop("height", "number", "Height in inches", default=1.5),
     ],
-    variants={
-        "variant": ["default", "info", "success", "warning", "error"]
-    },
+    variants={"variant": ["default", "info", "success", "warning", "error"]},
     composition={
         "supports": ["AlertTitle", "AlertDescription"],
-        "pattern": "Alert can be composed with title and description subcomponents"
+        "pattern": "Alert can be composed with title and description subcomponents",
     },
     examples=[
         example(
@@ -97,7 +98,7 @@ alert = Alert(
 alert.render(slide, left=1, top=1)
             """,
             variant="success",
-            title="Success!"
+            title="Success!",
         ),
         example(
             description="Warning alert",
@@ -110,7 +111,7 @@ alert = Alert(
 alert.render(slide, left=1, top=3)
             """,
             variant="warning",
-            title="Warning"
+            title="Warning",
         ),
         example(
             description="Composed alert",
@@ -120,10 +121,10 @@ alert.add_child(Alert.Title("Notice"))
 alert.add_child(Alert.Description("Please review the changes."))
 alert.render(slide, left=1, top=5)
             """,
-            variant="info"
-        )
+            variant="info",
+        ),
     ],
-    tags=["alert", "notification", "message", "ui", "feedback"]
+    tags=["alert", "notification", "message", "ui", "feedback"],
 )
 class Alert(ComposableComponent):
     """
@@ -150,18 +151,22 @@ class Alert(ComposableComponent):
     # Expose composition components as class attributes
     class Title(CardTitle):
         """Alert title subcomponent."""
+
         pass
 
     class Description(CardDescription):
         """Alert description subcomponent."""
+
         pass
 
-    def __init__(self,
-                 variant: str = "info",
-                 title: Optional[str] = None,
-                 description: Optional[str] = None,
-                 show_icon: bool = True,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        variant: str = "info",
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        show_icon: bool = True,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize alert component.
 
@@ -187,8 +192,9 @@ class Alert(ComposableComponent):
         if description:
             self.add_child(self.Description(description, theme))
 
-    def render(self, slide, left: float, top: float,
-               width: float = 5.0, height: float = 1.5) -> Any:
+    def render(
+        self, slide, left: float, top: float, width: float = 5.0, height: float = 1.5
+    ) -> Any:
         """
         Render alert to slide.
 
@@ -204,11 +210,7 @@ class Alert(ComposableComponent):
         """
         # Create alert container
         alert = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE,
-            Inches(left),
-            Inches(top),
-            Inches(width),
-            Inches(height)
+            MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)
         )
 
         # Apply variant styling
@@ -269,7 +271,11 @@ class AlertTitle(SubComponent):
         """Render title into alert text frame."""
         theme = theme or self.theme
 
-        p = text_frame.add_paragraph() if text_frame.paragraphs[0].text else text_frame.paragraphs[0]
+        p = (
+            text_frame.add_paragraph()
+            if text_frame.paragraphs[0].text
+            else text_frame.paragraphs[0]
+        )
         p.text = self.text
         p.alignment = PP_ALIGN.LEFT  # Ensure left alignment
         style = self.get_text_style("h5")
@@ -303,5 +309,5 @@ class AlertDescription(SubComponent):
 
 
 # Add to Alert class
-Alert.Title = AlertTitle
-Alert.Description = AlertDescription
+Alert.Title = AlertTitle  # type: ignore[misc]
+Alert.Description = AlertDescription  # type: ignore[misc]

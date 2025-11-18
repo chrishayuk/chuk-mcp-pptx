@@ -2,31 +2,22 @@
 Base chart component with validation, theming, and composition support.
 """
 
-from typing import Dict, Any, List, Optional, Tuple, Union
+from typing import Dict, Any, Optional, Tuple, Union
 from pptx.chart.data import CategoryChartData, XyChartData, BubbleChartData
-from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION, XL_TICK_MARK, XL_TICK_LABEL_POSITION
-from pptx.util import Inches, Pt
+from pptx.enum.chart import XL_CHART_TYPE
+from pptx.util import Inches
 from pptx.dml.color import RGBColor
-import asyncio
 
 from ...composition import ComposableComponent
 from ...variants import CHART_VARIANTS
 from ...layout.helpers import (
     validate_position,
-    validate_boundaries,
-    get_safe_content_area,
-    SLIDE_WIDTH,
-    SLIDE_HEIGHT,
-    MARGIN_TOP,
-    MARGIN_BOTTOM,
-    MARGIN_LEFT,
-    MARGIN_RIGHT
 )
 from ...utilities.chart_utils import (
     configure_legend,
     configure_axes,
     set_chart_title,
-    apply_chart_colors
+    apply_chart_colors,
 )
 
 
@@ -62,12 +53,14 @@ class ChartComponent(ComposableComponent):
     DEFAULT_LEFT = 1.0
     DEFAULT_TOP = 2.0
 
-    def __init__(self,
-                 title: Optional[str] = None,
-                 data: Optional[Dict[str, Any]] = None,
-                 theme: Optional[Dict[str, Any]] = None,
-                 style: str = "default",
-                 legend: str = "right"):
+    def __init__(
+        self,
+        title: Optional[str] = None,
+        data: Optional[Dict[str, Any]] = None,
+        theme: Optional[Dict[str, Any]] = None,
+        style: str = "default",
+        legend: str = "right",
+    ):
         """
         Initialize chart component.
 
@@ -86,10 +79,7 @@ class ChartComponent(ComposableComponent):
         self.chart_type = XL_CHART_TYPE.COLUMN_CLUSTERED
 
         # Get variant props
-        self.variant_props = CHART_VARIANTS.build(
-            style=style,
-            legend=legend
-        )
+        self.variant_props = CHART_VARIANTS.build(style=style, legend=legend)
 
     def validate(self) -> Tuple[bool, Optional[str]]:
         """
@@ -152,11 +142,14 @@ class ChartComponent(ComposableComponent):
         """
         raise NotImplementedError("Subclasses must implement _prepare_chart_data")
 
-    def render(self, slide,
-               left: Optional[float] = None,
-               top: Optional[float] = None,
-               width: Optional[float] = None,
-               height: Optional[float] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: Optional[float] = None,
+        top: Optional[float] = None,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+    ) -> Any:
         """
         Render chart to slide.
 
@@ -189,10 +182,7 @@ class ChartComponent(ComposableComponent):
 
         # Add chart to slide
         chart_shape = slide.shapes.add_chart(
-            self.chart_type,
-            Inches(left), Inches(top),
-            Inches(width), Inches(height),
-            chart_data
+            self.chart_type, Inches(left), Inches(top), Inches(width), Inches(height), chart_data
         )
 
         chart = chart_shape.chart
@@ -206,7 +196,7 @@ class ChartComponent(ComposableComponent):
                 chart,
                 self.title,
                 font_family=font_family,
-                font_color=self.get_color("foreground.DEFAULT")
+                font_color=self.get_color("foreground.DEFAULT"),
             )
 
         # Apply theme colors
@@ -217,7 +207,7 @@ class ChartComponent(ComposableComponent):
             chart,
             position=self.variant_props.get("legend_position", "right"),
             show=self.variant_props.get("show_legend", True),
-            font_family=font_family
+            font_family=font_family,
         )
 
         # Configure axes from variant props
@@ -225,7 +215,7 @@ class ChartComponent(ComposableComponent):
             chart,
             gridline_color=self.get_color("border.secondary"),
             label_font_family=font_family,
-            label_color=self.get_color("muted.foreground")
+            label_color=self.get_color("muted.foreground"),
         )
 
         return chart

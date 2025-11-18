@@ -127,7 +127,7 @@ class TestExtractPresentationText:
         for i in range(3):
             title_layout = presentation.slide_layouts[0]
             slide = presentation.slides.add_slide(title_layout)
-            slide.shapes.title.text = f"Slide {i+1}"
+            slide.shapes.title.text = f"Slide {i + 1}"
 
         result = extract_presentation_text(presentation)
         assert result["total_slides"] == 3
@@ -201,6 +201,7 @@ class TestFormatTextFrame:
 
         format_text_frame(tb.text_frame, alignment="left")
         from pptx.enum.text import PP_ALIGN
+
         assert tb.text_frame.paragraphs[0].alignment == PP_ALIGN.LEFT
 
     def test_format_alignment_center(self, slide):
@@ -210,6 +211,7 @@ class TestFormatTextFrame:
 
         format_text_frame(tb.text_frame, alignment="center")
         from pptx.enum.text import PP_ALIGN
+
         assert tb.text_frame.paragraphs[0].alignment == PP_ALIGN.CENTER
 
     def test_format_alignment_right(self, slide):
@@ -219,6 +221,7 @@ class TestFormatTextFrame:
 
         format_text_frame(tb.text_frame, alignment="right")
         from pptx.enum.text import PP_ALIGN
+
         assert tb.text_frame.paragraphs[0].alignment == PP_ALIGN.RIGHT
 
     def test_format_alignment_justify(self, slide):
@@ -228,6 +231,7 @@ class TestFormatTextFrame:
 
         format_text_frame(tb.text_frame, alignment="justify")
         from pptx.enum.text import PP_ALIGN
+
         assert tb.text_frame.paragraphs[0].alignment == PP_ALIGN.JUSTIFY
 
 
@@ -239,8 +243,10 @@ class TestValidateTextFit:
         # Add a connector (which doesn't have a text frame)
         connector = slide.shapes.add_connector(
             1,  # MSO_CONNECTOR.STRAIGHT
-            Inches(1), Inches(1),
-            Inches(3), Inches(3)
+            Inches(1),
+            Inches(1),
+            Inches(3),
+            Inches(3),
         )
 
         result = validate_text_fit(connector)
@@ -277,7 +283,9 @@ class TestValidateTextFit:
     def test_validate_suggests_adjustments_when_too_large(self, slide):
         """Test that suggestions are provided when text doesn't fit."""
         tb = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(1), Inches(0.5))
-        tb.text_frame.text = "This is a very long text that definitely will not fit in a small shape"
+        tb.text_frame.text = (
+            "This is a very long text that definitely will not fit in a small shape"
+        )
 
         result = validate_text_fit(tb, font_size=24)
         if not result["fits"]:

@@ -38,10 +38,8 @@ __all__ = [
     "list_templates",
     "get_template_info",
     "get_template",
-
     # Base
     "SlideTemplate",
-
     # Templates
     "MetricsDashboard",
     "ComparisonSlide",

@@ -14,7 +14,8 @@ Demonstrates how chat conversations look inside various device and window contai
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pptx import Presentation
 from pptx.util import Inches
@@ -28,7 +29,7 @@ from chuk_mcp_pptx.components.chat import (
     ChatGPTConversation,
     FacebookMessengerConversation,
     AIMConversation,
-    MSNConversation
+    MSNConversation,
 )
 from chuk_mcp_pptx.components.containers import (
     iPhoneContainer,
@@ -36,7 +37,7 @@ from chuk_mcp_pptx.components.containers import (
     BrowserWindow,
     MacOSWindow,
     WindowsWindow,
-    ChatContainer
+    ChatContainer,
 )
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 
@@ -66,10 +67,7 @@ def create_iphone_imessage_slide(prs, theme):
 
     conversation = iMessageConversation(messages, theme=theme.__dict__)
     conversation.render(
-        slide,
-        left=content_area['left'],
-        top=content_area['top'],
-        width=content_area['width']
+        slide, left=content_area["left"], top=content_area["top"], width=content_area["width"]
     )
 
 
@@ -91,17 +89,19 @@ def create_samsung_android_slide(prs, theme):
 
     # Android Messages conversation inside (3 messages to fit container)
     messages = [
-        {"text": "Meeting in 10 min!", "sender": "Sarah", "variant": "received", "timestamp": "2:50 PM"},
+        {
+            "text": "Meeting in 10 min!",
+            "sender": "Sarah",
+            "variant": "received",
+            "timestamp": "2:50 PM",
+        },
         {"text": "On my way. Bring laptop?", "variant": "sent", "timestamp": "2:51 PM"},
         {"text": "Yes please", "sender": "Sarah", "variant": "received", "timestamp": "2:52 PM"},
     ]
 
     conversation = AndroidConversation(messages, theme=theme.__dict__)
     conversation.render(
-        slide,
-        left=content_area['left'],
-        top=content_area['top'],
-        width=content_area['width']
+        slide, left=content_area["left"], top=content_area["top"], width=content_area["width"]
     )
 
 
@@ -122,23 +122,37 @@ def create_browser_slack_slide(prs, theme):
         title="Slack - #general",
         url="slack.com/messages/general",
         browser_type="chrome",
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     content_area = browser.render(slide, left=1.0, top=1.5, width=8.0, height=5.2)
 
     # Slack conversation inside (reduced to 3 messages to fit container)
     messages = [
-        {"text": "Quick standup in 5!", "sender": "Sarah", "timestamp": "9:00 AM", "avatar_text": "SM"},
-        {"text": "On my way", "sender": "John", "timestamp": "9:01 AM", "avatar_text": "JD", "reactions": ["👍 2"]},
-        {"text": "Zoom link in calendar", "sender": "Sarah", "timestamp": "9:02 AM", "avatar_text": "SM", "reactions": ["✅ 3"]},
+        {
+            "text": "Quick standup in 5!",
+            "sender": "Sarah",
+            "timestamp": "9:00 AM",
+            "avatar_text": "SM",
+        },
+        {
+            "text": "On my way",
+            "sender": "John",
+            "timestamp": "9:01 AM",
+            "avatar_text": "JD",
+            "reactions": ["👍 2"],
+        },
+        {
+            "text": "Zoom link in calendar",
+            "sender": "Sarah",
+            "timestamp": "9:02 AM",
+            "avatar_text": "SM",
+            "reactions": ["✅ 3"],
+        },
     ]
 
     conversation = SlackConversation(messages, spacing=0.15, theme=theme.__dict__)
     conversation.render(
-        slide,
-        left=content_area['left'],
-        top=content_area['top'],
-        width=content_area['width']
+        slide, left=content_area["left"], top=content_area["top"], width=content_area["width"]
     )
 
 
@@ -156,26 +170,37 @@ def create_windows_teams_slide(prs, theme):
 
     # Windows window
     windows = WindowsWindow(
-        title="Microsoft Teams",
-        app_icon="👥",
-        show_menubar=False,
-        theme=theme.__dict__
+        title="Microsoft Teams", app_icon="👥", show_menubar=False, theme=theme.__dict__
     )
     content_area = windows.render(slide, left=1.0, top=1.5, width=8.0, height=5.5)
 
     # Teams conversation inside
     messages = [
-        {"text": "Notes shared", "sender": "Sarah Johnson", "timestamp": "Today at 10:30 AM", "avatar_text": "SJ"},
-        {"text": "Great presentation!", "sender": "Mike Chen", "timestamp": "Today at 10:35 AM", "avatar_text": "MC", "reactions": ["👍 5"]},
-        {"text": "Thanks! Sync tomorrow?", "sender": "Sarah Johnson", "timestamp": "Today at 10:40 AM", "avatar_text": "SJ", "reply_count": 3},
+        {
+            "text": "Notes shared",
+            "sender": "Sarah Johnson",
+            "timestamp": "Today at 10:30 AM",
+            "avatar_text": "SJ",
+        },
+        {
+            "text": "Great presentation!",
+            "sender": "Mike Chen",
+            "timestamp": "Today at 10:35 AM",
+            "avatar_text": "MC",
+            "reactions": ["👍 5"],
+        },
+        {
+            "text": "Thanks! Sync tomorrow?",
+            "sender": "Sarah Johnson",
+            "timestamp": "Today at 10:40 AM",
+            "avatar_text": "SJ",
+            "reply_count": 3,
+        },
     ]
 
     conversation = TeamsConversation(messages, spacing=0.15, theme=theme.__dict__)
     conversation.render(
-        slide,
-        left=content_area['left'],
-        top=content_area['top'],
-        width=content_area['width']
+        slide, left=content_area["left"], top=content_area["top"], width=content_area["width"]
     )
 
 
@@ -193,10 +218,7 @@ def create_macos_messages_slide(prs, theme):
 
     # macOS window
     macos_window = MacOSWindow(
-        title="Messages",
-        app_icon="💬",
-        show_toolbar=False,
-        theme=theme.__dict__
+        title="Messages", app_icon="💬", show_toolbar=False, theme=theme.__dict__
     )
     content_area = macos_window.render(slide, left=1.5, top=1.5, width=7.0, height=5.5)
 
@@ -209,10 +231,7 @@ def create_macos_messages_slide(prs, theme):
 
     conversation = iMessageConversation(messages, theme=theme.__dict__)
     conversation.render(
-        slide,
-        left=content_area['left'],
-        top=content_area['top'],
-        width=content_area['width']
+        slide, left=content_area["left"], top=content_area["top"], width=content_area["width"]
     )
 
 
@@ -230,25 +249,22 @@ def create_browser_chatgpt_slide(prs, theme):
 
     # Browser window
     browser = BrowserWindow(
-        title="ChatGPT",
-        url="chat.openai.com",
-        browser_type="safari",
-        theme=theme.__dict__
+        title="ChatGPT", url="chat.openai.com", browser_type="safari", theme=theme.__dict__
     )
     content_area = browser.render(slide, left=1.0, top=1.5, width=8.0, height=5.2)
 
     # ChatGPT conversation inside (2 messages to fit container - ChatGPT has large padding)
     messages = [
         {"text": "Explain recursion simply", "variant": "user"},
-        {"text": "Recursion is when a function calls itself to solve smaller versions of the same problem. Each call works on a simpler case until reaching a base case that stops the recursion.", "variant": "assistant"},
+        {
+            "text": "Recursion is when a function calls itself to solve smaller versions of the same problem. Each call works on a simpler case until reaching a base case that stops the recursion.",
+            "variant": "assistant",
+        },
     ]
 
     conversation = ChatGPTConversation(messages, spacing=0.2, theme=theme.__dict__)
     conversation.render(
-        slide,
-        left=content_area['left'],
-        top=content_area['top'],
-        width=content_area['width']
+        slide, left=content_area["left"], top=content_area["top"], width=content_area["width"]
     )
 
 
@@ -270,7 +286,7 @@ def create_generic_container_slide(prs, theme):
         show_header=True,
         show_border=True,
         variant="outlined",
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     content_area = container.render(slide, left=2.0, top=1.5, width=6.0, height=5.5)
 
@@ -283,10 +299,7 @@ def create_generic_container_slide(prs, theme):
 
     conversation = WhatsAppConversation(messages, theme=theme.__dict__)
     conversation.render(
-        slide,
-        left=content_area['left'],
-        top=content_area['top'],
-        width=content_area['width']
+        slide, left=content_area["left"], top=content_area["top"], width=content_area["width"]
     )
 
 
@@ -311,7 +324,9 @@ def create_comparison_slide(prs, theme):
         {"text": "Container", "variant": "received"},
     ]
     iphone_conv = iMessageConversation(iphone_msgs, theme=theme.__dict__)
-    iphone_conv.render(slide, left=iphone_area['left'], top=iphone_area['top'], width=iphone_area['width'])
+    iphone_conv.render(
+        slide, left=iphone_area["left"], top=iphone_area["top"], width=iphone_area["width"]
+    )
 
     # Samsung (middle-left)
     samsung = SamsungContainer(theme=theme.__dict__)
@@ -322,7 +337,9 @@ def create_comparison_slide(prs, theme):
         {"text": "Container", "variant": "received"},
     ]
     samsung_conv = AndroidConversation(samsung_msgs, theme=theme.__dict__)
-    samsung_conv.render(slide, left=samsung_area['left'], top=samsung_area['top'], width=samsung_area['width'])
+    samsung_conv.render(
+        slide, left=samsung_area["left"], top=samsung_area["top"], width=samsung_area["width"]
+    )
 
     # Generic container (right)
     generic = ChatContainer(title="Generic", show_header=True, theme=theme.__dict__)
@@ -332,7 +349,9 @@ def create_comparison_slide(prs, theme):
         {"text": "Generic chat container", "variant": "received"},
     ]
     generic_conv = WhatsAppConversation(generic_msgs, theme=theme.__dict__)
-    generic_conv.render(slide, left=generic_area['left'], top=generic_area['top'], width=generic_area['width'])
+    generic_conv.render(
+        slide, left=generic_area["left"], top=generic_area["top"], width=generic_area["width"]
+    )
 
 
 def create_browser_facebook_slide(prs, theme):
@@ -349,10 +368,7 @@ def create_browser_facebook_slide(prs, theme):
 
     # Browser window
     browser = BrowserWindow(
-        title="Messenger",
-        url="messenger.com",
-        browser_type="chrome",
-        theme=theme.__dict__
+        title="Messenger", url="messenger.com", browser_type="chrome", theme=theme.__dict__
     )
     content_area = browser.render(slide, left=1.0, top=1.5, width=8.0, height=5.2)
 
@@ -365,10 +381,7 @@ def create_browser_facebook_slide(prs, theme):
 
     conversation = FacebookMessengerConversation(messages, spacing=0.12, theme=theme.__dict__)
     conversation.render(
-        slide,
-        left=content_area['left'],
-        top=content_area['top'],
-        width=content_area['width']
+        slide, left=content_area["left"], top=content_area["top"], width=content_area["width"]
     )
 
 
@@ -390,23 +403,35 @@ def create_generic_aol_slide(prs, theme):
         show_header=True,
         show_border=True,
         variant="outlined",
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     content_area = container.render(slide, left=2.0, top=1.5, width=6.0, height=5.5)
 
     # AIM conversation inside (3 messages to fit container)
     messages = [
-        {"text": "Hey! Want to hang out later?", "screen_name": "sk8rgrl2004", "variant": "received", "timestamp": "5:30 PM"},
-        {"text": "Yeah! Let's go to the mall at 6", "screen_name": "xXCoolDude2003Xx", "variant": "sent", "timestamp": "5:31 PM"},
-        {"text": "Cool! See you there!", "screen_name": "sk8rgrl2004", "variant": "received", "timestamp": "5:32 PM"},
+        {
+            "text": "Hey! Want to hang out later?",
+            "screen_name": "sk8rgrl2004",
+            "variant": "received",
+            "timestamp": "5:30 PM",
+        },
+        {
+            "text": "Yeah! Let's go to the mall at 6",
+            "screen_name": "xXCoolDude2003Xx",
+            "variant": "sent",
+            "timestamp": "5:31 PM",
+        },
+        {
+            "text": "Cool! See you there!",
+            "screen_name": "sk8rgrl2004",
+            "variant": "received",
+            "timestamp": "5:32 PM",
+        },
     ]
 
     conversation = AIMConversation(messages, spacing=0.15, theme=theme.__dict__)
     conversation.render(
-        slide,
-        left=content_area['left'],
-        top=content_area['top'],
-        width=content_area['width']
+        slide, left=content_area["left"], top=content_area["top"], width=content_area["width"]
     )
 
 
@@ -428,23 +453,37 @@ def create_generic_msn_slide(prs, theme):
         show_header=True,
         show_border=True,
         variant="outlined",
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     content_area = container.render(slide, left=2.0, top=1.5, width=6.0, height=5.5)
 
     # MSN conversation inside (3 messages to fit container)
     messages = [
-        {"text": "Hey! What are you up to?", "display_name": "AwesomeGirl", "variant": "received", "timestamp": "21:00", "emoticon": "😊"},
-        {"text": "Just listening to some indie rock", "display_name": "CoolGuy", "variant": "sent", "timestamp": "21:01", "emoticon": "🎵"},
-        {"text": "Nice! I love indie music too", "display_name": "AwesomeGirl", "variant": "received", "timestamp": "21:02"},
+        {
+            "text": "Hey! What are you up to?",
+            "display_name": "AwesomeGirl",
+            "variant": "received",
+            "timestamp": "21:00",
+            "emoticon": "😊",
+        },
+        {
+            "text": "Just listening to some indie rock",
+            "display_name": "CoolGuy",
+            "variant": "sent",
+            "timestamp": "21:01",
+            "emoticon": "🎵",
+        },
+        {
+            "text": "Nice! I love indie music too",
+            "display_name": "AwesomeGirl",
+            "variant": "received",
+            "timestamp": "21:02",
+        },
     ]
 
     conversation = MSNConversation(messages, spacing=0.12, theme=theme.__dict__)
     conversation.render(
-        slide,
-        left=content_area['left'],
-        top=content_area['top'],
-        width=content_area['width']
+        slide, left=content_area["left"], top=content_area["top"], width=content_area["width"]
     )
 
 

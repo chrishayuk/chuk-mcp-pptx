@@ -20,25 +20,25 @@ async def registry_tools(mock_mcp_server, mock_presentation_manager):
 @pytest.fixture
 def mock_registry():
     """Create a mock component registry."""
-    with patch('chuk_mcp_pptx.tools.registry_tools.registry') as mock_reg:
+    with patch("chuk_mcp_pptx.tools.registry_tools.registry") as mock_reg:
         # Mock registry methods
-        mock_reg.list_components.return_value = ['Button', 'Card', 'Alert']
-        mock_reg.list_by_category.return_value = ['Button']
+        mock_reg.list_components.return_value = ["Button", "Card", "Alert"]
+        mock_reg.list_by_category.return_value = ["Button"]
 
         # Mock component metadata
         mock_metadata = MagicMock()
-        mock_metadata.name = 'Button'
-        mock_metadata.category.value = 'ui'
-        mock_metadata.description = 'A clickable button component'
-        mock_metadata.tags = ['interactive', 'action']
+        mock_metadata.name = "Button"
+        mock_metadata.category.value = "ui"
+        mock_metadata.description = "A clickable button component"
+        mock_metadata.tags = ["interactive", "action"]
         mock_reg.get.return_value = mock_metadata
 
         # Mock schema
         mock_schema = {
-            'name': 'Button',
-            'props': {'text': 'string', 'variant': 'string'},
-            'variants': {'variant': ['default', 'primary', 'secondary']},
-            'examples': []
+            "name": "Button",
+            "props": {"text": "string", "variant": "string"},
+            "variants": {"variant": ["default", "primary", "secondary"]},
+            "examples": [],
         }
         mock_reg.get_schema.return_value = mock_schema
 
@@ -47,17 +47,17 @@ def mock_registry():
 
         # Mock variants
         mock_reg.list_variants.return_value = {
-            'variant': ['default', 'primary', 'secondary'],
-            'size': ['sm', 'md', 'lg']
+            "variant": ["default", "primary", "secondary"],
+            "size": ["sm", "md", "lg"],
         }
 
         # Mock examples
         mock_reg.get_examples.return_value = [
-            {'description': 'Basic button', 'code': 'Button(text="Click me")'}
+            {"description": "Basic button", "code": 'Button(text="Click me")'}
         ]
 
         # Mock export
-        mock_reg.export_for_llm.return_value = json.dumps({'components': []})
+        mock_reg.export_for_llm.return_value = json.dumps({"components": []})
 
         yield mock_reg
 
@@ -68,39 +68,39 @@ class TestListComponents:
     @pytest.mark.asyncio
     async def test_list_components_all(self, registry_tools, mock_registry):
         """Test listing all components."""
-        result = await registry_tools['pptx_list_components']()
+        result = await registry_tools["pptx_list_components"]()
         data = json.loads(result)
-        assert 'components' in data
-        assert 'count' in data
-        assert isinstance(data['components'], list)
+        assert "components" in data
+        assert "count" in data
+        assert isinstance(data["components"], list)
 
     @pytest.mark.asyncio
     async def test_list_components_has_metadata(self, registry_tools, mock_registry):
         """Test that components include metadata."""
-        result = await registry_tools['pptx_list_components']()
+        result = await registry_tools["pptx_list_components"]()
         data = json.loads(result)
-        if data['components']:
-            component = data['components'][0]
-            assert 'name' in component
-            assert 'category' in component
-            assert 'description' in component
-            assert 'tags' in component
+        if data["components"]:
+            component = data["components"][0]
+            assert "name" in component
+            assert "category" in component
+            assert "description" in component
+            assert "tags" in component
 
     @pytest.mark.asyncio
     async def test_list_components_by_category(self, registry_tools, mock_registry):
         """Test listing components filtered by category."""
-        result = await registry_tools['pptx_list_components'](category='ui')
+        result = await registry_tools["pptx_list_components"](category="ui")
         data = json.loads(result)
-        assert data.get('category_filter') == 'ui'
+        assert data.get("category_filter") == "ui"
 
     @pytest.mark.asyncio
     async def test_list_components_invalid_category(self, registry_tools, mock_registry):
         """Test listing with invalid category."""
-        mock_registry.list_by_category.side_effect = ValueError('Invalid category')
-        result = await registry_tools['pptx_list_components'](category='invalid')
+        mock_registry.list_by_category.side_effect = ValueError("Invalid category")
+        result = await registry_tools["pptx_list_components"](category="invalid")
         data = json.loads(result)
         # Should return error or handle gracefully
-        assert 'error' in data or 'components' in data
+        assert "error" in data or "components" in data
 
 
 class TestGetComponentSchema:
@@ -109,26 +109,26 @@ class TestGetComponentSchema:
     @pytest.mark.asyncio
     async def test_get_component_schema_success(self, registry_tools, mock_registry):
         """Test getting schema for valid component."""
-        result = await registry_tools['pptx_get_component_schema'](name='Button')
+        result = await registry_tools["pptx_get_component_schema"](name="Button")
         data = json.loads(result)
-        assert 'name' in data or 'props' in data
+        assert "name" in data or "props" in data
 
     @pytest.mark.asyncio
     async def test_get_component_schema_not_found(self, registry_tools, mock_registry):
         """Test getting schema for non-existent component."""
         mock_registry.get_schema.return_value = None
-        result = await registry_tools['pptx_get_component_schema'](name='NonExistent')
+        result = await registry_tools["pptx_get_component_schema"](name="NonExistent")
         data = json.loads(result)
-        assert 'error' in data
+        assert "error" in data
 
     @pytest.mark.asyncio
     async def test_get_component_schema_has_hint(self, registry_tools, mock_registry):
         """Test that error includes helpful hint."""
         mock_registry.get_schema.return_value = None
-        result = await registry_tools['pptx_get_component_schema'](name='Invalid')
+        result = await registry_tools["pptx_get_component_schema"](name="Invalid")
         data = json.loads(result)
-        if 'error' in data:
-            assert 'hint' in data
+        if "error" in data:
+            assert "hint" in data
 
 
 class TestSearchComponents:
@@ -137,43 +137,43 @@ class TestSearchComponents:
     @pytest.mark.asyncio
     async def test_search_components_returns_json(self, registry_tools, mock_registry):
         """Test that search returns JSON."""
-        result = await registry_tools['pptx_search_components'](query='button')
+        result = await registry_tools["pptx_search_components"](query="button")
         data = json.loads(result)
         assert isinstance(data, dict)
 
     @pytest.mark.asyncio
     async def test_search_components_has_query(self, registry_tools, mock_registry):
         """Test that search result includes query."""
-        result = await registry_tools['pptx_search_components'](query='metric')
+        result = await registry_tools["pptx_search_components"](query="metric")
         data = json.loads(result)
-        assert data.get('query') == 'metric'
+        assert data.get("query") == "metric"
 
     @pytest.mark.asyncio
     async def test_search_components_has_results(self, registry_tools, mock_registry):
         """Test that search includes results list."""
-        result = await registry_tools['pptx_search_components'](query='card')
+        result = await registry_tools["pptx_search_components"](query="card")
         data = json.loads(result)
-        assert 'results' in data
-        assert isinstance(data['results'], list)
+        assert "results" in data
+        assert isinstance(data["results"], list)
 
     @pytest.mark.asyncio
     async def test_search_components_has_count(self, registry_tools, mock_registry):
         """Test that search includes result count."""
-        result = await registry_tools['pptx_search_components'](query='alert')
+        result = await registry_tools["pptx_search_components"](query="alert")
         data = json.loads(result)
-        assert 'count' in data
-        assert isinstance(data['count'], int)
+        assert "count" in data
+        assert isinstance(data["count"], int)
 
     @pytest.mark.asyncio
     async def test_search_components_result_structure(self, registry_tools, mock_registry):
         """Test structure of search results."""
-        result = await registry_tools['pptx_search_components'](query='button')
+        result = await registry_tools["pptx_search_components"](query="button")
         data = json.loads(result)
-        if data['results']:
-            item = data['results'][0]
-            assert 'name' in item
-            assert 'category' in item
-            assert 'description' in item
+        if data["results"]:
+            item = data["results"][0]
+            assert "name" in item
+            assert "category" in item
+            assert "description" in item
 
 
 class TestGetComponentVariants:
@@ -182,26 +182,26 @@ class TestGetComponentVariants:
     @pytest.mark.asyncio
     async def test_get_component_variants_success(self, registry_tools, mock_registry):
         """Test getting variants for valid component."""
-        result = await registry_tools['pptx_get_component_variants'](name='Button')
+        result = await registry_tools["pptx_get_component_variants"](name="Button")
         data = json.loads(result)
-        assert 'component' in data
-        assert 'variants' in data
+        assert "component" in data
+        assert "variants" in data
 
     @pytest.mark.asyncio
     async def test_get_component_variants_not_found(self, registry_tools, mock_registry):
         """Test getting variants for non-existent component."""
         mock_registry.list_variants.return_value = None
-        result = await registry_tools['pptx_get_component_variants'](name='Invalid')
+        result = await registry_tools["pptx_get_component_variants"](name="Invalid")
         data = json.loads(result)
-        assert 'error' in data
+        assert "error" in data
 
     @pytest.mark.asyncio
     async def test_get_component_variants_structure(self, registry_tools, mock_registry):
         """Test variants structure."""
-        result = await registry_tools['pptx_get_component_variants'](name='Button')
+        result = await registry_tools["pptx_get_component_variants"](name="Button")
         data = json.loads(result)
-        if 'variants' in data:
-            variants = data['variants']
+        if "variants" in data:
+            variants = data["variants"]
             assert isinstance(variants, dict)
 
 
@@ -211,28 +211,28 @@ class TestGetComponentExamples:
     @pytest.mark.asyncio
     async def test_get_component_examples_success(self, registry_tools, mock_registry):
         """Test getting examples for valid component."""
-        result = await registry_tools['pptx_get_component_examples'](name='Button')
+        result = await registry_tools["pptx_get_component_examples"](name="Button")
         data = json.loads(result)
-        assert 'component' in data
-        assert 'examples' in data
+        assert "component" in data
+        assert "examples" in data
 
     @pytest.mark.asyncio
     async def test_get_component_examples_not_found(self, registry_tools, mock_registry):
         """Test getting examples for non-existent component."""
         mock_registry.get_examples.return_value = None
         mock_registry.get.return_value = None
-        result = await registry_tools['pptx_get_component_examples'](name='Invalid')
+        result = await registry_tools["pptx_get_component_examples"](name="Invalid")
         data = json.loads(result)
-        assert 'error' in data
+        assert "error" in data
 
     @pytest.mark.asyncio
     async def test_get_component_examples_empty(self, registry_tools, mock_registry):
         """Test component with no examples."""
         mock_registry.get_examples.return_value = None
-        result = await registry_tools['pptx_get_component_examples'](name='Button')
+        result = await registry_tools["pptx_get_component_examples"](name="Button")
         data = json.loads(result)
-        if 'examples' in data:
-            assert isinstance(data['examples'], list)
+        if "examples" in data:
+            assert isinstance(data["examples"], list)
 
 
 class TestExportRegistryDocs:
@@ -241,13 +241,13 @@ class TestExportRegistryDocs:
     @pytest.mark.asyncio
     async def test_export_registry_docs_returns_string(self, registry_tools, mock_registry):
         """Test that export returns string."""
-        result = await registry_tools['pptx_export_registry_docs']()
+        result = await registry_tools["pptx_export_registry_docs"]()
         assert isinstance(result, str)
 
     @pytest.mark.asyncio
     async def test_export_registry_docs_is_json(self, registry_tools, mock_registry):
         """Test that export returns valid JSON."""
-        result = await registry_tools['pptx_export_registry_docs']()
+        result = await registry_tools["pptx_export_registry_docs"]()
         # Should be parseable as JSON
         try:
             data = json.loads(result)
@@ -264,12 +264,12 @@ class TestIntegration:
     async def test_all_tools_registered(self, registry_tools):
         """Test that all expected tools are registered."""
         expected_tools = [
-            'pptx_list_components',
-            'pptx_get_component_schema',
-            'pptx_search_components',
-            'pptx_get_component_variants',
-            'pptx_get_component_examples',
-            'pptx_export_registry_docs',
+            "pptx_list_components",
+            "pptx_get_component_schema",
+            "pptx_search_components",
+            "pptx_get_component_variants",
+            "pptx_get_component_examples",
+            "pptx_export_registry_docs",
         ]
 
         for tool_name in expected_tools:
@@ -280,17 +280,17 @@ class TestIntegration:
     async def test_workflow_discover_component(self, registry_tools, mock_registry):
         """Test complete workflow: list → search → get schema."""
         # List all components
-        list_result = await registry_tools['pptx_list_components']()
+        list_result = await registry_tools["pptx_list_components"]()
         list_data = json.loads(list_result)
-        assert 'components' in list_data
+        assert "components" in list_data
 
         # Search for specific component
-        search_result = await registry_tools['pptx_search_components'](query='button')
+        search_result = await registry_tools["pptx_search_components"](query="button")
         search_data = json.loads(search_result)
-        assert 'results' in search_data
+        assert "results" in search_data
 
         # Get schema for component
-        schema_result = await registry_tools['pptx_get_component_schema'](name='Button')
+        schema_result = await registry_tools["pptx_get_component_schema"](name="Button")
         schema_data = json.loads(schema_result)
         # Should have schema or error
-        assert 'name' in schema_data or 'error' in schema_data
+        assert "name" in schema_data or "error" in schema_data

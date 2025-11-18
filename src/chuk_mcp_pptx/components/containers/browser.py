@@ -12,9 +12,13 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
-from ...tokens.platform_colors import get_browser_color, BROWSER_COLORS, MACOS_CONTROLS, get_container_ui_color
-from ...constants import BrowserType, ThemeMode, Platform, ColorKey, Theme
+from ...tokens.typography import FONT_SIZES
+from ...tokens.platform_colors import (
+    get_browser_color,
+    MACOS_CONTROLS,
+    get_container_ui_color,
+)
+from ...constants import Platform, ColorKey, Theme
 
 
 class BrowserWindow(Component):
@@ -49,12 +53,14 @@ class BrowserWindow(Component):
         )
     """
 
-    def __init__(self,
-                 title: str = "Browser",
-                 url: str = "example.com",
-                 browser_type: str = "chrome",  # chrome, safari, firefox
-                 show_tabs: bool = False,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        title: str = "Browser",
+        url: str = "example.com",
+        browser_type: str = "chrome",  # chrome, safari, firefox
+        show_tabs: bool = False,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize browser window.
 
@@ -74,7 +80,7 @@ class BrowserWindow(Component):
     def _is_dark_mode(self) -> bool:
         """Check if theme is dark mode."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return sum(bg) < 384
         return False
@@ -100,14 +106,15 @@ class BrowserWindow(Component):
     def _get_content_bg_color(self) -> RGBColor:
         """Get content background color from theme."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
         hex_color = get_container_ui_color(Platform.CHROME, ColorKey.PLACEHOLDER, Theme.LIGHT)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
-    def render(self, slide, left: float, top: float,
-               width: float = 8.0, height: float = 6.0) -> Dict[str, float]:
+    def render(
+        self, slide, left: float, top: float, width: float = 8.0, height: float = 6.0
+    ) -> Dict[str, float]:
         """
         Render browser window to slide.
 
@@ -125,11 +132,7 @@ class BrowserWindow(Component):
 
         # Window frame
         window_frame = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE,
-            Inches(left),
-            Inches(top),
-            Inches(width),
-            Inches(height)
+            MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)
         )
         window_frame.fill.solid()
         window_frame.fill.fore_color.rgb = self._get_chrome_color()
@@ -157,7 +160,7 @@ class BrowserWindow(Component):
                 Inches(control_x),
                 Inches(control_y),
                 Inches(control_size),
-                Inches(control_size)
+                Inches(control_size),
             )
             close_btn.fill.solid()
             close_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["close"]))
@@ -170,7 +173,7 @@ class BrowserWindow(Component):
                 Inches(control_x + control_spacing),
                 Inches(control_y),
                 Inches(control_size),
-                Inches(control_size)
+                Inches(control_size),
             )
             min_btn.fill.solid()
             min_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["minimize"]))
@@ -183,7 +186,7 @@ class BrowserWindow(Component):
                 Inches(control_x + control_spacing * 2),
                 Inches(control_y),
                 Inches(control_size),
-                Inches(control_size)
+                Inches(control_size),
             )
             max_btn.fill.solid()
             max_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["maximize"]))
@@ -202,7 +205,7 @@ class BrowserWindow(Component):
                 Inches(left + 0.1),
                 Inches(current_y - 0.05),
                 Inches(tab_width),
-                Inches(tab_height)
+                Inches(tab_height),
             )
             tab.fill.solid()
             tab.fill.fore_color.rgb = self._get_address_bar_color()
@@ -229,7 +232,7 @@ class BrowserWindow(Component):
             Inches(left + address_bar_margin),
             Inches(current_y),
             Inches(width - address_bar_margin * 2),
-            Inches(address_bar_height)
+            Inches(address_bar_height),
         )
         address_bar.fill.solid()
         address_bar.fill.fore_color.rgb = self._get_address_bar_color()
@@ -243,7 +246,11 @@ class BrowserWindow(Component):
         address_p = address_text.paragraphs[0]
         address_p.alignment = PP_ALIGN.LEFT
         address_p.font.size = Pt(FONT_SIZES["xs"])
-        address_p.font.color.rgb = self._get_text_color() if not self._is_dark_mode() else self.get_color("muted.foreground")
+        address_p.font.color.rgb = (
+            self._get_text_color()
+            if not self._is_dark_mode()
+            else self.get_color("muted.foreground")
+        )
         shapes.append(address_bar)
 
         current_y += address_bar_height + 0.1
@@ -255,7 +262,7 @@ class BrowserWindow(Component):
             Inches(left + 0.05),
             Inches(current_y),
             Inches(width - 0.1),
-            Inches(content_height)
+            Inches(content_height),
         )
         content.fill.solid()
         content.fill.fore_color.rgb = self._get_content_bg_color()
@@ -267,10 +274,10 @@ class BrowserWindow(Component):
         padding_v = 0.4  # Vertical padding (increased)
 
         return {
-            'left': left + padding_h,
-            'top': current_y + padding_v,
-            'width': width - (padding_h * 2),
-            'height': content_height - (padding_v * 2)
+            "left": left + padding_h,
+            "top": current_y + padding_v,
+            "width": width - (padding_h * 2),
+            "height": content_height - (padding_v * 2),
         }
 
 

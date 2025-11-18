@@ -10,6 +10,7 @@ from pptx.util import Inches, Pt
 from pathlib import Path
 import base64
 import io
+import asyncio
 from PIL import Image as PILImage, ImageFilter, ImageEnhance
 
 from ..base import Component
@@ -32,9 +33,24 @@ from ...registry import component, ComponentCategory, prop, example
         prop("blur_radius", "number", "Blur radius (0 = no blur)", default=0),
         prop("grayscale", "boolean", "Convert to grayscale", default=False),
         prop("sepia", "boolean", "Apply sepia tone effect", default=False),
-        prop("brightness", "number", "Brightness adjustment (1.0 = normal, <1 = darker, >1 = brighter)", default=1.0),
-        prop("contrast", "number", "Contrast adjustment (1.0 = normal, <1 = less contrast, >1 = more contrast)", default=1.0),
-        prop("saturation", "number", "Saturation adjustment (1.0 = normal, 0 = grayscale, >1 = more vibrant)", default=1.0),
+        prop(
+            "brightness",
+            "number",
+            "Brightness adjustment (1.0 = normal, <1 = darker, >1 = brighter)",
+            default=1.0,
+        ),
+        prop(
+            "contrast",
+            "number",
+            "Contrast adjustment (1.0 = normal, <1 = less contrast, >1 = more contrast)",
+            default=1.0,
+        ),
+        prop(
+            "saturation",
+            "number",
+            "Saturation adjustment (1.0 = normal, 0 = grayscale, >1 = more vibrant)",
+            default=1.0,
+        ),
         prop("sharpen", "boolean", "Apply sharpening filter", default=False),
         prop("invert", "boolean", "Invert colors (negative)", default=False),
     ],
@@ -45,7 +61,7 @@ from ...registry import component, ComponentCategory, prop, example
 image = Image(image_source="path/to/image.png")
 image.render(slide, left=2, top=2, width=4)
             """,
-            image_source="logo.png"
+            image_source="logo.png",
         ),
         example(
             "Image with shadow",
@@ -57,7 +73,7 @@ image = Image(
 image.render(slide, left=1, top=1, width=5, height=3)
             """,
             image_source="photo.jpg",
-            shadow=True
+            shadow=True,
         ),
         example(
             "Image with filters",
@@ -72,10 +88,10 @@ image.render(slide, left=1, top=1, width=5, height=3)
             """,
             image_source="photo.jpg",
             blur_radius=5,
-            brightness=1.2
+            brightness=1.2,
         ),
     ],
-    tags=["image", "picture", "photo", "media", "filter", "blur", "grayscale"]
+    tags=["image", "picture", "photo", "media", "filter", "blur", "grayscale"],
 )
 class Image(Component):
     """
@@ -105,20 +121,22 @@ class Image(Component):
         image.render(slide, left=3, top=3)
     """
 
-    def __init__(self,
-                 image_source: str,
-                 shadow: bool = False,
-                 glow: bool = False,
-                 reflection: bool = False,
-                 blur_radius: float = 0,
-                 grayscale: bool = False,
-                 sepia: bool = False,
-                 brightness: float = 1.0,
-                 contrast: float = 1.0,
-                 saturation: float = 1.0,
-                 sharpen: bool = False,
-                 invert: bool = False,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        image_source: str,
+        shadow: bool = False,
+        glow: bool = False,
+        reflection: bool = False,
+        blur_radius: float = 0,
+        grayscale: bool = False,
+        sepia: bool = False,
+        brightness: float = 1.0,
+        contrast: float = 1.0,
+        saturation: float = 1.0,
+        sharpen: bool = False,
+        invert: bool = False,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize image component.
 
@@ -151,9 +169,14 @@ class Image(Component):
         self.sharpen = sharpen
         self.invert = invert
 
-    def render(self, slide, left: float, top: float,
-               width: Optional[float] = None,
-               height: Optional[float] = None) -> Any:
+    async def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+    ) -> Any:
         """
         Render image to slide.
 
@@ -169,26 +192,26 @@ class Image(Component):
         """
         # Check if any filters need to be applied
         needs_processing = (
-            self.blur_radius > 0 or
-            self.grayscale or
-            self.sepia or
-            self.brightness != 1.0 or
-            self.contrast != 1.0 or
-            self.saturation != 1.0 or
-            self.sharpen or
-            self.invert
+            self.blur_radius > 0
+            or self.grayscale
+            or self.sepia
+            or self.brightness != 1.0
+            or self.contrast != 1.0
+            or self.saturation != 1.0
+            or self.sharpen
+            or self.invert
         )
 
         if needs_processing:
             # Load image for processing
-            pil_image = self._load_image()
+            pil_image = await self._load_image()
 
             # Apply filters
             pil_image = self._apply_filters(pil_image)
 
-            # Convert to stream for PowerPoint
+            # Convert to stream for PowerPoint (wrap blocking I/O)
             image_stream = io.BytesIO()
-            pil_image.save(image_stream, format='PNG')
+            await asyncio.to_thread(pil_image.save, image_stream, format="PNG")
             image_stream.seek(0)
 
             pic = self._add_picture(slide, image_stream, left, top, width, height)
@@ -218,47 +241,39 @@ class Image(Component):
         """Add picture to slide with specified dimensions."""
         if width and height:
             return slide.shapes.add_picture(
-                image_source,
-                Inches(left), Inches(top),
-                width=Inches(width), height=Inches(height)
+                image_source, Inches(left), Inches(top), width=Inches(width), height=Inches(height)
             )
         elif width:
             return slide.shapes.add_picture(
-                image_source,
-                Inches(left), Inches(top),
-                width=Inches(width)
+                image_source, Inches(left), Inches(top), width=Inches(width)
             )
         elif height:
             return slide.shapes.add_picture(
-                image_source,
-                Inches(left), Inches(top),
-                height=Inches(height)
+                image_source, Inches(left), Inches(top), height=Inches(height)
             )
         else:
-            return slide.shapes.add_picture(
-                image_source,
-                Inches(left), Inches(top)
-            )
+            return slide.shapes.add_picture(image_source, Inches(left), Inches(top))
 
-    def _load_image(self) -> PILImage.Image:
+    async def _load_image(self) -> PILImage.Image:
         """Load image from source (file path or base64)."""
         if self.image_source.startswith("data:image/"):
             # Handle base64 data
             header, encoded = self.image_source.split(",", 1)
             image_data = base64.b64decode(encoded)
             image_stream = io.BytesIO(image_data)
-            return PILImage.open(image_stream)
+            # Wrap blocking I/O in asyncio.to_thread
+            return await asyncio.to_thread(PILImage.open, image_stream)
         elif Path(self.image_source).exists():
-            # Handle file path
-            return PILImage.open(self.image_source)
+            # Handle file path - wrap blocking I/O in asyncio.to_thread
+            return await asyncio.to_thread(PILImage.open, self.image_source)
         else:
             raise FileNotFoundError(f"Image not found: {self.image_source}")
 
     def _apply_filters(self, pil_image: PILImage.Image) -> PILImage.Image:
         """Apply PIL filters to image."""
         # Convert to RGB if needed
-        if pil_image.mode != 'RGB':
-            pil_image = pil_image.convert('RGB')
+        if pil_image.mode != "RGB":
+            pil_image = pil_image.convert("RGB")
 
         # Apply blur
         if self.blur_radius > 0:
@@ -285,7 +300,7 @@ class Image(Component):
 
         # Apply grayscale (overrides saturation)
         if self.grayscale:
-            pil_image = pil_image.convert('L').convert('RGB')
+            pil_image = pil_image.convert("L").convert("RGB")
 
         # Apply sepia
         if self.sepia:
@@ -294,6 +309,7 @@ class Image(Component):
         # Apply invert
         if self.invert:
             from PIL import ImageOps
+
             pil_image = ImageOps.invert(pil_image)
 
         return pil_image

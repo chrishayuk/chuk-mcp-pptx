@@ -8,28 +8,22 @@ import pytest
 import sys
 import os
 import json
-from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, Mock, AsyncMock
+from unittest.mock import MagicMock
 from pptx import Presentation
 from pptx.slide import Slide
 from chuk_virtual_fs import AsyncVirtualFileSystem
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 from chuk_mcp_pptx.models import (
-    ErrorResponse,
-    SuccessResponse,
     PresentationResponse,
     SlideResponse,
     ComponentResponse,
     ChartResponse,
     ListPresentationsResponse,
-    PresentationInfo,
-    PresentationMetadata,
-    SlideMetadata,
 )
 from chuk_mcp_pptx.presentation_manager import PresentationManager
 
@@ -38,7 +32,7 @@ from chuk_mcp_pptx.presentation_manager import PresentationManager
 def mock_slide():
     """Create a mock slide for testing."""
     slide = MagicMock(spec=Slide)
-    
+
     # Mock shapes collection
     slide.shapes = MagicMock()
     slide.shapes.add_chart = MagicMock(return_value=MagicMock())
@@ -46,10 +40,10 @@ def mock_slide():
     slide.shapes.add_textbox = MagicMock(return_value=MagicMock())
     slide.shapes.title = MagicMock()
     slide.shapes.title.text = ""
-    
+
     # Mock placeholders
     slide.placeholders = {}
-    
+
     return slide
 
 
@@ -61,13 +55,13 @@ def mock_presentation():
     prs.slide_layouts = [MagicMock() for _ in range(11)]
     prs.slide_width = 9144000  # 10 inches in EMU
     prs.slide_height = 5143500  # 5.625 inches in EMU
-    
+
     # Mock add_slide method
     def add_slide(layout):
         return mock_slide()
-    
+
     prs.slides.add_slide = MagicMock(side_effect=add_slide)
-    
+
     return prs
 
 
@@ -98,52 +92,32 @@ def sample_chart_data():
     return {
         "column_data": {
             "categories": ["Q1", "Q2", "Q3", "Q4"],
-            "series": {
-                "Revenue": [100, 120, 140, 160],
-                "Profit": [20, 25, 30, 35]
-            }
+            "series": {"Revenue": [100, 120, 140, 160], "Profit": [20, 25, 30, 35]},
         },
         "line_data": {
             "categories": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-            "series": {
-                "Sales": [65, 68, 72, 78, 85, 92],
-                "Target": [70, 75, 80, 85, 90, 95]
-            }
+            "series": {"Sales": [65, 68, 72, 78, 85, 92], "Target": [70, 75, 80, 85, 90, 95]},
         },
         "pie_data": {
             "categories": ["Product A", "Product B", "Product C", "Product D"],
-            "values": [35, 25, 20, 20]
+            "values": [35, 25, 20, 20],
         },
         "scatter_data": [
-            {
-                "name": "Series 1",
-                "x_values": [1, 2, 3, 4, 5],
-                "y_values": [10, 20, 15, 25, 30]
-            },
-            {
-                "name": "Series 2",
-                "x_values": [1, 2, 3, 4, 5],
-                "y_values": [5, 15, 20, 18, 22]
-            }
+            {"name": "Series 1", "x_values": [1, 2, 3, 4, 5], "y_values": [10, 20, 15, 25, 30]},
+            {"name": "Series 2", "x_values": [1, 2, 3, 4, 5], "y_values": [5, 15, 20, 18, 22]},
         ],
         "bubble_data": [
-            {
-                "name": "Group A",
-                "points": [[10, 20, 5], [15, 25, 8], [20, 30, 12]]
-            },
-            {
-                "name": "Group B",
-                "points": [[5, 15, 3], [8, 18, 5], [12, 22, 7]]
-            }
+            {"name": "Group A", "points": [[10, 20, 5], [15, 25, 8], [20, 30, 12]]},
+            {"name": "Group B", "points": [[5, 15, 3], [8, 18, 5], [12, 22, 7]]},
         ],
         "funnel_data": {
             "stages": ["Leads", "Qualified", "Proposal", "Negotiation", "Closed"],
-            "values": [1000, 750, 300, 150, 50]
+            "values": [1000, 750, 300, 150, 50],
         },
         "waterfall_data": {
             "categories": ["Start", "Q1", "Q2", "Q3", "Q4", "End"],
-            "values": [100, 20, -10, 15, 25, 150]
-        }
+            "values": [100, 20, -10, 15, 25, 150],
+        },
     }
 
 
@@ -151,26 +125,18 @@ def sample_chart_data():
 def sample_component_data():
     """Sample data for UI component testing."""
     return {
-        "card": {
-            "title": "Test Card",
-            "description": "This is a test card description"
-        },
-        "button": {
-            "text": "Click Me",
-            "variant": "primary"
-        },
-        "code_block": {
-            "code": "print('Hello, World!')",
-            "language": "python"
-        }
+        "card": {"title": "Test Card", "description": "This is a test card description"},
+        "button": {"text": "Click Me", "variant": "primary"},
+        "code_block": {"code": "print('Hello, World!')", "language": "python"},
     }
 
 
 class MockChartData:
     """Mock chart data for testing."""
+
     def __init__(self):
         self.series = []
-    
+
     def add_series(self, name, values=None):
         """Add a series to the chart data."""
         series = MagicMock()
@@ -210,6 +176,7 @@ async def presentation_manager(vfs):
 
 
 # Test helper functions
+
 
 def assert_success_response(result: str) -> dict[str, Any]:
     """Validate that tool returns successful Pydantic response (not an error).
@@ -313,7 +280,7 @@ def validate_list_presentations_response(result: str) -> ListPresentationsRespon
 def assert_color_valid(color):
     """Assert that a color value is valid hex format."""
     if isinstance(color, str):
-        assert color.startswith('#'), f"Color {color} should start with #"
+        assert color.startswith("#"), f"Color {color} should start with #"
         assert len(color) in [4, 7], f"Color {color} should be 3 or 6 hex digits"
         # Check if valid hex
         try:
@@ -327,6 +294,7 @@ def assert_chart_renders(chart, slide):
     try:
         # For async charts
         import asyncio
+
         if asyncio.iscoroutinefunction(chart.render):
             asyncio.run(chart.render(slide, left=1, top=1, width=4, height=3))
         else:
@@ -347,9 +315,9 @@ def assert_component_renders(component, slide):
 def async_test(coro):
     """Decorator to run async tests."""
     import asyncio
-    
+
     def wrapper(*args, **kwargs):
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(coro(*args, **kwargs))
-    
+
     return wrapper

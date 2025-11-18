@@ -53,77 +53,57 @@ from .timeline import Timeline
 __all__ = [
     # Alert
     "Alert",
-
     # Avatar
     "Avatar",
     "AvatarWithLabel",
     "AvatarGroup",
-
     # Badge
     "Badge",
     "DotBadge",
     "CountBadge",
-
     # Button
     "Button",
     "IconButton",
     "ButtonGroup",
-
     # Card
     "Card",
     "MetricCard",
-
     # Connector
     "Connector",
-
     # Container
     "Container",
-
     # ContentGrid
     "ContentGrid",
-
     # Divider
     "Divider",
-
     # Grid
     "Grid",
-
     # Icon
     "Icon",
     "IconList",
-
     # Image
     "Image",
-
     # Progress
     "ProgressBar",
-
     # Shape
     "Shape",
-
     # SmartArt
     "ProcessFlow",
     "CycleDiagram",
     "HierarchyDiagram",
-
     # Spacer
     "Spacer",
-
     # Stack
     "Stack",
-
     # Table
     "Table",
-
     # Text
     "TextBox",
     "BulletList",
-
     # Tile
     "Tile",
     "IconTile",
     "ValueTile",
-
     # Timeline
     "Timeline",
 ]

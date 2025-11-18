@@ -11,9 +11,12 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
-from ...tokens.platform_colors import MACOS_CONTROLS, WINDOWS_CONTROLS, DEVICE_COLORS, get_container_ui_color
-from ...constants import ContainerPlatform, Theme, Platform, ColorKey
+from ...tokens.typography import FONT_SIZES
+from ...tokens.platform_colors import (
+    MACOS_CONTROLS,
+    get_container_ui_color,
+)
+from ...constants import Theme, Platform, ColorKey
 
 
 class MacOSWindow(Component):
@@ -39,11 +42,13 @@ class MacOSWindow(Component):
         content_area = macos_window.render(slide, left=1, top=1, width=7, height=5)
     """
 
-    def __init__(self,
-                 title: str = "Application",
-                 app_icon: Optional[str] = None,
-                 show_toolbar: bool = False,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        title: str = "Application",
+        app_icon: Optional[str] = None,
+        show_toolbar: bool = False,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize macOS window.
 
@@ -61,7 +66,7 @@ class MacOSWindow(Component):
     def _is_dark_mode(self) -> bool:
         """Check if theme is dark mode."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return sum(bg) < 384
         return False
@@ -81,14 +86,15 @@ class MacOSWindow(Component):
     def _get_content_bg_color(self) -> RGBColor:
         """Get content background color."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
         hex_color = get_container_ui_color(Platform.MACOS, ColorKey.CONTENT_BG, Theme.LIGHT)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
-    def render(self, slide, left: float, top: float,
-               width: float = 7.0, height: float = 5.0) -> Dict[str, float]:
+    def render(
+        self, slide, left: float, top: float, width: float = 7.0, height: float = 5.0
+    ) -> Dict[str, float]:
         """
         Render macOS window to slide.
 
@@ -106,11 +112,7 @@ class MacOSWindow(Component):
 
         # Window frame with shadow
         window_frame = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE,
-            Inches(left),
-            Inches(top),
-            Inches(width),
-            Inches(height)
+            MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)
         )
         window_frame.fill.solid()
         window_frame.fill.fore_color.rgb = self._get_content_bg_color()
@@ -134,7 +136,7 @@ class MacOSWindow(Component):
             Inches(left),
             Inches(top),
             Inches(width),
-            Inches(titlebar_height)
+            Inches(titlebar_height),
         )
         titlebar.fill.solid()
         titlebar.fill.fore_color.rgb = self._get_titlebar_color()
@@ -153,7 +155,7 @@ class MacOSWindow(Component):
             Inches(control_x),
             Inches(control_y),
             Inches(control_size),
-            Inches(control_size)
+            Inches(control_size),
         )
         close_btn.fill.solid()
         close_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["close"]))
@@ -168,7 +170,7 @@ class MacOSWindow(Component):
             Inches(control_x + control_spacing),
             Inches(control_y),
             Inches(control_size),
-            Inches(control_size)
+            Inches(control_size),
         )
         min_btn.fill.solid()
         min_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["minimize"]))
@@ -183,7 +185,7 @@ class MacOSWindow(Component):
             Inches(control_x + control_spacing * 2),
             Inches(control_y),
             Inches(control_size),
-            Inches(control_size)
+            Inches(control_size),
         )
         max_btn.fill.solid()
         max_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(MACOS_CONTROLS["maximize"]))
@@ -199,7 +201,7 @@ class MacOSWindow(Component):
             Inches(left + 1.0),
             Inches(top + 0.05),
             Inches(width - 2.0),
-            Inches(titlebar_height - 0.1)
+            Inches(titlebar_height - 0.1),
         )
         title_frame = title_box.text_frame
         title_frame.text = title_text
@@ -224,7 +226,7 @@ class MacOSWindow(Component):
                 Inches(left),
                 Inches(current_y),
                 Inches(width),
-                Inches(toolbar_height)
+                Inches(toolbar_height),
             )
             toolbar.fill.solid()
 
@@ -245,10 +247,10 @@ class MacOSWindow(Component):
 
         # Return content area bounds (no need to draw, already part of window frame)
         return {
-            'left': left + padding_h,
-            'top': current_y + padding_v,
-            'width': width - (padding_h * 2),
-            'height': content_height - (padding_v * 2)
+            "left": left + padding_h,
+            "top": current_y + padding_v,
+            "width": width - (padding_h * 2),
+            "height": content_height - (padding_v * 2),
         }
 
 

@@ -1,54 +1,53 @@
-.PHONY: help clean clean-build clean-pyc clean-test clean-all lint format test test-cov test-watch typecheck security dev-install build publish publish-test publish-manual bump-patch bump-minor bump-major run version
+.PHONY: help clean clean-build clean-pyc clean-test clean-all lint format test test-cov test-watch typecheck security dev-install build publish publish-test publish-manual bump-patch bump-minor bump-major run version check coverage-report release info
 
-# Detect package manager
-UV := $(shell command -v uv 2> /dev/null)
-ifdef UV
-    PIP := uv pip
-    PYTHON := uv run python
-    PYTEST := uv run pytest
-else
-    PIP := pip
-    PYTHON := python
-    PYTEST := pytest
-endif
-
+# Default target
 help:
-	@echo "chuk-mcp-pptx development tasks"
+	@echo "chuk-mcp-pptx - PowerPoint MCP Server"
 	@echo ""
 	@echo "Setup:"
-	@echo "  dev-install    Install development dependencies"
+	@echo "  dev-install     Install development dependencies"
 	@echo ""
 	@echo "Development:"
-	@echo "  run           Run the MCP server"
-	@echo "  test          Run tests"
-	@echo "  test-cov      Run tests with coverage report"
-	@echo "  test-watch    Run tests in watch mode"
-	@echo "  lint          Run linting checks"
-	@echo "  format        Format code with black and isort"
-	@echo "  typecheck     Run type checking with mypy"
-	@echo "  security      Run security checks"
+	@echo "  run            Run the MCP server"
+	@echo "  test           Run tests"
+	@echo "  test-cov       Run tests with coverage report"
+	@echo "  coverage-report Show current coverage report"
+	@echo "  lint           Run linting checks"
+	@echo "  format         Format code with ruff"
+	@echo "  typecheck      Run type checking with mypy"
+	@echo "  security       Run security checks"
+	@echo "  check          Run all checks (lint, typecheck, security, test)"
 	@echo ""
 	@echo "Cleanup:"
-	@echo "  clean         Remove build artifacts"
-	@echo "  clean-all     Remove all generated files including presentations"
+	@echo "  clean          Remove build artifacts"
+	@echo "  clean-all      Remove all generated files"
 	@echo ""
 	@echo "Publishing:"
-	@echo "  bump-patch    Bump patch version (0.0.X)"
-	@echo "  bump-minor    Bump minor version (0.X.0)"
-	@echo "  bump-major    Bump major version (X.0.0)"
-	@echo "  build         Build distribution packages"
-	@echo "  publish       Publish to PyPI (automated)"
-	@echo "  publish-test  Publish to TestPyPI"
-	@echo "  publish-manual Publish to PyPI (manual)"
+	@echo "  version        Show current version"
+	@echo "  bump-patch     Bump patch version (0.0.X)"
+	@echo "  bump-minor     Bump minor version (0.X.0)"
+	@echo "  bump-major     Bump major version (X.0.0)"
+	@echo "  build          Build distribution packages"
+	@echo "  publish        Create tag and trigger automated release"
+	@echo "  publish-test   Publish to TestPyPI"
+	@echo "  publish-manual Manually publish to PyPI"
+	@echo "  release        Alias for publish"
+	@echo "  info           Show project information"
 
 dev-install:
 	@echo "Installing development dependencies..."
-ifdef UV
-	uv sync --extra dev
-else
-	pip install -e ".[dev]"
-endif
-	@echo "Development environment ready!"
+	@if command -v uv >/dev/null 2>&1; then \
+		uv sync --dev; \
+	else \
+		pip install -e ".[dev]"; \
+	fi
+	@echo ""
+	@echo "✓ Development environment ready!"
+	@echo ""
+	@echo "Available commands:"
+	@echo "  make test       - Run tests"
+	@echo "  make test-cov   - Run tests with coverage"
+	@echo "  make check      - Run all checks (lint, typecheck, security, test)"
 
 run:
 	@echo "Starting chuk-mcp-pptx server..."
@@ -56,39 +55,95 @@ run:
 
 test:
 	@echo "Running tests..."
-	$(PYTEST) tests/ -v
+	@if command -v uv >/dev/null 2>&1; then \
+		uv run pytest; \
+	elif command -v pytest >/dev/null 2>&1; then \
+		pytest; \
+	else \
+		python -m pytest; \
+	fi
+
+coverage coverage-report:
+	@echo "Coverage Report:"
+	@echo "================"
+	@if command -v uv >/dev/null 2>&1; then \
+		uv run coverage report --omit="tests/*" || echo "No coverage data found. Run 'make test-cov' first."; \
+	else \
+		coverage report --omit="tests/*" || echo "No coverage data found. Run 'make test-cov' first."; \
+	fi
 
 test-cov:
 	@echo "Running tests with coverage..."
-	$(PYTEST) tests/ --cov=src/chuk_mcp_pptx --cov-report=html --cov-report=term-missing
-	@echo "Coverage report generated in htmlcov/index.html"
-
-test-watch:
-	@echo "Running tests in watch mode..."
-	$(PYTEST) tests/ -v --looponfail
+	@if command -v uv >/dev/null 2>&1; then \
+		uv run pytest --cov=src --cov-report=html --cov-report=term --cov-report=term-missing:skip-covered; \
+		exit_code=$$?; \
+		echo ""; \
+		echo "=========================="; \
+		echo "Coverage Summary:"; \
+		echo "=========================="; \
+		uv run coverage report --omit="tests/*" | tail -5; \
+		echo ""; \
+		echo "HTML coverage report saved to: htmlcov/index.html"; \
+		exit $$exit_code; \
+	else \
+		pytest --cov=src --cov-report=html --cov-report=term --cov-report=term-missing:skip-covered; \
+		exit_code=$$?; \
+		echo ""; \
+		echo "=========================="; \
+		echo "Coverage Summary:"; \
+		echo "=========================="; \
+		coverage report --omit="tests/*" | tail -5; \
+		echo ""; \
+		echo "HTML coverage report saved to: htmlcov/index.html"; \
+		exit $$exit_code; \
+	fi
 
 lint:
-	@echo "Running linting checks..."
-	$(PYTHON) -m ruff check src/ tests/
-	$(PYTHON) -m flake8 src/ tests/ --max-line-length=120 --exclude=__pycache__,.git,build,dist
+	@echo "Running linters..."
+	@if command -v uv >/dev/null 2>&1; then \
+		uv run ruff check .; \
+		uv run ruff format --check .; \
+	elif command -v ruff >/dev/null 2>&1; then \
+		ruff check .; \
+		ruff format --check .; \
+	else \
+		echo "Ruff not found. Install with: pip install ruff"; \
+	fi
 
 format:
 	@echo "Formatting code..."
-	$(PYTHON) -m black src/ tests/
-	$(PYTHON) -m isort src/ tests/
-	@echo "Code formatted!"
+	@if command -v uv >/dev/null 2>&1; then \
+		uv run ruff format .; \
+		uv run ruff check --fix .; \
+	elif command -v ruff >/dev/null 2>&1; then \
+		ruff format .; \
+		ruff check --fix .; \
+	else \
+		echo "Ruff not found. Install with: pip install ruff"; \
+	fi
 
 typecheck:
-	@echo "Running type checks..."
-	$(PYTHON) -m mypy src/chuk_mcp_pptx
+	@echo "Running type checker..."
+	@if command -v uv >/dev/null 2>&1; then \
+		uv run mypy src --ignore-missing-imports; \
+	elif command -v mypy >/dev/null 2>&1; then \
+		mypy src --ignore-missing-imports; \
+	else \
+		echo "MyPy not found. Install with: pip install mypy"; \
+	fi
 
 security:
 	@echo "Running security checks..."
-ifdef UV
-	uv run bandit -r src/chuk_mcp_pptx
-else
-	bandit -r src/chuk_mcp_pptx
-endif
+	@if command -v uv >/dev/null 2>&1; then \
+		uv run bandit -r src -ll; \
+	elif command -v bandit >/dev/null 2>&1; then \
+		bandit -r src -ll; \
+	else \
+		echo "Bandit not found. Install with: pip install bandit"; \
+	fi
+
+check: lint typecheck security test
+	@echo "All checks completed."
 
 clean: clean-build clean-pyc clean-test
 

@@ -15,12 +15,12 @@ from .registry import template, TemplateCategory, TemplateProp
     category=TemplateCategory.COMPARISON,
     description="Two-column comparison slide using Grid system",
     props=[
-        TemplateProp("title", "string", "Slide title"),
-        TemplateProp("left_title", "string", "Title for left column"),
-        TemplateProp("left_items", "array", "Items for left column"),
-        TemplateProp("right_title", "string", "Title for right column"),
-        TemplateProp("right_items", "array", "Items for right column"),
-        TemplateProp("theme", "object", "Theme dictionary", required=False)
+        TemplateProp(name="title", type="string", description="Slide title"),
+        TemplateProp(name="left_title", type="string", description="Title for left column"),
+        TemplateProp(name="left_items", type="array", description="Items for left column"),
+        TemplateProp(name="right_title", type="string", description="Title for right column"),
+        TemplateProp(name="right_items", type="array", description="Items for right column"),
+        TemplateProp(name="theme", type="object", description="Theme dictionary", required=False),
     ],
     examples=[
         {
@@ -28,10 +28,15 @@ from .registry import template, TemplateCategory, TemplateProp
             "left_title": "Build In-House",
             "left_items": ["Full control", "Custom features", "Higher cost", "Longer timeline"],
             "right_title": "Buy Solution",
-            "right_items": ["Quick deployment", "Proven reliability", "Lower initial cost", "Less customization"]
+            "right_items": [
+                "Quick deployment",
+                "Proven reliability",
+                "Lower initial cost",
+                "Less customization",
+            ],
         }
     ],
-    tags=["comparison", "versus", "side-by-side", "options"]
+    tags=["comparison", "versus", "side-by-side", "options"],
 )
 class ComparisonSlide(SlideTemplate):
     """
@@ -41,13 +46,15 @@ class ComparisonSlide(SlideTemplate):
     Uses Grid system for consistent positioning.
     """
 
-    def __init__(self,
-                 title: str,
-                 left_title: str,
-                 left_items: List[str],
-                 right_title: str,
-                 right_items: List[str],
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        title: str,
+        left_title: str,
+        left_items: List[str],
+        right_title: str,
+        right_items: List[str],
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize comparison template.
 
@@ -75,22 +82,12 @@ class ComparisonSlide(SlideTemplate):
         slide = prs.slides.add_slide(prs.slide_layouts[6])
 
         # Add title
-        title_text = TextBox(
-            text=self.title,
-            font_size=28,
-            bold=True,
-            theme=self.theme
-        )
+        title_text = TextBox(text=self.title, font_size=28, bold=True, theme=self.theme)
         title_text.render(slide, left=0.5, top=0.5, width=9.0, height=0.8)
 
         # Use grid-based comparison positions
         positions = get_comparison_positions(
-            gap="md",
-            left=0.5,
-            top=1.8,
-            width=9.0,
-            height=5.5,
-            include_header=False
+            gap="md", left=0.5, top=1.8, width=9.0, height=5.5, include_header=False
         )
 
         # Left column
@@ -102,22 +99,17 @@ class ComparisonSlide(SlideTemplate):
             left=left_pos["left"],
             top=left_pos["top"],
             width=left_pos["width"],
-            height=left_pos["height"]
+            height=left_pos["height"],
         )
 
         # Left title
-        left_title_text = TextBox(
-            text=self.left_title,
-            font_size=16,
-            bold=True,
-            theme=self.theme
-        )
+        left_title_text = TextBox(text=self.left_title, font_size=16, bold=True, theme=self.theme)
         left_title_text.render(
             slide,
             left=left_pos["left"] + 0.2,
             top=left_pos["top"] + 0.2,
             width=left_pos["width"] - 0.4,
-            height=0.4
+            height=0.4,
         )
 
         # Left bullet list
@@ -127,7 +119,7 @@ class ComparisonSlide(SlideTemplate):
             left=left_pos["left"] + 0.3,
             top=left_pos["top"] + 0.7,
             width=left_pos["width"] - 0.6,
-            height=left_pos["height"] - 1.0  # Use actual height from position
+            height=left_pos["height"] - 1.0,  # Use actual height from position
         )
 
         # Right column
@@ -139,22 +131,17 @@ class ComparisonSlide(SlideTemplate):
             left=right_pos["left"],
             top=right_pos["top"],
             width=right_pos["width"],
-            height=right_pos["height"]
+            height=right_pos["height"],
         )
 
         # Right title
-        right_title_text = TextBox(
-            text=self.right_title,
-            font_size=16,
-            bold=True,
-            theme=self.theme
-        )
+        right_title_text = TextBox(text=self.right_title, font_size=16, bold=True, theme=self.theme)
         right_title_text.render(
             slide,
             left=right_pos["left"] + 0.2,
             top=right_pos["top"] + 0.2,
             width=right_pos["width"] - 0.4,
-            height=0.4
+            height=0.4,
         )
 
         # Right bullet list
@@ -164,7 +151,7 @@ class ComparisonSlide(SlideTemplate):
             left=right_pos["left"] + 0.3,
             top=right_pos["top"] + 0.7,
             width=right_pos["width"] - 0.6,
-            height=right_pos["height"] - 1.0  # Use actual height from position
+            height=right_pos["height"] - 1.0,  # Use actual height from position
         )
 
         return len(prs.slides) - 1

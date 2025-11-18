@@ -12,9 +12,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
-from ...tokens.platform_colors import MACOS_CONTROLS, WINDOWS_CONTROLS, DEVICE_COLORS
-from ...constants import ContainerPlatform
+from ...tokens.typography import FONT_SIZES
 
 
 class SamsungContainer(Component):
@@ -49,10 +47,12 @@ class SamsungContainer(Component):
         )
     """
 
-    def __init__(self,
-                 title: str = "Samsung",
-                 variant: str = "galaxy-s",  # galaxy-s, galaxy-note
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        title: str = "Samsung",
+        variant: str = "galaxy-s",  # galaxy-s, galaxy-note
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize Samsung container.
 
@@ -68,7 +68,7 @@ class SamsungContainer(Component):
     def _get_device_color(self) -> RGBColor:
         """Get device frame color based on theme."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 if sum(bg) < 384:
                     return RGBColor(30, 30, 30)  # Phantom black
@@ -80,7 +80,7 @@ class SamsungContainer(Component):
     def _get_screen_bg_color(self) -> RGBColor:
         """Get screen background color based on theme."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
 
@@ -89,7 +89,7 @@ class SamsungContainer(Component):
     def _get_text_color(self) -> RGBColor:
         """Get text color based on theme."""
         if self.theme and isinstance(self.theme, dict):
-            fg = self.theme.get('colors', {}).get('foreground', {}).get('DEFAULT')
+            fg = self.theme.get("colors", {}).get("foreground", {}).get("DEFAULT")
             if fg and isinstance(fg, (list, tuple)) and len(fg) >= 3:
                 return RGBColor(fg[0], fg[1], fg[2])
 
@@ -98,13 +98,14 @@ class SamsungContainer(Component):
     def _is_dark_mode(self) -> bool:
         """Check if theme is dark mode."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return sum(bg) < 384
         return False
 
-    def render(self, slide, left: float, top: float,
-               width: float = 3.5, height: float = 6.5) -> Dict[str, float]:
+    def render(
+        self, slide, left: float, top: float, width: float = 3.5, height: float = 6.5
+    ) -> Dict[str, float]:
         """
         Render Samsung container to slide.
 
@@ -122,11 +123,7 @@ class SamsungContainer(Component):
 
         # Device frame
         device_frame = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE,
-            Inches(left),
-            Inches(top),
-            Inches(width),
-            Inches(height)
+            MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)
         )
         device_frame.fill.solid()
         device_frame.fill.fore_color.rgb = self._get_device_color()
@@ -146,7 +143,7 @@ class SamsungContainer(Component):
             Inches(screen_left),
             Inches(screen_top),
             Inches(screen_width),
-            Inches(screen_height)
+            Inches(screen_height),
         )
         screen.fill.solid()
         screen.fill.fore_color.rgb = self._get_screen_bg_color()
@@ -162,7 +159,7 @@ class SamsungContainer(Component):
             Inches(camera_left),
             Inches(screen_top + 0.05),
             Inches(camera_size),
-            Inches(camera_size)
+            Inches(camera_size),
         )
         camera.fill.solid()
         camera.fill.fore_color.rgb = self._get_device_color()
@@ -175,7 +172,7 @@ class SamsungContainer(Component):
             Inches(screen_left + 0.1),
             Inches(screen_top + 0.05),
             Inches(screen_width - 0.2),
-            Inches(status_bar_height)
+            Inches(status_bar_height),
         )
         status_frame = status_bar.text_frame
         status_frame.text = "10:30"
@@ -204,7 +201,7 @@ class SamsungContainer(Component):
             Inches(back_left),
             Inches(button_y),
             Inches(button_height),
-            Inches(button_height)
+            Inches(button_height),
         )
         back_button.fill.solid()
         back_button.fill.fore_color.rgb = button_color
@@ -219,7 +216,7 @@ class SamsungContainer(Component):
             Inches(home_left),
             Inches(button_y),
             Inches(button_height),
-            Inches(button_height)
+            Inches(button_height),
         )
         home_button.fill.solid()
         home_button.fill.fore_color.rgb = button_color
@@ -233,7 +230,7 @@ class SamsungContainer(Component):
             Inches(recent_left),
             Inches(button_y),
             Inches(button_height),
-            Inches(button_height)
+            Inches(button_height),
         )
         recent_button.fill.solid()
         recent_button.fill.fore_color.rgb = button_color
@@ -253,10 +250,10 @@ class SamsungContainer(Component):
         content_width = screen_width - (padding_h * 2)
 
         return {
-            'left': content_left,
-            'top': content_top + padding_v,
-            'width': content_width,
-            'height': content_height - (padding_v * 2)
+            "left": content_left,
+            "top": content_top + padding_v,
+            "width": content_width,
+            "height": content_height - (padding_v * 2),
         }
 
 

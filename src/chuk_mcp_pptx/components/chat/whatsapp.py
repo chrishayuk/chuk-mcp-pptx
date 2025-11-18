@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING, FONT_FAMILIES
 from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant, ComponentSizing, Theme, Platform, ColorKey
+from ...constants import ComponentSizing, Theme, Platform, ColorKey
 
 
 class WhatsAppBubble(Component):
@@ -48,13 +48,15 @@ class WhatsAppBubble(Component):
         msg.render(slide, left=1, top=3, width=7)
     """
 
-    def __init__(self,
-                 text: str,
-                 sender: Optional[str] = None,
-                 variant: str = "received",
-                 timestamp: Optional[str] = None,
-                 show_checkmarks: bool = True,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        sender: Optional[str] = None,
+        variant: str = "received",
+        timestamp: Optional[str] = None,
+        show_checkmarks: bool = True,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize WhatsApp bubble.
 
@@ -113,7 +115,7 @@ class WhatsAppBubble(Component):
             Inches(bubble_left),
             Inches(top),
             Inches(bubble_width),
-            Inches(bubble_height)
+            Inches(bubble_height),
         )
 
         # Style bubble - WhatsApp style
@@ -181,7 +183,7 @@ class WhatsAppBubble(Component):
                     Inches(bubble_left + bubble_width - 0.7),
                     Inches(top + bubble_height - 0.22),
                     Inches(0.6),
-                    Inches(0.18)
+                    Inches(0.18),
                 )
                 ts_frame = ts_box.text_frame
                 ts_frame.text = ts_text
@@ -211,10 +213,12 @@ class WhatsAppConversation(Component):
         conversation.render(slide, left=1, top=2, width=8)
     """
 
-    def __init__(self,
-                 messages: List[Dict[str, Any]],
-                 spacing: float = 0.12,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        messages: List[Dict[str, Any]],
+        spacing: float = 0.12,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize WhatsApp conversation.
 
@@ -239,7 +243,7 @@ class WhatsAppConversation(Component):
                 variant=msg_data.get("variant", "received"),
                 timestamp=msg_data.get("timestamp"),
                 show_checkmarks=msg_data.get("show_checkmarks", True),
-                theme=self.theme
+                theme=self.theme,
             )
 
             msg_shapes = message.render(slide, left, current_top, width)

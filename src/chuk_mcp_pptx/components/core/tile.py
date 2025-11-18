@@ -13,7 +13,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import get_text_style, FONT_SIZES, PARAGRAPH_SPACING
+from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING
 
 
 class Tile(Component):
@@ -58,14 +58,16 @@ class Tile(Component):
         "xl": (3.0, 3.0),
     }
 
-    def __init__(self,
-                 text: Optional[str] = None,
-                 label: Optional[str] = None,
-                 icon: Optional[str] = None,
-                 variant: str = "default",
-                 size: str = "md",
-                 color_variant: str = "default",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: Optional[str] = None,
+        label: Optional[str] = None,
+        icon: Optional[str] = None,
+        variant: str = "default",
+        size: str = "md",
+        color_variant: str = "default",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize tile.
 
@@ -145,8 +147,14 @@ class Tile(Component):
         else:
             return self.get_color("muted.foreground")
 
-    def render(self, slide, left: float, top: float,
-               width: Optional[float] = None, height: Optional[float] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+    ) -> Any:
         """
         Render tile to slide.
 
@@ -171,7 +179,7 @@ class Tile(Component):
             Inches(left),
             Inches(top),
             Inches(tile_width),
-            Inches(tile_height)
+            Inches(tile_height),
         )
 
         # Apply background
@@ -210,6 +218,7 @@ class Tile(Component):
         # Icon (if provided)
         if self.icon:
             from .icon import ICON_SYMBOLS
+
             symbol = ICON_SYMBOLS.get(self.icon, self.icon)
             current_p.text = symbol
             current_p.alignment = PP_ALIGN.CENTER
@@ -270,13 +279,15 @@ class IconTile(Tile):
         tile.render(slide, left=3, top=2)
     """
 
-    def __init__(self,
-                 icon: str,
-                 label: Optional[str] = None,
-                 variant: str = "default",
-                 size: str = "md",
-                 color_variant: str = "default",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        icon: str,
+        label: Optional[str] = None,
+        variant: str = "default",
+        size: str = "md",
+        color_variant: str = "default",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize icon tile.
 
@@ -295,7 +306,7 @@ class IconTile(Tile):
             variant=variant,
             size=size,
             color_variant=color_variant,
-            theme=theme
+            theme=theme,
         )
 
 
@@ -316,13 +327,15 @@ class ValueTile(Tile):
         tile.render(slide, left=3, top=2)
     """
 
-    def __init__(self,
-                 value: str,
-                 label: Optional[str] = None,
-                 variant: str = "default",
-                 size: str = "md",
-                 color_variant: str = "default",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        value: str,
+        label: Optional[str] = None,
+        variant: str = "default",
+        size: str = "md",
+        color_variant: str = "default",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize value tile.
 
@@ -341,7 +354,7 @@ class ValueTile(Tile):
             variant=variant,
             size=size,
             color_variant=color_variant,
-            theme=theme
+            theme=theme,
         )
 
 

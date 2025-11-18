@@ -7,11 +7,18 @@ from pptx import Presentation
 from pptx.util import Inches
 
 from chuk_mcp_pptx.composition import (
-    ComposableComponent, SubComponent,
-    CardHeader, CardContent, CardFooter,
-    CardTitle, CardDescription,
-    Stack, Separator, Badge,
-    compose, with_separator, CompositionBuilder
+    ComposableComponent,
+    CardHeader,
+    CardContent,
+    CardFooter,
+    CardTitle,
+    CardDescription,
+    Stack,
+    Separator,
+    Badge,
+    compose,
+    with_separator,
+    CompositionBuilder,
 )
 
 
@@ -149,10 +156,7 @@ class TestSubComponents:
 
     def test_stack(self):
         """Test Stack component."""
-        children = [
-            CardTitle("Title"),
-            CardContent("Content")
-        ]
+        children = [CardTitle("Title"), CardContent("Content")]
         stack = Stack(children, spacing=0.2)
 
         assert len(stack.children) == 2
@@ -166,9 +170,7 @@ class TestSubComponentRendering:
         """Setup test presentation and slide."""
         self.prs = Presentation()
         self.slide = self.prs.slides.add_slide(self.prs.slide_layouts[6])
-        self.shape = self.slide.shapes.add_textbox(
-            Inches(1), Inches(1), Inches(4), Inches(3)
-        )
+        self.shape = self.slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(3))
         self.text_frame = self.shape.text_frame
 
     def test_render_card_header(self):
@@ -218,9 +220,7 @@ class TestCompositionHelpers:
     def test_compose(self):
         """Test compose helper."""
         children = compose(
-            CardTitle("Title"),
-            CardDescription("Description"),
-            CardContent("Content")
+            CardTitle("Title"), CardDescription("Description"), CardContent("Content")
         )
 
         assert isinstance(children, list)
@@ -238,9 +238,7 @@ class TestCompositionHelpers:
     def test_with_separator(self):
         """Test with_separator helper."""
         children = with_separator(
-            CardTitle("Section 1"),
-            CardTitle("Section 2"),
-            CardTitle("Section 3")
+            CardTitle("Section 1"), CardTitle("Section 2"), CardTitle("Section 3")
         )
 
         # Should have original items plus separators
@@ -343,14 +341,15 @@ class TestCompositionBuilder:
     def test_builder_chaining(self):
         """Test method chaining."""
         builder = CompositionBuilder()
-        children = (builder
-                    .title("Title")
-                    .description("Description")
-                    .separator()
-                    .content("Content")
-                    .badge("New", "success")
-                    .footer("Footer")
-                    .build())
+        children = (
+            builder.title("Title")
+            .description("Description")
+            .separator()
+            .content("Content")
+            .badge("New", "success")
+            .footer("Footer")
+            .build()
+        )
 
         assert len(children) == 6
 
@@ -386,13 +385,14 @@ class TestCompositionIntegration:
 
         # Build composition
         builder = CompositionBuilder()
-        children = (builder
-                    .header("Dashboard", "Real-time analytics")
-                    .separator()
-                    .content("Your metrics are trending upward")
-                    .badge("Live", "success")
-                    .footer("Updated 5 min ago")
-                    .build())
+        children = (
+            builder.header("Dashboard", "Real-time analytics")
+            .separator()
+            .content("Your metrics are trending upward")
+            .badge("Live", "success")
+            .footer("Updated 5 min ago")
+            .build()
+        )
 
         # Add to parent
         for child in children:
@@ -416,9 +416,7 @@ class TestCompositionIntegration:
         parent = ComposableComponent()
 
         children = compose(
-            CardTitle("Welcome"),
-            CardDescription("Get started"),
-            CardContent("Instructions here")
+            CardTitle("Welcome"), CardDescription("Get started"), CardContent("Instructions here")
         )
 
         for child in children:

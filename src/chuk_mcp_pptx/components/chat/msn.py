@@ -8,13 +8,10 @@ Recreates the classic mid-2000s Microsoft messaging experience.
 from typing import Optional, Dict, Any, List
 from pptx.util import Pt, Inches
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
-from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
-from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant
 
 
 class MSNBubble(Component):
@@ -52,13 +49,15 @@ class MSNBubble(Component):
         msg.render(slide, left=1, top=3, width=7)
     """
 
-    def __init__(self,
-                 text: str,
-                 display_name: str,
-                 variant: str = "received",
-                 timestamp: Optional[str] = None,
-                 emoticon: Optional[str] = None,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        display_name: str,
+        variant: str = "received",
+        timestamp: Optional[str] = None,
+        emoticon: Optional[str] = None,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize MSN bubble.
 
@@ -116,7 +115,7 @@ class MSNBubble(Component):
             Inches(left),
             Inches(current_top),
             Inches(width),
-            Inches(0.22)  # Increased from 0.17
+            Inches(0.22),  # Increased from 0.17
         )
         header_frame = header_box.text_frame
         header_frame.word_wrap = False
@@ -138,10 +137,7 @@ class MSNBubble(Component):
 
         # Message text
         text_box = slide.shapes.add_textbox(
-            Inches(left),
-            Inches(current_top),
-            Inches(width),
-            Inches(0.5)
+            Inches(left), Inches(current_top), Inches(width), Inches(0.5)
         )
         text_frame = text_box.text_frame
         text_frame.word_wrap = True
@@ -191,10 +187,12 @@ class MSNConversation(Component):
         conversation.render(slide, left=1, top=2, width=7)
     """
 
-    def __init__(self,
-                 messages: List[Dict[str, Any]],
-                 spacing: float = 0.12,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        messages: List[Dict[str, Any]],
+        spacing: float = 0.12,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize MSN conversation.
 
@@ -219,7 +217,7 @@ class MSNConversation(Component):
                 variant=msg_data.get("variant", "received"),
                 timestamp=msg_data.get("timestamp"),
                 emoticon=msg_data.get("emoticon"),
-                theme=self.theme
+                theme=self.theme,
             )
 
             msg_shapes = message.render(slide, left, current_top, width)

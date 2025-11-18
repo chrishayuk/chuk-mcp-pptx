@@ -11,9 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
-from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant, Platform, ColorKey
+from ...tokens.typography import FONT_SIZES
+from ...tokens.platform_colors import CHAT_COLORS
+from ...constants import Platform, ColorKey
 
 
 class SlackMessage(Component):
@@ -50,14 +50,16 @@ class SlackMessage(Component):
         msg.render(slide, left=1, top=3, width=7)
     """
 
-    def __init__(self,
-                 text: str,
-                 sender: str,
-                 timestamp: str,
-                 avatar_text: Optional[str] = None,
-                 reactions: Optional[List[str]] = None,
-                 thread_count: Optional[int] = None,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        sender: str,
+        timestamp: str,
+        avatar_text: Optional[str] = None,
+        reactions: Optional[List[str]] = None,
+        thread_count: Optional[int] = None,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize Slack message.
 
@@ -99,7 +101,14 @@ class SlackMessage(Component):
         thread_height = 0.25 if self.thread_count else 0
 
         padding = 0.15
-        return sender_height + timestamp_height + text_height + reactions_height + thread_height + padding
+        return (
+            sender_height
+            + timestamp_height
+            + text_height
+            + reactions_height
+            + thread_height
+            + padding
+        )
 
     def render(self, slide, left: float, top: float, width: float = 7.0) -> list:
         """Render Slack message."""
@@ -116,10 +125,12 @@ class SlackMessage(Component):
             Inches(avatar_left),
             Inches(top),
             Inches(avatar_size),
-            Inches(avatar_size)
+            Inches(avatar_size),
         )
         avatar.fill.solid()
-        avatar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.AVATAR]))
+        avatar.fill.fore_color.rgb = RGBColor(
+            *self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.AVATAR])
+        )
         avatar.line.fill.background()
 
         # Avatar text
@@ -137,10 +148,7 @@ class SlackMessage(Component):
 
         # Sender name (separate from timestamp like Teams)
         sender_box = slide.shapes.add_textbox(
-            Inches(content_left),
-            Inches(current_top),
-            Inches(content_width),
-            Inches(0.2)
+            Inches(content_left), Inches(current_top), Inches(content_width), Inches(0.2)
         )
         sender_frame = sender_box.text_frame
         sender_frame.text = self.sender
@@ -150,16 +158,15 @@ class SlackMessage(Component):
         sender_p.alignment = PP_ALIGN.LEFT
         sender_p.font.size = Pt(FONT_SIZES["base"])
         sender_p.font.bold = True
-        sender_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.TEXT]))
+        sender_p.font.color.rgb = RGBColor(
+            *self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.TEXT])
+        )
         shapes.append(sender_box)
         current_top += 0.18
 
         # Timestamp (on separate line like Teams)
         timestamp_box = slide.shapes.add_textbox(
-            Inches(content_left),
-            Inches(current_top),
-            Inches(content_width),
-            Inches(0.18)
+            Inches(content_left), Inches(current_top), Inches(content_width), Inches(0.18)
         )
         timestamp_frame = timestamp_box.text_frame
         timestamp_frame.text = self.timestamp
@@ -167,16 +174,15 @@ class SlackMessage(Component):
         timestamp_p = timestamp_frame.paragraphs[0]
         timestamp_p.alignment = PP_ALIGN.LEFT
         timestamp_p.font.size = Pt(FONT_SIZES["sm"])
-        timestamp_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.SECONDARY_TEXT]))
+        timestamp_p.font.color.rgb = RGBColor(
+            *self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.SECONDARY_TEXT])
+        )
         shapes.append(timestamp_box)
         current_top += 0.18
 
         # Message text
         text_box = slide.shapes.add_textbox(
-            Inches(content_left),
-            Inches(current_top),
-            Inches(content_width),
-            Inches(0.5)
+            Inches(content_left), Inches(current_top), Inches(content_width), Inches(0.5)
         )
         text_frame = text_box.text_frame
         text_frame.text = self.text
@@ -185,7 +191,9 @@ class SlackMessage(Component):
         text_p = text_frame.paragraphs[0]
         text_p.alignment = PP_ALIGN.LEFT
         text_p.font.size = Pt(FONT_SIZES["sm"])
-        text_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.TEXT]))
+        text_p.font.color.rgb = RGBColor(
+            *self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.TEXT])
+        )
         shapes.append(text_box)
 
         # Calculate actual text height
@@ -198,34 +206,34 @@ class SlackMessage(Component):
         if self.reactions:
             reactions_text = "   ".join(self.reactions)
             reactions_box = slide.shapes.add_textbox(
-                Inches(content_left),
-                Inches(current_top),
-                Inches(content_width),
-                Inches(0.25)
+                Inches(content_left), Inches(current_top), Inches(content_width), Inches(0.25)
             )
             reactions_frame = reactions_box.text_frame
             reactions_frame.text = reactions_text
             reactions_p = reactions_frame.paragraphs[0]
             reactions_p.alignment = PP_ALIGN.LEFT
             reactions_p.font.size = Pt(FONT_SIZES["sm"])
-            reactions_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.SECONDARY_TEXT]))
+            reactions_p.font.color.rgb = RGBColor(
+                *self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.SECONDARY_TEXT])
+            )
             shapes.append(reactions_box)
             current_top += 0.25
 
         # Thread indicator
         if self.thread_count:
             thread_box = slide.shapes.add_textbox(
-                Inches(content_left),
-                Inches(current_top),
-                Inches(content_width),
-                Inches(0.2)
+                Inches(content_left), Inches(current_top), Inches(content_width), Inches(0.2)
             )
             thread_frame = thread_box.text_frame
-            thread_frame.text = f"💬 {self.thread_count} {'reply' if self.thread_count == 1 else 'replies'}"
+            thread_frame.text = (
+                f"💬 {self.thread_count} {'reply' if self.thread_count == 1 else 'replies'}"
+            )
             thread_p = thread_frame.paragraphs[0]
             thread_p.alignment = PP_ALIGN.LEFT
             thread_p.font.size = Pt(FONT_SIZES["sm"])
-            thread_p.font.color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.LINK]))
+            thread_p.font.color.rgb = RGBColor(
+                *self.hex_to_rgb(CHAT_COLORS[Platform.SLACK][ColorKey.LINK])
+            )
             shapes.append(thread_box)
 
         return shapes
@@ -257,10 +265,12 @@ class SlackConversation(Component):
         conversation.render(slide, left=1, top=2, width=8)
     """
 
-    def __init__(self,
-                 messages: List[Dict[str, Any]],
-                 spacing: float = 0.15,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        messages: List[Dict[str, Any]],
+        spacing: float = 0.15,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize Slack conversation.
 
@@ -286,7 +296,7 @@ class SlackConversation(Component):
                 avatar_text=msg_data.get("avatar_text"),
                 reactions=msg_data.get("reactions"),
                 thread_count=msg_data.get("thread_count"),
-                theme=self.theme
+                theme=self.theme,
             )
 
             msg_shapes = message.render(slide, left, current_top, width)

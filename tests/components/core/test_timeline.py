@@ -1,6 +1,7 @@
 """
 Comprehensive tests for Timeline component.
 """
+
 import pytest
 from pptx import Presentation
 
@@ -28,7 +29,7 @@ class TestTimelineComponent:
         return [
             {"date": "Jan 2024", "title": "Project Start"},
             {"date": "Mar 2024", "title": "Beta Release"},
-            {"date": "Jun 2024", "title": "Launch"}
+            {"date": "Jun 2024", "title": "Launch"},
         ]
 
     @pytest.fixture
@@ -38,19 +39,15 @@ class TestTimelineComponent:
             {
                 "date": "Q1 2024",
                 "title": "Planning",
-                "description": "Initial planning and research"
+                "description": "Initial planning and research",
             },
-            {
-                "date": "Q2 2024",
-                "title": "Development",
-                "description": "Build core features"
-            },
+            {"date": "Q2 2024", "title": "Development", "description": "Build core features"},
             {
                 "date": "Q3 2024",
                 "title": "Launch",
                 "description": "Public release",
-                "highlight": True
-            }
+                "highlight": True,
+            },
         ]
 
     @pytest.fixture
@@ -59,7 +56,7 @@ class TestTimelineComponent:
         return [
             {"date": "2023", "title": "Founded", "highlight": False},
             {"date": "2024", "title": "Series A", "highlight": True},
-            {"date": "2025", "title": "Expansion", "highlight": False}
+            {"date": "2025", "title": "Expansion", "highlight": False},
         ]
 
     def test_initialization(self, simple_events):
@@ -120,7 +117,7 @@ class TestTimelineComponent:
         """Test rendering with descriptions enabled but event missing description key."""
         events = [
             {"date": "Q1", "title": "Event 1", "description": "Has description"},
-            {"date": "Q2", "title": "Event 2"}  # No description
+            {"date": "Q2", "title": "Event 2"},  # No description
         ]
         timeline = Timeline(events, show_descriptions=True)
         shapes = timeline.render(slide, left=1.0, top=3.0, width=8.0)
@@ -278,7 +275,7 @@ class TestTimelineEdgeCases:
             {
                 "date": "Q1 2024",
                 "title": "Very long event title that spans multiple words and characters",
-                "description": "This is an extremely long description that contains a lot of text and information about the event. It should wrap properly within the text box."
+                "description": "This is an extremely long description that contains a lot of text and information about the event. It should wrap properly within the text box.",
             }
         ]
         timeline = Timeline(events, show_descriptions=True)
@@ -287,10 +284,7 @@ class TestTimelineEdgeCases:
 
     def test_empty_text_values(self, slide):
         """Test timeline with empty text values."""
-        events = [
-            {"date": "", "title": ""},
-            {"date": "Q1", "title": ""}
-        ]
+        events = [{"date": "", "title": ""}, {"date": "Q1", "title": ""}]
         timeline = Timeline(events)
         shapes = timeline.render(slide, left=1.0, top=3.0, width=8.0)
         assert len(shapes) > 0
@@ -300,7 +294,7 @@ class TestTimelineEdgeCases:
         events = [
             {"date": "Q1", "title": "Event 1", "highlight": True},
             {"date": "Q2", "title": "Event 2", "highlight": True},
-            {"date": "Q3", "title": "Event 3", "highlight": True}
+            {"date": "Q3", "title": "Event 3", "highlight": True},
         ]
         timeline = Timeline(events)
         shapes = timeline.render(slide, left=1.0, top=3.0, width=8.0)
@@ -315,10 +309,7 @@ class TestTimelineEdgeCases:
 
     def test_maximum_width(self, slide):
         """Test timeline with maximum width."""
-        events = [
-            {"date": "2020", "title": "Start"},
-            {"date": "2025", "title": "End"}
-        ]
+        events = [{"date": "2020", "title": "Start"}, {"date": "2025", "title": "End"}]
         timeline = Timeline(events)
         shapes = timeline.render(slide, left=0.5, top=3.0, width=9.0)
         assert len(shapes) > 0
@@ -329,7 +320,7 @@ class TestTimelineEdgeCases:
             {
                 "date": "2024",
                 "title": "Event!",
-                "description": "Description with special chars: @#$%^&*()"
+                "description": "Description with special chars: @#$%^&*()",
             }
         ]
         timeline = Timeline(events, show_descriptions=True)
@@ -342,7 +333,7 @@ class TestTimelineEdgeCases:
             {"date": "Q1", "title": "Event 1", "highlight": True},
             {"date": "Q2", "title": "Event 2", "highlight": False},
             {"date": "Q3", "title": "Event 3"},  # No highlight key
-            {"date": "Q4", "title": "Event 4", "highlight": True}
+            {"date": "Q4", "title": "Event 4", "highlight": True},
         ]
         timeline = Timeline(events)
         shapes = timeline.render(slide, left=1.0, top=3.0, width=8.0)
@@ -350,10 +341,7 @@ class TestTimelineEdgeCases:
 
     def test_two_events(self, slide):
         """Test timeline with exactly two events."""
-        events = [
-            {"date": "Start", "title": "Beginning"},
-            {"date": "End", "title": "Finish"}
-        ]
+        events = [{"date": "Start", "title": "Beginning"}, {"date": "End", "title": "Finish"}]
         timeline = Timeline(events)
         shapes = timeline.render(slide, left=1.0, top=3.0, width=8.0)
         assert len(shapes) > 0
@@ -379,7 +367,7 @@ class TestTimelineVariantCombinations:
         return [
             {"date": "Q1", "title": "Phase 1", "description": "First phase"},
             {"date": "Q2", "title": "Phase 2", "description": "Second phase", "highlight": True},
-            {"date": "Q3", "title": "Phase 3", "description": "Third phase"}
+            {"date": "Q3", "title": "Phase 3", "description": "Third phase"},
         ]
 
     def test_default_variant_line_style(self, slide, test_events):
@@ -426,10 +414,7 @@ class TestTimelineVariantCombinations:
         for variant in variants:
             for style in styles:
                 timeline = Timeline(
-                    test_events,
-                    variant=variant,
-                    style=style,
-                    show_descriptions=True
+                    test_events, variant=variant, style=style, show_descriptions=True
                 )
                 shapes = timeline.render(slide, left=1.0, top=3.0, width=8.0)
                 assert len(shapes) > 0

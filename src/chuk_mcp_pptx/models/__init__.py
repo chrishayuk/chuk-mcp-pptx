@@ -3,6 +3,7 @@ Pydantic Models for PowerPoint MCP Server
 
 All data structures are Pydantic models for type safety and validation.
 """
+
 from .responses import (
     ErrorResponse,
     SuccessResponse,

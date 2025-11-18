@@ -3,9 +3,11 @@
 Table Gallery - Showcases table components with different themes and variants.
 Demonstrates various table types for business presentations.
 """
+
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pptx import Presentation
 from pptx.util import Inches
@@ -56,11 +58,11 @@ def create_table_gallery(theme_name: str = "corporate"):
             ["Revenue", "$12.4M", "$13.8M", "$14.2M", "$15.6M", "+28%"],
             ["Gross Profit", "$4.8M", "$5.4M", "$5.8M", "$6.2M", "+31%"],
             ["EBITDA", "$1.6M", "$2.0M", "$2.3M", "$2.6M", "+45%"],
-            ["Net Income", "$1.2M", "$1.5M", "$1.8M", "$2.1M", "+52%"]
+            ["Net Income", "$1.2M", "$1.5M", "$1.8M", "$2.1M", "+52%"],
         ],
         variant="default",
         size="md",
-        theme=theme
+        theme=theme,
     )
     financial_table.render(slide2, left=1.5, top=2.0, width=7.0, height=3.0)
 
@@ -81,11 +83,11 @@ def create_table_gallery(theme_name: str = "corporate"):
             ["Storage", "10 GB", "100 GB", "Unlimited"],
             ["Support", "Email", "Priority", "24/7 Phone"],
             ["API Access", "No", "Yes", "Yes"],
-            ["Price/Month", "$9.99", "$49.99", "$199.99"]
+            ["Price/Month", "$9.99", "$49.99", "$199.99"],
         ],
         variant="bordered",
         size="md",
-        theme=theme
+        theme=theme,
     )
     comparison_table.render(slide3, left=2.0, top=2.0, width=6.0, height=3.5)
 
@@ -106,11 +108,11 @@ def create_table_gallery(theme_name: str = "corporate"):
             ["Design", "Feb 1", "Feb 28", "4 weeks", "Complete"],
             ["Development", "Mar 1", "May 31", "12 weeks", "In Progress"],
             ["Testing", "Jun 1", "Jun 30", "4 weeks", "Planned"],
-            ["Launch", "Jul 1", "Jul 15", "2 weeks", "Planned"]
+            ["Launch", "Jul 1", "Jul 15", "2 weeks", "Planned"],
         ],
         variant="striped",
         size="md",
-        theme=theme
+        theme=theme,
     )
     timeline_table.render(slide4, left=1.0, top=2.0, width=8.0, height=3.5)
 
@@ -131,11 +133,11 @@ def create_table_gallery(theme_name: str = "corporate"):
             ["Marketing", "10K leads", "12.3K leads", "123%"],
             ["Support", "< 2hr", "1.5hr avg", "133%"],
             ["Engineering", "95% uptime", "99.2%", "104%"],
-            ["Finance", "< 5% var", "3.2% var", "136%"]
+            ["Finance", "< 5% var", "3.2% var", "136%"],
         ],
         variant="default",
         size="md",
-        theme=theme
+        theme=theme,
     )
     metrics_table.render(slide5, left=1.5, top=2.0, width=7.0, height=3.5)
 
@@ -156,11 +158,11 @@ def create_table_gallery(theme_name: str = "corporate"):
             ["Sales", "$1.8M", "$2.0M", "$2.2M", "$2.0M", "$8.0M"],
             ["Operations", "$2.0M", "$2.0M", "$2.0M", "$2.0M", "$8.0M"],
             ["Support", "$1.0M", "$1.0M", "$1.1M", "$1.1M", "$4.2M"],
-            ["Total", "$7.3M", "$7.8M", "$8.3M", "$8.3M", "$31.7M"]
+            ["Total", "$7.3M", "$7.8M", "$8.3M", "$8.3M", "$31.7M"],
         ],
         variant="bordered",
         size="md",
-        theme=theme
+        theme=theme,
     )
     budget_table.render(slide6, left=1.0, top=2.0, width=8.0, height=3.5)
 
@@ -177,52 +179,40 @@ def create_table_gallery(theme_name: str = "corporate"):
     # Default variant (small)
     default_table = Table(
         headers=["Type", "Style"],
-        data=[
-            ["Default", "Standard"],
-            ["Data", "Format"]
-        ],
+        data=[["Default", "Standard"], ["Data", "Format"]],
         variant="default",
         size="sm",
-        theme=theme
+        theme=theme,
     )
     default_table.render(slide7, left=0.5, top=2.0, width=4.5, height=1.5)
 
     # Bordered variant (small)
     bordered_table = Table(
         headers=["Type", "Style"],
-        data=[
-            ["Bordered", "Bold"],
-            ["Data", "Format"]
-        ],
+        data=[["Bordered", "Bold"], ["Data", "Format"]],
         variant="bordered",
         size="sm",
-        theme=theme
+        theme=theme,
     )
     bordered_table.render(slide7, left=5.5, top=2.0, width=4.0, height=1.5)
 
     # Striped variant (small)
     striped_table = Table(
         headers=["Type", "Style"],
-        data=[
-            ["Striped", "Alternating"],
-            ["Data", "Rows"]
-        ],
+        data=[["Striped", "Alternating"], ["Data", "Rows"]],
         variant="striped",
         size="sm",
-        theme=theme
+        theme=theme,
     )
     striped_table.render(slide7, left=0.5, top=4.0, width=4.5, height=1.5)
 
     # Minimal variant (small)
     minimal_table = Table(
         headers=["Type", "Style"],
-        data=[
-            ["Minimal", "Clean"],
-            ["Data", "Simple"]
-        ],
+        data=[["Minimal", "Clean"], ["Data", "Simple"]],
         variant="minimal",
         size="sm",
-        theme=theme
+        theme=theme,
     )
     minimal_table.render(slide7, left=5.5, top=4.0, width=4.0, height=1.5)
 
@@ -263,7 +253,7 @@ def main():
     for theme_name, filename in created_files:
         print(f"  • {theme_name}: {filename}")
 
-    print(f"\n📁 All files saved to: outputs/")
+    print("\n📁 All files saved to: outputs/")
     print("\n💡 Table types demonstrated:")
     print("    • Financial reports")
     print("    • Product comparisons")

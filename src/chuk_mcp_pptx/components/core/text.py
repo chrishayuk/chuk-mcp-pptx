@@ -5,7 +5,7 @@ Text components for PowerPoint presentations.
 Provides text box and bullet list components with formatting.
 """
 
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 from pptx.dml.color import RGBColor
@@ -29,7 +29,9 @@ from ...registry import component, ComponentCategory, prop, example
         prop("bold", "boolean", "Bold text", default=False),
         prop("italic", "boolean", "Italic text", default=False),
         prop("color", "string", "Text color (semantic or hex)", default=None),
-        prop("alignment", "string", "Text alignment (left, center, right, justify)", default="left"),
+        prop(
+            "alignment", "string", "Text alignment (left, center, right, justify)", default="left"
+        ),
         prop("auto_fit", "boolean", "Auto-fit text to shape", default=False),
     ],
     examples=[
@@ -39,7 +41,7 @@ from ...registry import component, ComponentCategory, prop, example
 text = TextBox(text="Hello World")
 text.render(slide, left=2, top=2, width=4, height=1)
             """,
-            text="Hello World"
+            text="Hello World",
         ),
         example(
             "Formatted text box",
@@ -55,10 +57,10 @@ text.render(slide, left=1, top=3, width=8, height=1.5)
             """,
             text="Important Message",
             bold=True,
-            alignment="center"
+            alignment="center",
         ),
     ],
-    tags=["text", "textbox", "label", "heading"]
+    tags=["text", "textbox", "label", "heading"],
 )
 class TextBox(Component):
     """
@@ -87,16 +89,18 @@ class TextBox(Component):
         text.render(slide, left=1, top=1, width=8, height=1.5)
     """
 
-    def __init__(self,
-                 text: str,
-                 font_name: str = "Calibri",
-                 font_size: int = 18,
-                 bold: bool = False,
-                 italic: bool = False,
-                 color: Optional[str] = None,
-                 alignment: str = "left",
-                 auto_fit: bool = False,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        font_name: str = "Calibri",
+        font_size: int = 18,
+        bold: bool = False,
+        italic: bool = False,
+        color: Optional[str] = None,
+        alignment: str = "left",
+        auto_fit: bool = False,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize text box component.
 
@@ -121,8 +125,7 @@ class TextBox(Component):
         self.alignment = alignment
         self.auto_fit = auto_fit
 
-    def render(self, slide, left: float, top: float,
-               width: float, height: float) -> Any:
+    def render(self, slide, left: float, top: float, width: float, height: float) -> Any:
         """
         Render text box to slide.
 
@@ -151,7 +154,7 @@ class TextBox(Component):
                 "left": PP_ALIGN.LEFT,
                 "center": PP_ALIGN.CENTER,
                 "right": PP_ALIGN.RIGHT,
-                "justify": PP_ALIGN.JUSTIFY
+                "justify": PP_ALIGN.JUSTIFY,
             }
             paragraph.alignment = alignment_map.get(self.alignment.lower(), PP_ALIGN.LEFT)
 
@@ -173,7 +176,7 @@ class TextBox(Component):
                     rgb = self.theme.get_color("foreground.DEFAULT")
                     if rgb:
                         font.color.rgb = rgb
-                except:
+                except (AttributeError, KeyError, TypeError, ValueError):
                     pass
 
         # Apply auto-fit if requested
@@ -189,19 +192,19 @@ class TextBox(Component):
     def _parse_color(self, color_str: str) -> Optional[RGBColor]:
         """Parse color string (semantic or hex) to RGBColor."""
         # Handle hex colors
-        if color_str.startswith('#'):
-            hex_color = color_str.lstrip('#')
+        if color_str.startswith("#"):
+            hex_color = color_str.lstrip("#")
             r = int(hex_color[0:2], 16)
             g = int(hex_color[2:4], 16)
             b = int(hex_color[4:6], 16)
             return RGBColor(r, g, b)
 
         # Handle semantic colors
-        if self.theme and '.' in color_str:
+        if self.theme and "." in color_str:
             try:
                 color_rgb = self.theme.get_color(color_str)
                 return color_rgb
-            except:
+            except (AttributeError, KeyError, TypeError, ValueError):
                 pass
 
         return None
@@ -229,7 +232,7 @@ class TextBox(Component):
 bullets = BulletList(items=["First item", "Second item", "Third item"])
 bullets.render(slide, left=1, top=2, width=8, height=4)
             """,
-            items=["First", "Second", "Third"]
+            items=["First", "Second", "Third"],
         ),
         example(
             "Styled bullet list",
@@ -243,10 +246,10 @@ bullets = BulletList(
 bullets.render(slide, left=1, top=2, width=8, height=3)
             """,
             items=["Revenue", "Costs", "Quality"],
-            bullet_char="→"
+            bullet_char="→",
         ),
     ],
-    tags=["bullet", "list", "items", "enumeration"]
+    tags=["bullet", "list", "items", "enumeration"],
 )
 class BulletList(Component):
     """
@@ -274,13 +277,15 @@ class BulletList(Component):
         bullets.render(slide, left=1, top=2, width=8, height=3)
     """
 
-    def __init__(self,
-                 items: List[str],
-                 font_size: int = 16,
-                 color: Optional[str] = None,
-                 bullet_char: str = "•",
-                 spacing: int = 6,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        items: List[str],
+        font_size: int = 16,
+        color: Optional[str] = None,
+        bullet_char: str = "•",
+        spacing: int = 6,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize bullet list component.
 
@@ -299,8 +304,7 @@ class BulletList(Component):
         self.bullet_char = bullet_char
         self.spacing = spacing
 
-    def render(self, slide, left: float, top: float,
-               width: float, height: float) -> Any:
+    def render(self, slide, left: float, top: float, width: float, height: float) -> Any:
         """
         Render bullet list to slide.
 
@@ -343,7 +347,7 @@ class BulletList(Component):
                     rgb = self.theme.get_color("foreground.DEFAULT")
                     if rgb:
                         p.font.color.rgb = rgb
-                except:
+                except (AttributeError, KeyError, TypeError, ValueError):
                     pass
 
         return text_box
@@ -351,19 +355,19 @@ class BulletList(Component):
     def _parse_color(self, color_str: str) -> Optional[RGBColor]:
         """Parse color string (semantic or hex) to RGBColor."""
         # Handle hex colors
-        if color_str.startswith('#'):
-            hex_color = color_str.lstrip('#')
+        if color_str.startswith("#"):
+            hex_color = color_str.lstrip("#")
             r = int(hex_color[0:2], 16)
             g = int(hex_color[2:4], 16)
             b = int(hex_color[4:6], 16)
             return RGBColor(r, g, b)
 
         # Handle semantic colors
-        if self.theme and '.' in color_str:
+        if self.theme and "." in color_str:
             try:
                 color_rgb = self.theme.get_color(color_str)
                 return color_rgb
-            except:
+            except (AttributeError, KeyError, TypeError, ValueError):
                 pass
 
         return None

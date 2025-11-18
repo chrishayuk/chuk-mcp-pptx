@@ -5,11 +5,10 @@ Tests variants, sizes, composition, and rendering.
 
 import pytest
 from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.enum.shapes import MSO_SHAPE
+from pptx.util import Inches
 
 from chuk_mcp_pptx.components.core.button import Button, IconButton, ButtonGroup
-from chuk_mcp_pptx.themes import Theme, ThemeManager
+from chuk_mcp_pptx.themes import ThemeManager
 from chuk_mcp_pptx.registry import get_component_schema, list_components
 
 
@@ -41,6 +40,7 @@ class TestButtonCreation:
     def test_button_with_custom_theme(self):
         """Test button with custom theme."""
         from chuk_mcp_pptx.themes import ThemeManager
+
         theme_manager = ThemeManager()
         custom_theme = theme_manager.get_theme("default-light")
         button = Button(text="Test", theme=custom_theme)
@@ -173,6 +173,7 @@ class TestButtonRendering:
         shape = button.render(slide, left=1.0, top=1.0)
         paragraph = shape.text_frame.paragraphs[0]
         from pptx.enum.text import PP_ALIGN
+
         assert paragraph.alignment == PP_ALIGN.CENTER
 
     def test_button_is_rounded_rectangle(self, slide):
@@ -180,6 +181,7 @@ class TestButtonRendering:
         button = Button(text="Test")
         shape = button.render(slide, left=1.0, top=1.0)
         from pptx.enum.shapes import MSO_SHAPE_TYPE
+
         assert shape.shape_type == MSO_SHAPE_TYPE.AUTO_SHAPE
 
     def test_button_with_different_themes(self, slide):
@@ -222,9 +224,22 @@ class TestIconButton:
 
     def test_icon_button_mappings(self):
         """Test all icon mappings work."""
-        icons = ["play", "pause", "stop", "next", "previous",
-                "plus", "minus", "close", "check", "star",
-                "heart", "settings", "menu", "search"]
+        icons = [
+            "play",
+            "pause",
+            "stop",
+            "next",
+            "previous",
+            "plus",
+            "minus",
+            "close",
+            "check",
+            "star",
+            "heart",
+            "settings",
+            "menu",
+            "search",
+        ]
 
         for icon_name in icons:
             button = IconButton(icon=icon_name)
@@ -269,10 +284,7 @@ class TestButtonGroup:
 
     def test_button_group_creation(self):
         """Test creating a button group."""
-        buttons = [
-            {"text": "Save", "variant": "default"},
-            {"text": "Cancel", "variant": "ghost"}
-        ]
+        buttons = [{"text": "Save", "variant": "default"}, {"text": "Cancel", "variant": "ghost"}]
         group = ButtonGroup(buttons=buttons)
         assert len(group.buttons) == 2
         assert group.orientation == "horizontal"
@@ -282,7 +294,7 @@ class TestButtonGroup:
         buttons = [
             {"text": "One", "variant": "default"},
             {"text": "Two", "variant": "secondary"},
-            {"text": "Three", "variant": "outline"}
+            {"text": "Three", "variant": "outline"},
         ]
         group = ButtonGroup(buttons=buttons, orientation="horizontal")
         shapes = group.render(slide, left=1.0, top=1.0)
@@ -298,7 +310,7 @@ class TestButtonGroup:
         """Test vertical button group layout."""
         buttons = [
             {"text": "First", "variant": "default"},
-            {"text": "Second", "variant": "secondary"}
+            {"text": "Second", "variant": "secondary"},
         ]
         group = ButtonGroup(buttons=buttons, orientation="vertical")
         shapes = group.render(slide, left=1.0, top=1.0)
@@ -311,10 +323,7 @@ class TestButtonGroup:
 
     def test_button_group_spacing(self, slide):
         """Test button group spacing between buttons."""
-        buttons = [
-            {"text": "A", "variant": "default"},
-            {"text": "B", "variant": "default"}
-        ]
+        buttons = [{"text": "A", "variant": "default"}, {"text": "B", "variant": "default"}]
         spacing = 0.2
         group = ButtonGroup(buttons=buttons, spacing=spacing)
         shapes = group.render(slide, left=1.0, top=1.0)
@@ -336,6 +345,7 @@ class TestButtonThemeIntegration:
     def test_button_uses_theme_colors(self):
         """Test button uses theme colors correctly."""
         from chuk_mcp_pptx.themes import ThemeManager
+
         theme_manager = ThemeManager()
         theme = theme_manager.get_theme("default-light")
         button = Button(text="Test", variant="default", theme=theme)

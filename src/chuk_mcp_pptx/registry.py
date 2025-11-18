@@ -2,9 +2,10 @@
 Component registry with schema support for LLM consumption.
 Provides discovery, documentation, and validation for PowerPoint components.
 """
+
 from __future__ import annotations
 
-from typing import Any, Type, Callable
+from typing import Any, Type, List, Dict
 from enum import Enum
 import json
 import inspect
@@ -14,6 +15,7 @@ from collections import defaultdict
 
 class ComponentCategory(str, Enum):
     """Component categories for organization."""
+
     LAYOUT = "layout"
     UI = "ui"
     CHART = "chart"
@@ -25,6 +27,7 @@ class ComponentCategory(str, Enum):
 
 class PropDefinition(BaseModel):
     """Definition of a component property."""
+
     name: str = Field(..., description="Property name")
     type: str = Field(..., description="Property type")
     description: str = Field(..., description="Property description")
@@ -39,6 +42,7 @@ class PropDefinition(BaseModel):
 
 class ComponentMetadata(BaseModel):
     """Metadata for a registered component."""
+
     name: str = Field(..., description="Component name")
     component_class: Type = Field(..., description="Component class reference")
     category: ComponentCategory = Field(..., description="Component category")
@@ -77,7 +81,7 @@ class ComponentRegistry:
         variants: dict[str, list[str]] | None = None,
         composition: dict[str, Any] | None = None,
         tags: list[str] | None = None,
-        version: str = "1.0.0"
+        version: str = "1.0.0",
     ) -> ComponentMetadata:
         """
         Register a component with the registry.
@@ -107,13 +111,13 @@ class ComponentRegistry:
             variants=variants,
             composition=composition,
             tags=tags or [],
-            version=version
+            version=version,
         )
 
         self._components[name] = metadata
         self._categories[category].append(name)
 
-        for tag in (tags or []):
+        for tag in tags or []:
             self._tags[tag].append(name)
 
         return metadata
@@ -181,8 +185,7 @@ class ComponentRegistry:
 
         for prop in metadata.props:
             field_info = Field(
-                default=prop.default if not prop.required else ...,
-                description=prop.description
+                default=prop.default if not prop.required else ..., description=prop.description
             )
 
             # Map type strings to Python types
@@ -200,6 +203,7 @@ class ComponentRegistry:
             # Handle options (enum)
             if prop.options:
                 from enum import Enum
+
                 prop_type = Enum(f"{prop.name}Enum", {opt: opt for opt in prop.options})
 
             props_schema[prop.name] = (prop_type, field_info)
@@ -208,10 +212,7 @@ class ComponentRegistry:
                 required_fields.append(prop.name)
 
         # Create dynamic Pydantic model
-        DynamicModel = create_model(
-            f"{name}Props",
-            **props_schema
-        )
+        DynamicModel = create_model(f"{name}Props", **props_schema)
 
         return {
             "name": name,
@@ -227,10 +228,7 @@ class ComponentRegistry:
 
     def get_all_schemas(self) -> dict[str, Any]:
         """Get schemas for all components."""
-        return {
-            name: self.get_schema(name)
-            for name in self._components.keys()
-        }
+        return {name: self.get_schema(name) for name in self._components.keys()}
 
     def export_for_llm(self) -> str:
         """
@@ -247,7 +245,7 @@ class ComponentRegistry:
                 "by_category": {cat.value: self.list_by_category(cat) for cat in ComponentCategory},
                 "by_tag": dict(self._tags),
                 "all": self.list_components(),
-            }
+            },
         }
 
         return json.dumps(llm_docs, indent=2)
@@ -289,12 +287,9 @@ registry = ComponentRegistry()
 
 # Registration helper decorators
 
+
 def component(
-    name: str,
-    category: ComponentCategory,
-    description: str,
-    props: list[PropDefinition],
-    **kwargs
+    name: str, category: ComponentCategory, description: str, props: list[PropDefinition], **kwargs
 ):
     """
     Decorator to register a component.
@@ -315,6 +310,7 @@ def component(
         class Card(Component):
             ...
     """
+
     def decorator(cls):
         registry.register(
             name=name,
@@ -322,13 +318,15 @@ def component(
             category=category,
             description=description,
             props=props,
-            **kwargs
+            **kwargs,
         )
         return cls
+
     return decorator
 
 
 # Convenience functions
+
 
 def prop(name: str, type: str, description: str, **kwargs) -> PropDefinition:
     """Shorthand for creating PropDefinition."""
@@ -337,14 +335,11 @@ def prop(name: str, type: str, description: str, **kwargs) -> PropDefinition:
 
 def example(description: str, code: str, **props) -> dict[str, Any]:
     """Create an example entry."""
-    return {
-        "description": description,
-        "code": code,
-        "props": props
-    }
+    return {"description": description, "code": code, "props": props}
 
 
 # Public API functions for accessing the registry
+
 
 def get_component_schema(name: str) -> dict[str, Any] | None:
     """

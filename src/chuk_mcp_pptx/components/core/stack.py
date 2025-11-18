@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any, List, Literal
 
 from ..base import Component
 from ...tokens.spacing import GAPS
-from ...layout.helpers import SLIDE_WIDTH, SLIDE_HEIGHT, CONTENT_WIDTH, CONTENT_HEIGHT
+from ...layout.helpers import SLIDE_WIDTH, SLIDE_HEIGHT, CONTENT_WIDTH
 from ...registry import component, ComponentCategory, prop, example
 
 
@@ -16,15 +16,27 @@ from ...registry import component, ComponentCategory, prop, example
     category=ComponentCategory.LAYOUT,
     description="Stack elements vertically or horizontally with consistent spacing",
     props=[
-        prop("direction", "string", "Stack direction",
-             options=["vertical", "horizontal"],
-             default="vertical"),
-        prop("gap", "string", "Gap between items",
-             options=["none", "xs", "sm", "md", "lg", "xl"],
-             default="md"),
-        prop("align", "string", "Alignment",
-             options=["start", "center", "end", "stretch"],
-             default="start"),
+        prop(
+            "direction",
+            "string",
+            "Stack direction",
+            options=["vertical", "horizontal"],
+            default="vertical",
+        ),
+        prop(
+            "gap",
+            "string",
+            "Gap between items",
+            options=["none", "xs", "sm", "md", "lg", "xl"],
+            default="md",
+        ),
+        prop(
+            "align",
+            "string",
+            "Alignment",
+            options=["start", "center", "end", "stretch"],
+            default="start",
+        ),
     ],
     examples=[
         example(
@@ -34,10 +46,10 @@ stack = Stack(direction="vertical", gap="md")
 positions = stack.distribute(3, item_height=1.0, top=2.0)
             """,
             direction="vertical",
-            gap="md"
+            gap="md",
         )
     ],
-    tags=["layout", "stack", "flexbox"]
+    tags=["layout", "stack", "flexbox"],
 )
 class Stack(Component):
     """
@@ -56,24 +68,28 @@ class Stack(Component):
             component.render(slide, **pos)
     """
 
-    def __init__(self,
-                 direction: Literal["vertical", "horizontal"] = "vertical",
-                 gap: Literal["none", "xs", "sm", "md", "lg", "xl"] = "md",
-                 align: Literal["start", "center", "end", "stretch"] = "start",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        direction: Literal["vertical", "horizontal"] = "vertical",
+        gap: Literal["none", "xs", "sm", "md", "lg", "xl"] = "md",
+        align: Literal["start", "center", "end", "stretch"] = "start",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(theme)
         self.direction = direction
         self.gap = GAPS.get(gap, GAPS["md"])
         self.align = align
 
-    def distribute(self,
-                   num_items: int,
-                   item_width: Optional[float] = None,
-                   item_height: Optional[float] = None,
-                   left: float = 0.5,
-                   top: float = 1.5,
-                   container_width: Optional[float] = None,
-                   container_height: Optional[float] = None) -> List[Dict[str, float]]:
+    def distribute(
+        self,
+        num_items: int,
+        item_width: Optional[float] = None,
+        item_height: Optional[float] = None,
+        left: float = 0.5,
+        top: float = 1.5,
+        container_width: Optional[float] = None,
+        container_height: Optional[float] = None,
+    ) -> List[Dict[str, float]]:
         """
         Distribute items in stack.
 
@@ -98,12 +114,9 @@ class Stack(Component):
                 else:  # start or stretch
                     item_left = left
 
-                positions.append({
-                    'left': item_left,
-                    'top': current_top,
-                    'width': width,
-                    'height': height
-                })
+                positions.append(
+                    {"left": item_left, "top": current_top, "width": width, "height": height}
+                )
 
                 current_top += height + self.gap
 
@@ -123,24 +136,23 @@ class Stack(Component):
                 else:  # start or stretch
                     item_top = top
 
-                positions.append({
-                    'left': current_left,
-                    'top': item_top,
-                    'width': width,
-                    'height': height
-                })
+                positions.append(
+                    {"left": current_left, "top": item_top, "width": width, "height": height}
+                )
 
                 current_left += width + self.gap
 
         return positions
 
-    def render_children(self,
-                       slide,
-                       children: List[Any],
-                       left: float = 0.5,
-                       top: float = 1.5,
-                       item_width: Optional[float] = None,
-                       item_height: Optional[float] = None) -> List[Any]:
+    def render_children(
+        self,
+        slide,
+        children: List[Any],
+        left: float = 0.5,
+        top: float = 1.5,
+        item_width: Optional[float] = None,
+        item_height: Optional[float] = None,
+    ) -> List[Any]:
         """
         Render a list of components in a stack layout.
 
@@ -170,13 +182,13 @@ class Stack(Component):
             item_width=item_width,
             item_height=item_height,
             left=left,
-            top=top
+            top=top,
         )
 
         shapes = []
         for child, pos in zip(children, positions):
             # Render each child at its calculated position
-            if hasattr(child, 'render'):
+            if hasattr(child, "render"):
                 shape = child.render(slide, **pos)
                 shapes.append(shape)
 

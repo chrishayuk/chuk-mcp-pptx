@@ -2,9 +2,6 @@
 Tests for Card components.
 """
 
-import pytest
-from unittest.mock import MagicMock
-
 from chuk_mcp_pptx.components.core.card import Card, MetricCard
 
 
@@ -66,81 +63,58 @@ class TestCard:
         dark_card = Card(variant="default", theme=dark_theme)
 
         # Light theme card
-        light_card = Card(variant="default", theme=light_theme
-        )
-        
+        light_card = Card(variant="default", theme=light_theme)
+
         # Themes should be different
         assert dark_card.tokens != light_card.tokens
 
 
 class TestMetricCard:
     """Test MetricCard component."""
-    
+
     def test_init(self, dark_theme):
         """Test initialization."""
         card = MetricCard(
-            label="Revenue",
-            value="$12.5M",
-            change="+15%",
-            trend="up",
-            theme=dark_theme
+            label="Revenue", value="$12.5M", change="+15%", trend="up", theme=dark_theme
         )
-        
+
         assert card.label == "Revenue"
         assert card.value == "$12.5M"
         assert card.change == "+15%"
         assert card.trend == "up"
-    
+
     def test_trend_indicators(self, dark_theme):
         """Test different trend indicators."""
         trends = ["up", "down", "neutral"]
-        
+
         for trend in trends:
-            card = MetricCard(
-                label="Test",
-                value="100",
-                change="5%",
-                trend=trend,
-                theme=dark_theme
-            )
+            card = MetricCard(label="Test", value="100", change="5%", trend=trend, theme=dark_theme)
             assert card.trend == trend
-    
+
     def test_render(self, mock_slide, dark_theme):
         """Test rendering metric card."""
         card = MetricCard(
-            label="Sales",
-            value="1,234",
-            change="+8.5%",
-            trend="up",
-            theme=dark_theme
+            label="Sales", value="1,234", change="+8.5%", trend="up", theme=dark_theme
         )
-        
+
         card.render(mock_slide, left=1, top=1, width=2.5, height=1.5)
-        
+
         # Should add shapes for metric card
         assert mock_slide.shapes.add_shape.called or mock_slide.shapes.add_textbox.called
-    
+
     def test_no_change(self, dark_theme):
         """Test metric card without change value."""
         card = MetricCard(
-            label="Total Users",
-            value="10,000",
-            change=None,
-            trend=None,
-            theme=dark_theme
+            label="Total Users", value="10,000", change=None, trend=None, theme=dark_theme
         )
-        
+
         assert card.change is None
         assert card.trend is None
-    
+
     def test_format_options(self, dark_theme):
         """Test formatting options."""
         card = MetricCard(
-            label="Percentage",
-            value="85.5%",
-            change="+2.3pp",
-            trend="up",
-            theme=dark_theme
+            label="Percentage", value="85.5%", change="+2.3pp", trend="up", theme=dark_theme
         )
 
         assert card.value == "85.5%"
@@ -166,7 +140,9 @@ class TestCardAutoSizing:
     def test_calculate_min_width_long_title(self, dark_theme):
         """Test minimum width caps at maximum."""
         card = Card(variant="default", theme=dark_theme)
-        card.add_child(Card.Title("This is a very long title that should be capped at maximum width"))
+        card.add_child(
+            Card.Title("This is a very long title that should be capped at maximum width")
+        )
         min_width = card._calculate_min_width()
         assert min_width == 6.0  # Capped at maximum
 
@@ -241,32 +217,20 @@ class TestMetricCardEdgeCases:
     def test_metric_card_neutral_trend_symbol(self, dark_theme):
         """Test neutral trend shows correct symbol."""
         card = MetricCard(
-            label="Stable",
-            value="100",
-            change="0%",
-            trend="neutral",
-            theme=dark_theme
+            label="Stable", value="100", change="0%", trend="neutral", theme=dark_theme
         )
         assert card.trend == "neutral"
 
     def test_metric_card_missing_change_and_trend(self, dark_theme):
         """Test metric card works without change/trend."""
-        card = MetricCard(
-            label="Count",
-            value="5,000",
-            theme=dark_theme
-        )
+        card = MetricCard(label="Count", value="5,000", theme=dark_theme)
         assert card.change is None
         assert card.trend is None
 
     def test_metric_card_with_zero_change(self, dark_theme):
         """Test metric card with zero change."""
         card = MetricCard(
-            label="No Change",
-            value="100",
-            change="0%",
-            trend="neutral",
-            theme=dark_theme
+            label="No Change", value="100", change="0%", trend="neutral", theme=dark_theme
         )
         assert card.change == "0%"
 
@@ -277,7 +241,7 @@ class TestMetricCardEdgeCases:
             value="$1,234,567,890",
             change="+123.45%",
             trend="up",
-            theme=dark_theme
+            theme=dark_theme,
         )
         assert "$" in card.value
         assert "%" in card.change

@@ -31,9 +31,13 @@ CONNECTOR_TYPES = {
         prop("start_y", "number", "Starting Y position in inches", required=True),
         prop("end_x", "number", "Ending X position in inches", required=True),
         prop("end_y", "number", "Ending Y position in inches", required=True),
-        prop("connector_type", "string", "Connector style",
-             options=["straight", "elbow", "curved"],
-             default="straight"),
+        prop(
+            "connector_type",
+            "string",
+            "Connector style",
+            options=["straight", "elbow", "curved"],
+            default="straight",
+        ),
         prop("line_color", "string", "Line color", example="primary.DEFAULT"),
         prop("line_width", "number", "Line width in points", default=2.0),
         prop("arrow_start", "boolean", "Show arrow at start", default=False),
@@ -52,7 +56,7 @@ connector = Connector(
 )
 connector.render(slide)
             """,
-            connector_type="straight"
+            connector_type="straight",
         ),
         example(
             "Curved bidirectional",
@@ -68,10 +72,10 @@ connector = Connector(
 )
 connector.render(slide)
             """,
-            connector_type="curved"
+            connector_type="curved",
         ),
     ],
-    tags=["connector", "arrow", "line", "diagram", "flow"]
+    tags=["connector", "arrow", "line", "diagram", "flow"],
 )
 class Connector(Component):
     """
@@ -103,17 +107,19 @@ class Connector(Component):
         connector.render(slide)
     """
 
-    def __init__(self,
-                 start_x: float,
-                 start_y: float,
-                 end_x: float,
-                 end_y: float,
-                 connector_type: str = "straight",
-                 line_color: Optional[str] = None,
-                 line_width: float = 2.0,
-                 arrow_start: bool = False,
-                 arrow_end: bool = True,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        start_x: float,
+        start_y: float,
+        end_x: float,
+        end_y: float,
+        connector_type: str = "straight",
+        line_color: Optional[str] = None,
+        line_width: float = 2.0,
+        arrow_start: bool = False,
+        arrow_end: bool = True,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize connector component.
 
@@ -151,10 +157,7 @@ class Connector(Component):
             Connector shape object
         """
         # Get connector type
-        mso_connector = CONNECTOR_TYPES.get(
-            self.connector_type.lower(),
-            MSO_CONNECTOR.STRAIGHT
-        )
+        mso_connector = CONNECTOR_TYPES.get(self.connector_type.lower(), MSO_CONNECTOR.STRAIGHT)
 
         # Create connector
         connector = slide.shapes.add_connector(
@@ -162,7 +165,7 @@ class Connector(Component):
             Inches(self.start_x),
             Inches(self.start_y),
             Inches(self.end_x),
-            Inches(self.end_y)
+            Inches(self.end_y),
         )
 
         # Set line color
@@ -184,9 +187,7 @@ class Connector(Component):
         if color_str.startswith("#"):
             color_str = color_str[1:]
             return RGBColor(
-                int(color_str[0:2], 16),
-                int(color_str[2:4], 16),
-                int(color_str[4:6], 16)
+                int(color_str[0:2], 16), int(color_str[2:4], 16), int(color_str[4:6], 16)
             )
         else:
             return self.get_color(color_str)
@@ -194,9 +195,8 @@ class Connector(Component):
     def _add_arrows(self, connector):
         """Add arrow heads to connector."""
         # Get or create line element
-        line_elem = connector._element.spPr.ln if hasattr(connector._element.spPr, 'ln') else None
+        line_elem = connector._element.spPr.ln if hasattr(connector._element.spPr, "ln") else None
         if line_elem is None:
-            from pptx.oxml.ns import qn
             line_elem = connector._element.spPr._add_ln()
 
         # Add arrow at end

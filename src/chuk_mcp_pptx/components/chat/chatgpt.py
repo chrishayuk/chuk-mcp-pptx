@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import CHAT_COLORS
-from ...constants import MessageVariant, Platform, ColorKey
+from ...constants import Platform, ColorKey
 
 
 class ChatGPTMessage(Component):
@@ -45,10 +45,9 @@ class ChatGPTMessage(Component):
         msg.render(slide, left=1, top=3, width=8)
     """
 
-    def __init__(self,
-                 text: str,
-                 variant: str = "assistant",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, text: str, variant: str = "assistant", theme: Optional[Dict[str, Any]] = None
+    ):
         """
         Initialize ChatGPT message.
 
@@ -97,7 +96,7 @@ class ChatGPTMessage(Component):
             Inches(left),
             Inches(top),
             Inches(width),
-            Inches(content_height)
+            Inches(content_height),
         )
 
         container.fill.solid()
@@ -116,12 +115,14 @@ class ChatGPTMessage(Component):
                 Inches(avatar_left),
                 Inches(avatar_top),
                 Inches(avatar_size),
-                Inches(avatar_size)
+                Inches(avatar_size),
             )
 
             # ChatGPT green
             avatar_shape.fill.solid()
-            avatar_shape.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.CHATGPT][ColorKey.AVATAR]))
+            avatar_shape.fill.fore_color.rgb = RGBColor(
+                *self.hex_to_rgb(CHAT_COLORS[Platform.CHATGPT][ColorKey.AVATAR])
+            )
             avatar_shape.line.fill.background()
 
             # Add "AI" text in avatar
@@ -150,10 +151,7 @@ class ChatGPTMessage(Component):
 
         # Message text
         text_box = slide.shapes.add_textbox(
-            Inches(text_left),
-            Inches(top + 0.2),
-            Inches(text_width),
-            Inches(content_height - 0.4)
+            Inches(text_left), Inches(top + 0.2), Inches(text_width), Inches(content_height - 0.4)
         )
 
         text_frame = text_box.text_frame
@@ -193,10 +191,12 @@ class ChatGPTConversation(Component):
         conversation.render(slide, left=0.5, top=1.5, width=9)
     """
 
-    def __init__(self,
-                 messages: List[Dict[str, Any]],
-                 spacing: float = 0.0,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        messages: List[Dict[str, Any]],
+        spacing: float = 0.0,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize ChatGPT conversation.
 
@@ -218,7 +218,7 @@ class ChatGPTConversation(Component):
             message = ChatGPTMessage(
                 text=msg_data.get("text", ""),
                 variant=msg_data.get("variant", "assistant"),
-                theme=self.theme
+                theme=self.theme,
             )
 
             msg_shapes = message.render(slide, left, current_top, width)

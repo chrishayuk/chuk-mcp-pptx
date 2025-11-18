@@ -11,6 +11,7 @@ This script creates a presentation with:
 Run from project root:
     uv run python examples/basic_presentation.py
 """
+
 import asyncio
 import sys
 from pathlib import Path
@@ -48,7 +49,7 @@ async def main():
     result = await manager.get("my_presentation")
     if result:
         prs, meta = result
-        print(f"   ✓ Retrieved successfully")
+        print("   ✓ Retrieved successfully")
         print(f"   ✓ Slide count: {len(prs.slides)}")
         print(f"   ✓ Metadata: {meta.name}\n")
     else:
@@ -57,7 +58,6 @@ async def main():
 
     # Add a title slide
     print("5. Adding title slide...")
-    from pptx.util import Inches
     from chuk_mcp_pptx.constants import SlideLayoutIndex
 
     slide_layout = prs.slide_layouts[SlideLayoutIndex.TITLE]
@@ -68,7 +68,7 @@ async def main():
 
     # Update in VFS
     await manager.update("my_presentation")
-    print(f"   ✓ Title slide added\n")
+    print("   ✓ Title slide added\n")
 
     # Add a content slide
     print("6. Adding content slide with bullets...")
@@ -82,7 +82,7 @@ async def main():
             "Easy to use API",
             "Virtual filesystem integration",
             "Component-based design system",
-            "Pydantic models for type safety"
+            "Pydantic models for type safety",
         ]
         for idx, bullet in enumerate(bullets):
             if idx == 0:
@@ -130,5 +130,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

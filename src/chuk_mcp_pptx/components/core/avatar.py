@@ -79,13 +79,15 @@ class Avatar(Component):
         "xl": 28,
     }
 
-    def __init__(self,
-                 text: Optional[str] = None,
-                 icon: Optional[str] = None,
-                 variant: str = "default",
-                 size: str = "md",
-                 color_variant: str = "default",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: Optional[str] = None,
+        icon: Optional[str] = None,
+        variant: str = "default",
+        size: str = "md",
+        color_variant: str = "default",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize avatar.
 
@@ -156,8 +158,7 @@ class Avatar(Component):
             else:
                 return self.get_color("foreground.DEFAULT")
 
-    def render(self, slide, left: float, top: float,
-               diameter: Optional[float] = None) -> Any:
+    def render(self, slide, left: float, top: float, diameter: Optional[float] = None) -> Any:
         """
         Render avatar to slide.
 
@@ -179,7 +180,7 @@ class Avatar(Component):
             Inches(left),
             Inches(top),
             Inches(avatar_diameter),
-            Inches(avatar_diameter)
+            Inches(avatar_diameter),
         )
 
         # Apply background
@@ -216,6 +217,7 @@ class Avatar(Component):
         # Render icon or text
         if self.icon:
             from .icon import ICON_SYMBOLS
+
             symbol = ICON_SYMBOLS.get(self.icon, self.icon)
             p.text = symbol
             p.font.size = Pt(self.FONT_SIZE_MAP.get(self.size, 14))
@@ -253,16 +255,18 @@ class AvatarWithLabel(Component):
         avatar.render(slide, left=1, top=2)
     """
 
-    def __init__(self,
-                 text: Optional[str] = None,
-                 icon: Optional[str] = None,
-                 label: Optional[str] = None,
-                 sublabel: Optional[str] = None,
-                 variant: str = "default",
-                 size: str = "md",
-                 color_variant: str = "default",
-                 orientation: str = "horizontal",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: Optional[str] = None,
+        icon: Optional[str] = None,
+        label: Optional[str] = None,
+        sublabel: Optional[str] = None,
+        variant: str = "default",
+        size: str = "md",
+        color_variant: str = "default",
+        orientation: str = "horizontal",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize avatar with label.
 
@@ -287,8 +291,7 @@ class AvatarWithLabel(Component):
         self.color_variant = color_variant
         self.orientation = orientation
 
-    def render(self, slide, left: float, top: float,
-               width: float = 3.0) -> list:
+    def render(self, slide, left: float, top: float, width: float = 3.0) -> list:
         """
         Render avatar with label to slide.
 
@@ -310,7 +313,7 @@ class AvatarWithLabel(Component):
             variant=self.variant,
             size=self.size,
             color_variant=self.color_variant,
-            theme=self.theme
+            theme=self.theme,
         )
         avatar_shape = avatar_component.render(slide, left, top)
         shapes.append(avatar_shape)
@@ -336,16 +339,15 @@ class AvatarWithLabel(Component):
             label_height = 0.5 if self.sublabel else 0.3
 
             label_box = slide.shapes.add_textbox(
-                Inches(label_left),
-                Inches(label_top),
-                Inches(label_width),
-                Inches(label_height)
+                Inches(label_left), Inches(label_top), Inches(label_width), Inches(label_height)
             )
 
             text_frame = label_box.text_frame
             text_frame.clear()
             text_frame.word_wrap = True
-            text_frame.vertical_anchor = MSO_ANCHOR.TOP if self.orientation == "vertical" else MSO_ANCHOR.MIDDLE
+            text_frame.vertical_anchor = (
+                MSO_ANCHOR.TOP if self.orientation == "vertical" else MSO_ANCHOR.MIDDLE
+            )
             text_frame.margin_left = 0
             text_frame.margin_top = 0
 
@@ -403,13 +405,15 @@ class AvatarGroup(Component):
         group.render(slide, left=1, top=2)
     """
 
-    def __init__(self,
-                 members: list,
-                 size: str = "md",
-                 variant: str = "default",
-                 max_display: Optional[int] = None,
-                 overlap: bool = False,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        members: list,
+        size: str = "md",
+        variant: str = "default",
+        max_display: Optional[int] = None,
+        overlap: bool = False,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize avatar group.
 
@@ -469,7 +473,7 @@ class AvatarGroup(Component):
                 variant=self.variant,
                 size=self.size,
                 color_variant=member.get("color_variant", "default"),
-                theme=self.theme
+                theme=self.theme,
             )
             avatar_shape = avatar.render(slide, avatar_left, top)
             shapes.append(avatar_shape)
@@ -482,7 +486,7 @@ class AvatarGroup(Component):
                 variant=self.variant,
                 size=self.size,
                 color_variant="default",
-                theme=self.theme
+                theme=self.theme,
             )
             remaining_shape = remaining_avatar.render(slide, remaining_left, top)
             shapes.append(remaining_shape)

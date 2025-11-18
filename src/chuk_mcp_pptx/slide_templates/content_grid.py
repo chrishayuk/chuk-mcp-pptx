@@ -15,12 +15,24 @@ from .registry import template, TemplateCategory, TemplateProp
     category=TemplateCategory.CONTENT,
     description="Slide with grid of content items (cards, tiles, buttons) using Grid system",
     props=[
-        TemplateProp("title", "string", "Slide title"),
-        TemplateProp("items", "array", "List of items to display"),
-        TemplateProp("item_type", "string", "Type of items", required=False,
-                     options=["card", "tile", "button"], default="card"),
-        TemplateProp("columns", "number", "Number of columns", required=False, default=2),
-        TemplateProp("theme", "object", "Theme dictionary", required=False)
+        TemplateProp(name="title", type="string", description="Slide title"),
+        TemplateProp(name="items", type="array", description="List of items to display"),
+        TemplateProp(
+            name="item_type",
+            type="string",
+            description="Type of items",
+            required=False,
+            options=["card", "tile", "button"],
+            default="card",
+        ),
+        TemplateProp(
+            name="columns",
+            type="number",
+            description="Number of columns",
+            required=False,
+            default=2,
+        ),
+        TemplateProp(name="theme", type="object", description="Theme dictionary", required=False),
     ],
     examples=[
         {
@@ -29,13 +41,13 @@ from .registry import template, TemplateCategory, TemplateProp
                 {"title": "Fast", "description": "Lightning quick performance"},
                 {"title": "Secure", "description": "Enterprise-grade security"},
                 {"title": "Scalable", "description": "Grows with your needs"},
-                {"title": "Reliable", "description": "99.9% uptime guarantee"}
+                {"title": "Reliable", "description": "99.9% uptime guarantee"},
             ],
             "item_type": "card",
-            "columns": 2
+            "columns": 2,
         }
     ],
-    tags=["grid", "cards", "features", "content", "layout"]
+    tags=["grid", "cards", "features", "content", "layout"],
 )
 class ContentGridSlide(SlideTemplate):
     """
@@ -45,12 +57,14 @@ class ContentGridSlide(SlideTemplate):
     The ContentGrid component can be reused independently.
     """
 
-    def __init__(self,
-                 title: str,
-                 items: List[Dict[str, Any]],
-                 item_type: str = "card",
-                 columns: int = 2,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        title: str,
+        items: List[Dict[str, Any]],
+        item_type: str = "card",
+        columns: int = 2,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize content grid slide template.
 
@@ -75,27 +89,13 @@ class ContentGridSlide(SlideTemplate):
         slide = prs.slides.add_slide(prs.slide_layouts[6])
 
         # Add title
-        title_text = TextBox(
-            text=self.title,
-            font_size=28,
-            bold=True,
-            theme=self.theme
-        )
+        title_text = TextBox(text=self.title, font_size=28, bold=True, theme=self.theme)
         title_text.render(slide, left=0.5, top=0.5, width=9.0, height=0.8)
 
         # Use ContentGrid component to render the grid
         content_grid = ContentGrid(
-            items=self.items,
-            item_type=self.item_type,
-            columns=self.columns,
-            theme=self.theme
+            items=self.items, item_type=self.item_type, columns=self.columns, theme=self.theme
         )
-        content_grid.render(
-            slide,
-            left=0.5,
-            top=1.8,
-            width=9.0,
-            height=5.5
-        )
+        content_grid.render(slide, left=0.5, top=1.8, width=9.0, height=5.5)
 
         return len(prs.slides) - 1

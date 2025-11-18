@@ -11,9 +11,12 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
-from ...tokens.platform_colors import MACOS_CONTROLS, WINDOWS_CONTROLS, DEVICE_COLORS, get_container_ui_color
-from ...constants import ContainerPlatform, Theme, Platform, ColorKey
+from ...tokens.typography import FONT_SIZES
+from ...tokens.platform_colors import (
+    WINDOWS_CONTROLS,
+    get_container_ui_color,
+)
+from ...constants import Theme, Platform, ColorKey
 
 
 class WindowsWindow(Component):
@@ -39,11 +42,13 @@ class WindowsWindow(Component):
         content_area = windows_window.render(slide, left=1, top=1, width=7, height=5)
     """
 
-    def __init__(self,
-                 title: str = "Application",
-                 app_icon: Optional[str] = None,
-                 show_menubar: bool = False,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        title: str = "Application",
+        app_icon: Optional[str] = None,
+        show_menubar: bool = False,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize Windows window.
 
@@ -61,7 +66,7 @@ class WindowsWindow(Component):
     def _is_dark_mode(self) -> bool:
         """Check if theme is dark mode."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return sum(bg) < 384
         return False
@@ -81,7 +86,7 @@ class WindowsWindow(Component):
     def _get_content_bg_color(self) -> RGBColor:
         """Get content background color."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
 
@@ -89,8 +94,9 @@ class WindowsWindow(Component):
         hex_color = get_container_ui_color(Platform.WINDOWS, ColorKey.MENUBAR, theme_mode)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
-    def render(self, slide, left: float, top: float,
-               width: float = 7.0, height: float = 5.0) -> Dict[str, float]:
+    def render(
+        self, slide, left: float, top: float, width: float = 7.0, height: float = 5.0
+    ) -> Dict[str, float]:
         """
         Render Windows window to slide.
 
@@ -108,11 +114,7 @@ class WindowsWindow(Component):
 
         # Window frame (Windows 11 rounded corners)
         window_frame = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE,
-            Inches(left),
-            Inches(top),
-            Inches(width),
-            Inches(height)
+            MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)
         )
         window_frame.fill.solid()
         window_frame.fill.fore_color.rgb = self._get_content_bg_color()
@@ -135,7 +137,7 @@ class WindowsWindow(Component):
             Inches(left),
             Inches(top),
             Inches(width),
-            Inches(titlebar_height)
+            Inches(titlebar_height),
         )
         titlebar.fill.solid()
         titlebar.fill.fore_color.rgb = self._get_titlebar_color()
@@ -149,7 +151,7 @@ class WindowsWindow(Component):
             Inches(left + 0.15),
             Inches(top + 0.05),
             Inches(width - 2.0),
-            Inches(titlebar_height - 0.1)
+            Inches(titlebar_height - 0.1),
         )
         title_frame = title_box.text_frame
         title_frame.text = title_text
@@ -172,7 +174,7 @@ class WindowsWindow(Component):
             Inches(control_x),
             Inches(top),
             Inches(control_width),
-            Inches(control_height)
+            Inches(control_height),
         )
         min_btn.fill.solid()
         min_btn.fill.fore_color.rgb = self._get_titlebar_color()
@@ -180,10 +182,7 @@ class WindowsWindow(Component):
 
         # Minimize icon (horizontal line)
         min_icon = slide.shapes.add_textbox(
-            Inches(control_x),
-            Inches(top),
-            Inches(control_width),
-            Inches(control_height)
+            Inches(control_x), Inches(top), Inches(control_width), Inches(control_height)
         )
         min_icon.text_frame.text = "─"
         min_p = min_icon.text_frame.paragraphs[0]
@@ -199,7 +198,7 @@ class WindowsWindow(Component):
             Inches(control_x + control_width),
             Inches(top),
             Inches(control_width),
-            Inches(control_height)
+            Inches(control_height),
         )
         max_btn.fill.solid()
         max_btn.fill.fore_color.rgb = self._get_titlebar_color()
@@ -210,7 +209,7 @@ class WindowsWindow(Component):
             Inches(control_x + control_width),
             Inches(top),
             Inches(control_width),
-            Inches(control_height)
+            Inches(control_height),
         )
         max_icon.text_frame.text = "□"
         max_p = max_icon.text_frame.paragraphs[0]
@@ -226,10 +225,12 @@ class WindowsWindow(Component):
             Inches(control_x + control_width * 2),
             Inches(top),
             Inches(control_width),
-            Inches(control_height)
+            Inches(control_height),
         )
         close_btn.fill.solid()
-        close_btn.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(WINDOWS_CONTROLS["close"]))  # Windows red
+        close_btn.fill.fore_color.rgb = RGBColor(
+            *self.hex_to_rgb(WINDOWS_CONTROLS["close"])
+        )  # Windows red
         close_btn.line.fill.background()
 
         # Close icon (X)
@@ -237,7 +238,7 @@ class WindowsWindow(Component):
             Inches(control_x + control_width * 2),
             Inches(top),
             Inches(control_width),
-            Inches(control_height)
+            Inches(control_height),
         )
         close_icon.text_frame.text = "✕"
         close_p = close_icon.text_frame.paragraphs[0]
@@ -259,7 +260,7 @@ class WindowsWindow(Component):
                 Inches(left),
                 Inches(current_y),
                 Inches(width),
-                Inches(menubar_height)
+                Inches(menubar_height),
             )
             menubar.fill.solid()
 
@@ -273,10 +274,7 @@ class WindowsWindow(Component):
 
             # Menu items
             menu_text = slide.shapes.add_textbox(
-                Inches(left + 0.15),
-                Inches(current_y),
-                Inches(width - 0.3),
-                Inches(menubar_height)
+                Inches(left + 0.15), Inches(current_y), Inches(width - 0.3), Inches(menubar_height)
             )
             menu_frame = menu_text.text_frame
             menu_frame.text = "File   Edit   View   Help"
@@ -295,10 +293,10 @@ class WindowsWindow(Component):
         padding_v = 0.3  # Vertical padding
 
         return {
-            'left': left + padding_h,
-            'top': current_y + padding_v,
-            'width': width - (padding_h * 2),
-            'height': content_height - (padding_v * 2)
+            "left": left + padding_h,
+            "top": current_y + padding_v,
+            "width": width - (padding_h * 2),
+            "height": content_height - (padding_v * 2),
         }
 
 

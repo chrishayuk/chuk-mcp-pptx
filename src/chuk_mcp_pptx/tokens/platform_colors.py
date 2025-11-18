@@ -4,8 +4,6 @@ Platform-specific brand colors for chat, container, and application UI component
 These colors represent authentic brand identities for platforms like iOS, Android, WhatsApp, etc.
 """
 
-from typing import Dict, Any
-
 # Chat Platform Colors
 CHAT_COLORS = {
     "ios": {

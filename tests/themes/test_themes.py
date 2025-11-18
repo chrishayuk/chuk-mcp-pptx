@@ -8,8 +8,12 @@ from pptx import Presentation
 from pptx.util import Inches
 
 from chuk_mcp_pptx.themes.theme_manager import (
-    ThemeManager, Theme, CyberpunkTheme, GradientTheme,
-    MinimalTheme, CorporateTheme
+    ThemeManager,
+    Theme,
+    CyberpunkTheme,
+    GradientTheme,
+    MinimalTheme,
+    CorporateTheme,
 )
 from chuk_mcp_pptx.tokens.colors import PALETTE, GRADIENTS
 
@@ -105,7 +109,7 @@ class TestTheme:
             "name": "custom",
             "primary_hue": "emerald",
             "mode": "light",
-            "font_family": "Georgia"
+            "font_family": "Georgia",
         }
 
         theme = Theme.from_dict(config)
@@ -224,7 +228,11 @@ class TestThemeManager:
         mgr = ThemeManager()
 
         dark_themes = mgr.list_themes_by_mode("dark")
-        assert all("dark" in theme or theme == "cyberpunk" for theme in dark_themes if theme != "sunset" and theme != "ocean" and theme != "aurora")
+        assert all(
+            "dark" in theme or theme == "cyberpunk"
+            for theme in dark_themes
+            if theme != "sunset" and theme != "ocean" and theme != "aurora"
+        )
 
         light_themes = mgr.list_themes_by_mode("light")
         assert "light" in light_themes
@@ -293,9 +301,9 @@ class TestSpecialThemes:
         assert theme.mode == "dark"
         assert theme.primary_hue == "violet"
 
-        # Should have cyberpunk colors
-        assert theme.tokens["background"]["DEFAULT"] == "#0a0014"
-        assert theme.tokens["foreground"]["DEFAULT"] == "#00ffff"
+        # Should have cyberpunk colors (from PALETTE)
+        assert theme.tokens["background"]["DEFAULT"] == "#020617"  # PALETTE["slate"][950]
+        assert theme.tokens["foreground"]["DEFAULT"] == "#22d3ee"  # PALETTE["cyan"][400]
 
     def test_gradient_theme(self):
         """Test gradient theme."""
@@ -312,8 +320,8 @@ class TestSpecialThemes:
 
         assert theme.name == "minimal"
         assert theme.mode == "light"
-        assert theme.tokens["background"]["DEFAULT"] == "#ffffff"
-        assert theme.tokens["foreground"]["DEFAULT"] == "#000000"
+        assert theme.tokens["background"]["DEFAULT"] == "#fafafa"  # PALETTE["zinc"][50]
+        assert theme.tokens["foreground"]["DEFAULT"] == "#09090b"  # PALETTE["zinc"][950]
 
     def test_corporate_theme(self):
         """Test corporate theme."""
@@ -391,7 +399,7 @@ class TestThemeIntegration:
             "name": data["name"],
             "mode": data["mode"],
             "primary_hue": data["primary_hue"],
-            "font_family": data["font_family"]
+            "font_family": data["font_family"],
         }
         new_theme = Theme.from_dict(config)
 

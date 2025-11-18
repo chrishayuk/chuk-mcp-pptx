@@ -4,6 +4,7 @@ Add comprehensive error handling wrapper to async_server.py
 
 This will catch any exceptions in tool calls and return proper error responses.
 """
+
 import sys
 from pathlib import Path
 
@@ -20,13 +21,13 @@ if "TOOL_ERROR_WRAPPER_APPLIED" in content:
 marker = "# TOOL_ERROR_WRAPPER_APPLIED - DO NOT REMOVE THIS LINE\n"
 
 # Find where to insert (after logger = logging.getLogger(__name__))
-insert_point = content.find('logger = logging.getLogger(__name__)')
+insert_point = content.find("logger = logging.getLogger(__name__)")
 if insert_point == -1:
     print("❌ Could not find insertion point")
     sys.exit(1)
 
 # Find end of that line
-line_end = content.find('\n', insert_point)
+line_end = content.find("\n", insert_point)
 
 # Insert error wrapper decorator
 wrapper_code = '''
@@ -54,7 +55,7 @@ new_content = content[:line_end] + wrapper_code + content[line_end:]
 # Now we need to wrap all @mcp.tool decorated functions
 # This is tricky - we'll add the wrapper right after each @mcp.tool line
 
-lines = new_content.split('\n')
+lines = new_content.split("\n")
 new_lines = []
 i = 0
 while i < len(lines):
@@ -62,14 +63,14 @@ while i < len(lines):
     new_lines.append(line)
 
     # If this is an @mcp.tool decorator, wrap the next function
-    if line.strip() == '@mcp.tool':
+    if line.strip() == "@mcp.tool":
         # Next line should be async def
         i += 1
         if i < len(lines):
             func_line = lines[i]
-            if func_line.strip().startswith('async def '):
+            if func_line.strip().startswith("async def "):
                 # Extract function name
-                func_name = func_line.split('async def ')[1].split('(')[0]
+                func_name = func_line.split("async def ")[1].split("(")[0]
                 # Add wrapper
                 indent = len(func_line) - len(func_line.lstrip())
                 new_lines.append(func_line)
@@ -88,7 +89,7 @@ while i < len(lines):
 final_content = marker + content
 
 # Add better logging at the top of file
-logging_config = '''
+logging_config = """
 import sys
 # Configure logging to stderr with more detail
 logging.basicConfig(
@@ -97,11 +98,11 @@ logging.basicConfig(
     stream=sys.stderr,
     force=True
 )
-'''
+"""
 
 # Insert after imports, before logger creation
-import_end = content.find('logger = logging.getLogger(__name__)')
-final_content = content[:import_end] + logging_config + '\n' + marker + content[import_end:]
+import_end = content.find("logger = logging.getLogger(__name__)")
+final_content = content[:import_end] + logging_config + "\n" + marker + content[import_end:]
 
 # Write back
 server_file.write_text(final_content)

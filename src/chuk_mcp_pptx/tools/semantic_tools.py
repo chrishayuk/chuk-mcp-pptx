@@ -12,20 +12,11 @@ These tools provide:
 Philosophy: LLMs should describe WHAT they want, not HOW to position it.
 """
 
-from typing import Any, Optional
-
 from ..themes.theme_manager import ThemeManager
 
-from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
 from ..constants import (
     SlideLayoutIndex,
-    ErrorMessages,
-    SuccessMessages,
-    ShapeType,
-    Spacing,
-    Defaults,
 )
-
 
 
 def register_semantic_tools(mcp, manager):
@@ -62,10 +53,7 @@ def register_semantic_tools(mcp, manager):
 
     @mcp.tool
     async def pptx_create_quick_deck(
-        name: str,
-        title: str,
-        subtitle: str | None = None,
-        theme: str = "dark-violet"
+        name: str, title: str, subtitle: str | None = None, theme: str = "dark-violet"
     ) -> str:
         """
         Create a complete presentation with title slide in one call.
@@ -114,10 +102,7 @@ def register_semantic_tools(mcp, manager):
 
     @mcp.tool
     async def pptx_add_metrics_dashboard(
-        title: str,
-        metrics: list[dict[str, str]],
-        theme: str | None = None,
-        layout: str = "grid"
+        title: str, metrics: list[dict[str, str]], theme: str | None = None, layout: str = "grid"
     ) -> str:
         """
         Add a complete metrics dashboard slide with automatic layout.
@@ -157,15 +142,10 @@ def register_semantic_tools(mcp, manager):
 
         # Get theme
         theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
-        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
+        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, "__dict__") else theme_obj
 
         # Use template to create slide
-        template = MetricsDashboard(
-            title=title,
-            metrics=metrics,
-            layout=layout,
-            theme=theme_dict
-        )
+        template = MetricsDashboard(title=title, metrics=metrics, layout=layout, theme=theme_dict)
         slide_idx = template.render(prs)
 
         # Apply theme background only (components already have themed colors)
@@ -182,7 +162,7 @@ def register_semantic_tools(mcp, manager):
         items: list[dict[str, str]],
         item_type: str = "card",
         columns: int = 2,
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a grid of content items with automatic layout.
@@ -224,15 +204,11 @@ def register_semantic_tools(mcp, manager):
 
         # Get theme
         theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
-        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
+        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, "__dict__") else theme_obj
 
         # Use template to create slide
         template = ContentGridSlide(
-            title=title,
-            items=items,
-            item_type=item_type,
-            columns=columns,
-            theme=theme_dict
+            title=title, items=items, item_type=item_type, columns=columns, theme=theme_dict
         )
         slide_idx = template.render(prs)
 
@@ -249,7 +225,7 @@ def register_semantic_tools(mcp, manager):
         title: str,
         events: list[dict[str, str]],
         orientation: str = "horizontal",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a timeline slide with automatic layout.
@@ -288,14 +264,11 @@ def register_semantic_tools(mcp, manager):
 
         # Get theme
         theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
-        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
+        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, "__dict__") else theme_obj
 
         # Use template to create slide
         template = TimelineSlide(
-            title=title,
-            events=events,
-            orientation=orientation,
-            theme=theme_dict
+            title=title, events=events, orientation=orientation, theme=theme_dict
         )
         slide_idx = template.render(prs)
 
@@ -314,7 +287,7 @@ def register_semantic_tools(mcp, manager):
         left_items: list[str],
         right_title: str,
         right_items: list[str],
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a two-column comparison slide.
@@ -353,7 +326,7 @@ def register_semantic_tools(mcp, manager):
 
         # Get theme
         theme_obj = theme_manager.get_theme(theme) if theme else theme_manager.get_theme("dark")
-        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
+        theme_dict = theme_obj.__dict__ if hasattr(theme_obj, "__dict__") else theme_obj
 
         # Use template to create slide
         template = ComparisonSlide(
@@ -362,7 +335,7 @@ def register_semantic_tools(mcp, manager):
             left_items=left_items,
             right_title=right_title,
             right_items=right_items,
-            theme=theme_dict
+            theme=theme_dict,
         )
         slide_idx = template.render(prs)
 
@@ -375,9 +348,7 @@ def register_semantic_tools(mcp, manager):
         return f"Added comparison slide: {left_title} vs {right_title} at slide {slide_idx}"
 
     @mcp.tool
-    async def pptx_list_slide_templates(
-        category: str | None = None
-    ) -> str:
+    async def pptx_list_slide_templates(category: str | None = None) -> str:
         """
         List all available slide templates.
 
@@ -400,13 +371,12 @@ def register_semantic_tools(mcp, manager):
         """
         from ..slide_templates.registry import list_templates
         import json
+
         templates = list_templates(category)
         return json.dumps(templates, indent=2)
 
     @mcp.tool
-    async def pptx_get_template_info(
-        template_name: str
-    ) -> str:
+    async def pptx_get_template_info(template_name: str) -> str:
         """
         Get detailed information about a specific slide template.
 
@@ -425,20 +395,23 @@ def register_semantic_tools(mcp, manager):
         """
         from ..slide_templates.registry import get_template_info
         import json
+
         info = get_template_info(template_name)
         if info is None:
             return json.dumps({"error": f"Template '{template_name}' not found"})
         return json.dumps(info, indent=2)
 
     # Store tools for return
-    tools.update({
-        'pptx_create_quick_deck': pptx_create_quick_deck,
-        'pptx_add_metrics_dashboard': pptx_add_metrics_dashboard,
-        'pptx_add_content_grid': pptx_add_content_grid,
-        'pptx_add_timeline_slide': pptx_add_timeline_slide,
-        'pptx_add_comparison_slide': pptx_add_comparison_slide,
-        'pptx_list_slide_templates': pptx_list_slide_templates,
-        'pptx_get_template_info': pptx_get_template_info,
-    })
+    tools.update(
+        {
+            "pptx_create_quick_deck": pptx_create_quick_deck,
+            "pptx_add_metrics_dashboard": pptx_add_metrics_dashboard,
+            "pptx_add_content_grid": pptx_add_content_grid,
+            "pptx_add_timeline_slide": pptx_add_timeline_slide,
+            "pptx_add_comparison_slide": pptx_add_comparison_slide,
+            "pptx_list_slide_templates": pptx_list_slide_templates,
+            "pptx_get_template_info": pptx_get_template_info,
+        }
+    )
 
     return tools

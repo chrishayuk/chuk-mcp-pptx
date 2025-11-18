@@ -13,7 +13,7 @@ from pptx.dml.color import RGBColor
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant, Theme, Platform, ColorKey
+from ...constants import Theme, Platform, ColorKey
 
 
 class FacebookMessengerBubble(Component):
@@ -46,11 +46,13 @@ class FacebookMessengerBubble(Component):
         msg.render(slide, left=1, top=3, width=7)
     """
 
-    def __init__(self,
-                 text: str,
-                 variant: str = "received",
-                 avatar_text: Optional[str] = None,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        variant: str = "received",
+        avatar_text: Optional[str] = None,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize Facebook Messenger bubble.
 
@@ -103,7 +105,7 @@ class FacebookMessengerBubble(Component):
             # Avatar for received messages
             if self.avatar_text:
                 bubble_left = left + avatar_size + avatar_gap
-                bubble_width -= (avatar_size + avatar_gap)
+                bubble_width -= avatar_size + avatar_gap
                 show_avatar = True
             else:
                 bubble_left = left
@@ -116,10 +118,12 @@ class FacebookMessengerBubble(Component):
                 Inches(left),
                 Inches(top + bubble_height - avatar_size),  # Bottom align
                 Inches(avatar_size),
-                Inches(avatar_size)
+                Inches(avatar_size),
             )
             avatar.fill.solid()
-            avatar.fill.fore_color.rgb = RGBColor(*self.hex_to_rgb(CHAT_COLORS[Platform.FACEBOOK][ColorKey.SENT]))
+            avatar.fill.fore_color.rgb = RGBColor(
+                *self.hex_to_rgb(CHAT_COLORS[Platform.FACEBOOK][ColorKey.SENT])
+            )
             avatar.line.fill.background()
 
             # Avatar text
@@ -139,7 +143,7 @@ class FacebookMessengerBubble(Component):
             Inches(bubble_left),
             Inches(top),
             Inches(bubble_width),
-            Inches(bubble_height)
+            Inches(bubble_height),
         )
 
         # Style bubble - Facebook style is very rounded
@@ -188,10 +192,12 @@ class FacebookMessengerConversation(Component):
         conversation.render(slide, left=1, top=2, width=8)
     """
 
-    def __init__(self,
-                 messages: List[Dict[str, Any]],
-                 spacing: float = 0.1,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        messages: List[Dict[str, Any]],
+        spacing: float = 0.1,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize Facebook Messenger conversation.
 
@@ -214,7 +220,7 @@ class FacebookMessengerConversation(Component):
                 text=msg_data.get("text", ""),
                 variant=msg_data.get("variant", "received"),
                 avatar_text=msg_data.get("avatar_text"),
-                theme=self.theme
+                theme=self.theme,
             )
 
             msg_shapes = message.render(slide, left, current_top, width)

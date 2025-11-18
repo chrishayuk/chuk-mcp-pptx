@@ -15,14 +15,22 @@ from ...registry import component, ComponentCategory, prop
     category=ComponentCategory.LAYOUT,
     description="Invisible spacer for adding spacing between elements",
     props=[
-        prop("size", "string", "Spacer size",
-             options=["xs", "sm", "md", "lg", "xl", "2xl"],
-             default="md"),
-        prop("direction", "string", "Spacer direction",
-             options=["vertical", "horizontal"],
-             default="vertical"),
+        prop(
+            "size",
+            "string",
+            "Spacer size",
+            options=["xs", "sm", "md", "lg", "xl", "2xl"],
+            default="md",
+        ),
+        prop(
+            "direction",
+            "string",
+            "Spacer direction",
+            options=["vertical", "horizontal"],
+            default="vertical",
+        ),
     ],
-    tags=["layout", "spacer", "margin"]
+    tags=["layout", "spacer", "margin"],
 )
 class Spacer(Component):
     """
@@ -34,10 +42,12 @@ class Spacer(Component):
         spacing = spacer.get_size()
     """
 
-    def __init__(self,
-                 size: Literal["xs", "sm", "md", "lg", "xl", "2xl"] = "md",
-                 direction: Literal["vertical", "horizontal"] = "vertical",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        size: Literal["xs", "sm", "md", "lg", "xl", "2xl"] = "md",
+        direction: Literal["vertical", "horizontal"] = "vertical",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(theme)
         self.size = size
         self.direction = direction
@@ -58,6 +68,6 @@ class Spacer(Component):
         """Spacer doesn't render anything, just returns size."""
         size = self.get_size()
         if self.direction == "vertical":
-            return {'height': size, 'width': 0}
+            return {"height": size, "width": 0}
         else:
-            return {'width': size, 'height': 0}
+            return {"width": size, "height": 0}

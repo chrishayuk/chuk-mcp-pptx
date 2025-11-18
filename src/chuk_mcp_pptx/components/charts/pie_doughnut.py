@@ -2,10 +2,9 @@
 Pie and Doughnut chart components with variants and registry integration.
 """
 
-from typing import Dict, Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from pptx.chart.data import CategoryChartData
-from pptx.enum.chart import XL_CHART_TYPE, XL_DATA_LABEL_POSITION
-from pptx.util import Pt
+from pptx.enum.chart import XL_CHART_TYPE
 from pptx.dml.color import RGBColor
 
 from .base import ChartComponent
@@ -18,25 +17,50 @@ from ...registry import component, ComponentCategory, prop, example
     category=ComponentCategory.DATA,
     description="Pie chart component for showing proportions and percentages",
     props=[
-        prop("categories", "array", "Category labels", required=True,
-             example=["Q1", "Q2", "Q3", "Q4"]),
-        prop("values", "array", "Data values (must be positive)", required=True,
-             example=[30, 25, 25, 20]),
-        prop("variant", "string", "Chart variant",
-             options=["pie", "doughnut", "exploded"],
-             default="pie", example="pie"),
-        prop("style", "string", "Visual style preset",
-             options=["default", "detailed", "minimal"],
-             default="default", example="default"),
+        prop(
+            "categories",
+            "array",
+            "Category labels",
+            required=True,
+            example=["Q1", "Q2", "Q3", "Q4"],
+        ),
+        prop(
+            "values",
+            "array",
+            "Data values (must be positive)",
+            required=True,
+            example=[30, 25, 25, 20],
+        ),
+        prop(
+            "variant",
+            "string",
+            "Chart variant",
+            options=["pie", "doughnut", "exploded"],
+            default="pie",
+            example="pie",
+        ),
+        prop(
+            "style",
+            "string",
+            "Visual style preset",
+            options=["default", "detailed", "minimal"],
+            default="default",
+            example="default",
+        ),
         prop("title", "string", "Chart title", example="Market Share"),
         prop("explode_slice", "number", "Index of slice to explode (0-based)", example=0),
-        prop("legend", "string", "Legend position",
-             options=["right", "bottom", "top", "none"],
-             default="right", example="right"),
+        prop(
+            "legend",
+            "string",
+            "Legend position",
+            options=["right", "bottom", "top", "none"],
+            default="right",
+            example="right",
+        ),
     ],
     variants={
         "variant": ["pie", "doughnut", "exploded"],
-        "style": ["default", "detailed", "minimal"]
+        "style": ["default", "detailed", "minimal"],
     },
     examples=[
         example(
@@ -52,7 +76,7 @@ chart.render(slide, left=1, top=2)
             """,
             categories=["Product A", "Product B", "Product C"],
             values=[45, 30, 25],
-            variant="pie"
+            variant="pie",
         ),
         example(
             "Doughnut chart with detailed style",
@@ -69,10 +93,10 @@ chart.render(slide)
             categories=["Sales", "Marketing", "R&D", "Operations"],
             values=[40, 25, 20, 15],
             variant="doughnut",
-            style="detailed"
-        )
+            style="detailed",
+        ),
     ],
-    tags=["chart", "pie", "doughnut", "proportions", "percentages"]
+    tags=["chart", "pie", "doughnut", "proportions", "percentages"],
 )
 class PieChart(ChartComponent):
     """
@@ -96,13 +120,15 @@ class PieChart(ChartComponent):
     - minimal: No labels
     """
 
-    def __init__(self,
-                 categories: List[str],
-                 values: List[float],
-                 variant: str = "pie",
-                 style: str = "default",
-                 explode_slice: Optional[int] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        categories: List[str],
+        values: List[float],
+        variant: str = "pie",
+        style: str = "default",
+        explode_slice: Optional[int] = None,
+        **kwargs,
+    ):
         """
         Initialize pie chart.
 
@@ -126,10 +152,7 @@ class PieChart(ChartComponent):
             raise ValueError(f"Invalid chart data: {error}")
 
         # Update variant props to include pie-specific variants
-        self.variant_props = PIE_CHART_VARIANTS.build(
-            variant=variant,
-            style=style
-        )
+        self.variant_props = PIE_CHART_VARIANTS.build(variant=variant, style=style)
 
         # Set chart type based on variant
         if variant == "doughnut":
@@ -148,7 +171,10 @@ class PieChart(ChartComponent):
             return False, "No values provided"
 
         if len(self.categories) != len(self.values):
-            return False, f"Categories ({len(self.categories)}) and values ({len(self.values)}) must have same length"
+            return (
+                False,
+                f"Categories ({len(self.categories)}) and values ({len(self.values)}) must have same length",
+            )
 
         # Check for negative values
         if any(v < 0 for v in self.values):
@@ -181,7 +207,7 @@ class PieChart(ChartComponent):
             for i, point in enumerate(series.points):
                 if i < len(chart_colors):
                     color_hex = chart_colors[i]
-                    if isinstance(color_hex, str) and color_hex.startswith('#'):
+                    if isinstance(color_hex, str) and color_hex.startswith("#"):
                         rgb = self.hex_to_rgb(color_hex)
                         fill = point.format.fill
                         fill.solid()
@@ -210,19 +236,28 @@ class PieChart(ChartComponent):
     category=ComponentCategory.DATA,
     description="Doughnut chart (pie chart with hollow center) for showing proportions",
     props=[
-        prop("categories", "array", "Category labels", required=True,
-             example=["Category A", "Category B", "Category C"]),
-        prop("values", "array", "Data values (must be positive)", required=True,
-             example=[40, 35, 25]),
-        prop("style", "string", "Visual style preset",
-             options=["default", "detailed", "minimal"],
-             default="default", example="default"),
+        prop(
+            "categories",
+            "array",
+            "Category labels",
+            required=True,
+            example=["Category A", "Category B", "Category C"],
+        ),
+        prop(
+            "values", "array", "Data values (must be positive)", required=True, example=[40, 35, 25]
+        ),
+        prop(
+            "style",
+            "string",
+            "Visual style preset",
+            options=["default", "detailed", "minimal"],
+            default="default",
+            example="default",
+        ),
         prop("title", "string", "Chart title", example="Distribution"),
         prop("hole_size", "number", "Size of center hole (0-1)", default=0.5, example=0.5),
     ],
-    variants={
-        "style": ["default", "detailed", "minimal"]
-    },
+    variants={"style": ["default", "detailed", "minimal"]},
     examples=[
         example(
             "Doughnut chart",
@@ -235,10 +270,10 @@ chart = DoughnutChart(
 chart.render(slide, left=1, top=2)
             """,
             categories=["Sales", "Marketing", "Operations"],
-            values=[50, 30, 20]
+            values=[50, 30, 20],
         )
     ],
-    tags=["chart", "doughnut", "donut", "proportions"]
+    tags=["chart", "doughnut", "donut", "proportions"],
 )
 class DoughnutChart(PieChart):
     """
@@ -257,7 +292,7 @@ class DoughnutChart(PieChart):
             **kwargs: Additional chart parameters
         """
         # Force variant to doughnut
-        kwargs['variant'] = 'doughnut'
+        kwargs["variant"] = "doughnut"
         super().__init__(**kwargs)
         self.hole_size = hole_size
 
@@ -266,7 +301,7 @@ class DoughnutChart(PieChart):
         chart = super().render(slide, **kwargs)
 
         # Set hole size if supported
-        if hasattr(chart.plots[0], 'doughnut_hole_size'):
+        if hasattr(chart.plots[0], "doughnut_hole_size"):
             chart.plots[0].doughnut_hole_size = int(self.hole_size * 100)
 
         return chart

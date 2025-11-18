@@ -10,8 +10,6 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 
 from ..base import Component
-from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
-from ...tokens.spacing import SPACING
 from ...constants import ComponentSizing
 from ...variants import BADGE_VARIANTS
 from ...registry import component, ComponentCategory, prop, example
@@ -23,15 +21,18 @@ from ...registry import component, ComponentCategory, prop, example
     description="Small badge/label component for status indicators and tags",
     props=[
         prop("text", "string", "Badge text", required=True, example="New"),
-        prop("variant", "string", "Visual variant",
-             options=["default", "secondary", "success", "warning", "destructive", "outline"],
-             default="default", example="success"),
+        prop(
+            "variant",
+            "string",
+            "Visual variant",
+            options=["default", "secondary", "success", "warning", "destructive", "outline"],
+            default="default",
+            example="success",
+        ),
         prop("left", "number", "Left position in inches", required=True),
         prop("top", "number", "Top position in inches", required=True),
     ],
-    variants={
-        "variant": ["default", "secondary", "success", "warning", "destructive", "outline"]
-    },
+    variants={"variant": ["default", "secondary", "success", "warning", "destructive", "outline"]},
     examples=[
         example(
             "Success badge",
@@ -40,7 +41,7 @@ badge = Badge(text="Active", variant="success")
 badge.render(slide, left=1, top=1)
             """,
             text="Active",
-            variant="success"
+            variant="success",
         ),
         example(
             "Warning badge",
@@ -49,7 +50,7 @@ badge = Badge(text="Beta", variant="warning")
 badge.render(slide, left=2, top=1)
             """,
             text="Beta",
-            variant="warning"
+            variant="warning",
         ),
         example(
             "Destructive badge",
@@ -58,10 +59,10 @@ badge = Badge(text="Deprecated", variant="destructive")
 badge.render(slide, left=3, top=1)
             """,
             text="Deprecated",
-            variant="destructive"
-        )
+            variant="destructive",
+        ),
     ],
-    tags=["badge", "label", "status", "tag", "ui"]
+    tags=["badge", "label", "status", "tag", "ui"],
 )
 class Badge(Component):
     """
@@ -83,10 +84,7 @@ class Badge(Component):
         badge.render(slide, left=2, top=2)
     """
 
-    def __init__(self,
-                 text: str,
-                 variant: str = "default",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, text: str, variant: str = "default", theme: Optional[Dict[str, Any]] = None):
         """
         Initialize badge component.
 
@@ -102,9 +100,14 @@ class Badge(Component):
         # Get variant props
         self.variant_props = BADGE_VARIANTS.build(variant=variant)
 
-    def render(self, slide, left: float, top: float,
-               width: Optional[float] = None,
-               height: Optional[float] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+    ) -> Any:
         """
         Render badge to slide.
 
@@ -128,7 +131,7 @@ class Badge(Component):
             Inches(left),
             Inches(top),
             Inches(badge_width),
-            Inches(badge_height)
+            Inches(badge_height),
         )
 
         # Apply variant styling
@@ -196,10 +199,12 @@ class Badge(Component):
         # Font styling from variants
         paragraph.font.size = Pt(props.get("font_size", 10))
         # Handle both Theme objects and dict themes
-        if hasattr(self.theme, 'typography'):
+        if hasattr(self.theme, "typography"):
             font_family = self.theme.typography.get("font_family", "Inter")
         else:
-            font_family = self.theme.get("font_family", "Inter") if isinstance(self.theme, dict) else "Inter"
+            font_family = (
+                self.theme.get("font_family", "Inter") if isinstance(self.theme, dict) else "Inter"
+            )
         paragraph.font.name = font_family
 
         # Text color
@@ -216,9 +221,13 @@ class Badge(Component):
     category=ComponentCategory.UI,
     description="Small dot indicator for status (like notification dots)",
     props=[
-        prop("variant", "string", "Color variant",
-             options=["default", "success", "warning", "destructive"],
-             default="default"),
+        prop(
+            "variant",
+            "string",
+            "Color variant",
+            options=["default", "success", "warning", "destructive"],
+            default="default",
+        ),
         prop("left", "number", "Left position in inches", required=True),
         prop("top", "number", "Top position in inches", required=True),
         prop("size", "number", "Dot size in inches", default=0.15),
@@ -230,10 +239,10 @@ class Badge(Component):
 dot = DotBadge(variant="success")
 dot.render(slide, left=1, top=1)
             """,
-            variant="success"
+            variant="success",
         )
     ],
-    tags=["badge", "dot", "indicator", "status"]
+    tags=["badge", "dot", "indicator", "status"],
 )
 class DotBadge(Component):
     """
@@ -241,10 +250,9 @@ class DotBadge(Component):
     Perfect for notification dots, online status, etc.
     """
 
-    def __init__(self,
-                 variant: str = "default",
-                 size: float = 0.15,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, variant: str = "default", size: float = 0.15, theme: Optional[Dict[str, Any]] = None
+    ):
         """
         Initialize dot badge.
 
@@ -271,11 +279,7 @@ class DotBadge(Component):
         """
         # Create circular dot
         dot = slide.shapes.add_shape(
-            MSO_SHAPE.OVAL,
-            Inches(left),
-            Inches(top),
-            Inches(self.size),
-            Inches(self.size)
+            MSO_SHAPE.OVAL, Inches(left), Inches(top), Inches(self.size), Inches(self.size)
         )
 
         # Get color based on variant
@@ -304,9 +308,13 @@ class DotBadge(Component):
     description="Badge showing a count/number (like notification counts)",
     props=[
         prop("count", "number", "Count to display", required=True, example=5),
-        prop("variant", "string", "Visual variant",
-             options=["default", "destructive"],
-             default="destructive"),
+        prop(
+            "variant",
+            "string",
+            "Visual variant",
+            options=["default", "destructive"],
+            default="destructive",
+        ),
         prop("max", "number", "Maximum count before showing '+'", default=99),
     ],
     examples=[
@@ -317,7 +325,7 @@ badge = CountBadge(count=5, variant="destructive")
 badge.render(slide, left=1, top=1)
             """,
             count=5,
-            variant="destructive"
+            variant="destructive",
         ),
         example(
             "High count with max",
@@ -326,10 +334,10 @@ badge = CountBadge(count=150, max=99)  # Shows "99+"
 badge.render(slide, left=2, top=1)
             """,
             count=150,
-            max=99
-        )
+            max=99,
+        ),
     ],
-    tags=["badge", "count", "notification", "number"]
+    tags=["badge", "count", "notification", "number"],
 )
 class CountBadge(Badge):
     """
@@ -337,11 +345,13 @@ class CountBadge(Badge):
     Shows "+ " when count exceeds max.
     """
 
-    def __init__(self,
-                 count: int,
-                 variant: str = "destructive",
-                 max_count: int = 99,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        count: int,
+        variant: str = "destructive",
+        max_count: int = 99,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize count badge.
 

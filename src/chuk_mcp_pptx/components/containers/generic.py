@@ -49,12 +49,14 @@ class ChatContainer(Component):
         )
     """
 
-    def __init__(self,
-                 title: Optional[str] = None,
-                 show_header: bool = False,
-                 show_border: bool = True,
-                 variant: str = "default",  # default, outlined, filled
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        title: Optional[str] = None,
+        show_header: bool = False,
+        show_border: bool = True,
+        variant: str = "default",  # default, outlined, filled
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize chat container.
 
@@ -74,7 +76,7 @@ class ChatContainer(Component):
     def _is_dark_mode(self) -> bool:
         """Check if theme is dark mode."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return sum(bg) < 384
         return False
@@ -83,13 +85,13 @@ class ChatContainer(Component):
         """Get container background color."""
         if self.variant == "filled":
             if self.theme and isinstance(self.theme, dict):
-                card = self.theme.get('colors', {}).get('card', {}).get('DEFAULT')
+                card = self.theme.get("colors", {}).get("card", {}).get("DEFAULT")
                 if card and isinstance(card, (list, tuple)) and len(card) >= 3:
                     return RGBColor(card[0], card[1], card[2])
 
         # Default to theme background
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
 
@@ -99,7 +101,7 @@ class ChatContainer(Component):
     def _get_border_color(self) -> RGBColor:
         """Get border color."""
         if self.theme and isinstance(self.theme, dict):
-            border = self.theme.get('colors', {}).get('border', {}).get('DEFAULT')
+            border = self.theme.get("colors", {}).get("border", {}).get("DEFAULT")
             if border and isinstance(border, (list, tuple)) and len(border) >= 3:
                 return RGBColor(border[0], border[1], border[2])
 
@@ -110,7 +112,7 @@ class ChatContainer(Component):
     def _get_header_bg_color(self) -> RGBColor:
         """Get header background color."""
         if self.theme and isinstance(self.theme, dict):
-            muted = self.theme.get('colors', {}).get('muted', {}).get('DEFAULT')
+            muted = self.theme.get("colors", {}).get("muted", {}).get("DEFAULT")
             if muted and isinstance(muted, (list, tuple)) and len(muted) >= 3:
                 return RGBColor(muted[0], muted[1], muted[2])
 
@@ -121,7 +123,7 @@ class ChatContainer(Component):
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
         if self.theme and isinstance(self.theme, dict):
-            fg = self.theme.get('colors', {}).get('foreground', {}).get('DEFAULT')
+            fg = self.theme.get("colors", {}).get("foreground", {}).get("DEFAULT")
             if fg and isinstance(fg, (list, tuple)) and len(fg) >= 3:
                 return RGBColor(fg[0], fg[1], fg[2])
 
@@ -129,8 +131,9 @@ class ChatContainer(Component):
         hex_color = get_container_ui_color(Platform.GENERIC, ColorKey.HEADER_TEXT, theme_mode)
         return RGBColor(*self.hex_to_rgb(hex_color))
 
-    def render(self, slide, left: float, top: float,
-               width: float = 6.0, height: float = 5.0) -> Dict[str, float]:
+    def render(
+        self, slide, left: float, top: float, width: float = 6.0, height: float = 5.0
+    ) -> Dict[str, float]:
         """
         Render chat container to slide.
 
@@ -148,11 +151,7 @@ class ChatContainer(Component):
 
         # Container frame
         container = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE,
-            Inches(left),
-            Inches(top),
-            Inches(width),
-            Inches(height)
+            MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)
         )
         container.fill.solid()
         container.fill.fore_color.rgb = self._get_container_bg_color()
@@ -178,7 +177,7 @@ class ChatContainer(Component):
                 Inches(left),
                 Inches(top),
                 Inches(width),
-                Inches(header_height)
+                Inches(header_height),
             )
             header.fill.solid()
             header.fill.fore_color.rgb = self._get_header_bg_color()
@@ -190,7 +189,7 @@ class ChatContainer(Component):
                 Inches(left + 0.2),
                 Inches(top + 0.05),
                 Inches(width - 0.4),
-                Inches(header_height - 0.1)
+                Inches(header_height - 0.1),
             )
             header_frame = header_text.text_frame
             header_frame.text = self.title
@@ -213,10 +212,10 @@ class ChatContainer(Component):
         content_height = height - (content_top - top) - padding_v
 
         return {
-            'left': left + padding_h,
-            'top': content_top,
-            'width': width - (padding_h * 2),
-            'height': content_height
+            "left": left + padding_h,
+            "top": content_top,
+            "width": width - (padding_h * 2),
+            "height": content_height,
         }
 
 

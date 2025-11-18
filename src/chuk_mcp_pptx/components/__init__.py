@@ -9,13 +9,23 @@ from .code import CodeBlock, InlineCode, Terminal
 # Core UI components
 from .core import (
     Alert,
-    Avatar, AvatarWithLabel, AvatarGroup,
-    Badge, DotBadge, CountBadge,
-    Button, IconButton, ButtonGroup,
-    Card, MetricCard,
-    Icon, IconList,
+    Avatar,
+    AvatarWithLabel,
+    AvatarGroup,
+    Badge,
+    DotBadge,
+    CountBadge,
+    Button,
+    IconButton,
+    ButtonGroup,
+    Card,
+    MetricCard,
+    Icon,
+    IconList,
     ProgressBar,
-    Tile, IconTile, ValueTile,
+    Tile,
+    IconTile,
+    ValueTile,
     Timeline,
 )
 from .chat import (
@@ -38,7 +48,7 @@ from .chat import (
     AIMBubble,
     AIMConversation,
     MSNBubble,
-    MSNConversation
+    MSNConversation,
 )
 from .containers import (
     iPhoneContainer,
@@ -46,93 +56,76 @@ from .containers import (
     BrowserWindow,
     MacOSWindow,
     WindowsWindow,
-    ChatContainer
+    ChatContainer,
 )
 
 __all__ = [
     # Base
-    'Component',
-    'AsyncComponent',
-
+    "Component",
+    "AsyncComponent",
     # Buttons
-    'Button',
-    'IconButton',
-    'ButtonGroup',
-
+    "Button",
+    "IconButton",
+    "ButtonGroup",
     # Cards
-    'Card',
-    'MetricCard',
-
+    "Card",
+    "MetricCard",
     # Badges
-    'Badge',
-    'DotBadge',
-    'CountBadge',
-
+    "Badge",
+    "DotBadge",
+    "CountBadge",
     # Alerts
-    'Alert',
-
+    "Alert",
     # Code
-    'CodeBlock',
-    'InlineCode',
-    'Terminal',
-
+    "CodeBlock",
+    "InlineCode",
+    "Terminal",
     # Progress
-    'ProgressBar',
-
+    "ProgressBar",
     # Icons
-    'Icon',
-    'IconList',
-
+    "Icon",
+    "IconList",
     # Timeline
-    'Timeline',
-
+    "Timeline",
     # Tiles
-    'Tile',
-    'IconTile',
-    'ValueTile',
-
+    "Tile",
+    "IconTile",
+    "ValueTile",
     # Avatars
-    'Avatar',
-    'AvatarWithLabel',
-    'AvatarGroup',
-
+    "Avatar",
+    "AvatarWithLabel",
+    "AvatarGroup",
     # Chat - Generic
-    'ChatMessage',
-    'ChatConversation',
-
+    "ChatMessage",
+    "ChatConversation",
     # Chat - Mobile Platforms
-    'iMessageBubble',
-    'iMessageConversation',
-    'AndroidMessageBubble',
-    'AndroidConversation',
-    'WhatsAppBubble',
-    'WhatsAppConversation',
-    'FacebookMessengerBubble',
-    'FacebookMessengerConversation',
-
+    "iMessageBubble",
+    "iMessageConversation",
+    "AndroidMessageBubble",
+    "AndroidConversation",
+    "WhatsAppBubble",
+    "WhatsAppConversation",
+    "FacebookMessengerBubble",
+    "FacebookMessengerConversation",
     # Chat - AI & Workplace
-    'ChatGPTMessage',
-    'ChatGPTConversation',
-    'SlackMessage',
-    'SlackConversation',
-    'TeamsMessage',
-    'TeamsConversation',
-
+    "ChatGPTMessage",
+    "ChatGPTConversation",
+    "SlackMessage",
+    "SlackConversation",
+    "TeamsMessage",
+    "TeamsConversation",
     # Chat - Legacy/Nostalgic
-    'AIMBubble',
-    'AIMConversation',
-    'MSNBubble',
-    'MSNConversation',
-
+    "AIMBubble",
+    "AIMConversation",
+    "MSNBubble",
+    "MSNConversation",
     # Containers - Mobile
-    'iPhoneContainer',
-    'SamsungContainer',
-
+    "iPhoneContainer",
+    "SamsungContainer",
     # Containers - Desktop/Windows
-    'BrowserWindow',
-    'MacOSWindow',
-    'WindowsWindow',
-
+    "BrowserWindow",
+    "MacOSWindow",
+    "WindowsWindow",
     # Containers - Generic
-    'ChatContainer',
+    "ChatContainer",
 ]

@@ -5,16 +5,14 @@ Provides an authentic iPhone mockup frame for displaying chat conversations
 and other mobile content.
 """
 
-from typing import Optional, Dict, Any, Callable
+from typing import Optional, Dict, Any
 from pptx.util import Pt, Inches
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
-from ...tokens.platform_colors import MACOS_CONTROLS, WINDOWS_CONTROLS, DEVICE_COLORS
-from ...constants import ContainerPlatform
+from ...tokens.typography import FONT_SIZES
 
 
 class iPhoneContainer(Component):
@@ -49,11 +47,13 @@ class iPhoneContainer(Component):
         )
     """
 
-    def __init__(self,
-                 title: str = "iPhone",
-                 show_notch: bool = True,
-                 variant: str = "pro",  # pro, pro-max, standard
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        title: str = "iPhone",
+        show_notch: bool = True,
+        variant: str = "pro",  # pro, pro-max, standard
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize iPhone container.
 
@@ -72,7 +72,7 @@ class iPhoneContainer(Component):
         """Get device frame color based on theme."""
         # Check if theme is dark mode
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 # If background is dark (low RGB values), use light frame
                 if sum(bg) < 384:  # 128 * 3
@@ -86,7 +86,7 @@ class iPhoneContainer(Component):
     def _get_screen_bg_color(self) -> RGBColor:
         """Get screen background color based on theme."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return RGBColor(bg[0], bg[1], bg[2])
 
@@ -96,7 +96,7 @@ class iPhoneContainer(Component):
     def _get_text_color(self) -> RGBColor:
         """Get text color based on theme."""
         if self.theme and isinstance(self.theme, dict):
-            fg = self.theme.get('colors', {}).get('foreground', {}).get('DEFAULT')
+            fg = self.theme.get("colors", {}).get("foreground", {}).get("DEFAULT")
             if fg and isinstance(fg, (list, tuple)) and len(fg) >= 3:
                 return RGBColor(fg[0], fg[1], fg[2])
 
@@ -106,13 +106,14 @@ class iPhoneContainer(Component):
     def _is_dark_mode(self) -> bool:
         """Check if theme is dark mode."""
         if self.theme and isinstance(self.theme, dict):
-            bg = self.theme.get('colors', {}).get('background', {}).get('DEFAULT')
+            bg = self.theme.get("colors", {}).get("background", {}).get("DEFAULT")
             if bg and isinstance(bg, (list, tuple)) and len(bg) >= 3:
                 return sum(bg) < 384  # 128 * 3
         return False
 
-    def render(self, slide, left: float, top: float,
-               width: float = 3.5, height: float = 6.5) -> Dict[str, float]:
+    def render(
+        self, slide, left: float, top: float, width: float = 3.5, height: float = 6.5
+    ) -> Dict[str, float]:
         """
         Render iPhone container to slide.
 
@@ -130,11 +131,7 @@ class iPhoneContainer(Component):
 
         # Device frame (outer rounded rectangle)
         device_frame = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE,
-            Inches(left),
-            Inches(top),
-            Inches(width),
-            Inches(height)
+            MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)
         )
         device_frame.fill.solid()
         device_frame.fill.fore_color.rgb = self._get_device_color()
@@ -154,7 +151,7 @@ class iPhoneContainer(Component):
             Inches(screen_left),
             Inches(screen_top),
             Inches(screen_width),
-            Inches(screen_height)
+            Inches(screen_height),
         )
         screen.fill.solid()
         screen.fill.fore_color.rgb = self._get_screen_bg_color()
@@ -174,7 +171,7 @@ class iPhoneContainer(Component):
                 Inches(notch_left),
                 Inches(screen_top),
                 Inches(notch_width),
-                Inches(notch_height)
+                Inches(notch_height),
             )
             notch.fill.solid()
             notch.fill.fore_color.rgb = self._get_device_color()
@@ -189,7 +186,7 @@ class iPhoneContainer(Component):
             Inches(screen_left + 0.1),
             Inches(status_bar_top),
             Inches(screen_width - 0.2),
-            Inches(status_bar_height)
+            Inches(status_bar_height),
         )
         status_frame = status_bar.text_frame
         status_frame.text = "9:41"  # Classic iPhone time
@@ -213,7 +210,7 @@ class iPhoneContainer(Component):
             Inches(home_indicator_left),
             Inches(home_indicator_top),
             Inches(home_indicator_width),
-            Inches(home_indicator_height)
+            Inches(home_indicator_height),
         )
         home_indicator.fill.solid()
 
@@ -239,10 +236,10 @@ class iPhoneContainer(Component):
         content_width = screen_width - (padding_h * 2)
 
         return {
-            'left': content_left,
-            'top': content_top + padding_v,
-            'width': content_width,
-            'height': content_height - (padding_v * 2)
+            "left": content_left,
+            "top": content_top + padding_v,
+            "width": content_width,
+            "height": content_height - (padding_v * 2),
         }
 
 

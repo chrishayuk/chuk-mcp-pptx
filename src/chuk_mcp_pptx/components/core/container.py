@@ -16,12 +16,20 @@ from ...registry import component, ComponentCategory, prop, example
     category=ComponentCategory.LAYOUT,
     description="Responsive container for centering and constraining content width",
     props=[
-        prop("size", "string", "Container size",
-             options=["sm", "md", "lg", "xl", "2xl", "full"],
-             default="lg"),
-        prop("padding", "string", "Internal padding",
-             options=["none", "sm", "md", "lg", "xl"],
-             default="md"),
+        prop(
+            "size",
+            "string",
+            "Container size",
+            options=["sm", "md", "lg", "xl", "2xl", "full"],
+            default="lg",
+        ),
+        prop(
+            "padding",
+            "string",
+            "Internal padding",
+            options=["none", "sm", "md", "lg", "xl"],
+            default="md",
+        ),
         prop("center", "boolean", "Center horizontally", default=True),
     ],
     examples=[
@@ -32,10 +40,10 @@ container = Container(size="lg", padding="md")
 container.render(slide, top=1.5)
             """,
             size="lg",
-            padding="md"
+            padding="md",
         )
     ],
-    tags=["layout", "container", "responsive"]
+    tags=["layout", "container", "responsive"],
 )
 class Container(Component):
     """
@@ -51,11 +59,13 @@ class Container(Component):
         container.render(slide, top=0)
     """
 
-    def __init__(self,
-                 size: Literal["sm", "md", "lg", "xl", "2xl", "full"] = "lg",
-                 padding: Literal["none", "sm", "md", "lg", "xl"] = "md",
-                 center: bool = True,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        size: Literal["sm", "md", "lg", "xl", "2xl", "full"] = "lg",
+        padding: Literal["none", "sm", "md", "lg", "xl"] = "md",
+        center: bool = True,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(theme)
         self.size = size
         self.padding = padding
@@ -79,8 +89,8 @@ class Container(Component):
 
         # Container doesn't render a visual element, just returns bounds
         return {
-            'left': left + padding_value,
-            'top': top + padding_value,
-            'width': container_width - (2 * padding_value),
-            'height': (height or SLIDE_HEIGHT - top) - (2 * padding_value)
+            "left": left + padding_value,
+            "top": top + padding_value,
+            "width": container_width - (2 * padding_value),
+            "height": (height or SLIDE_HEIGHT - top) - (2 * padding_value),
         }

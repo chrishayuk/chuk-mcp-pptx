@@ -15,8 +15,13 @@ from ...registry import component, ComponentCategory, prop, example
     description="Grid of content items (cards, tiles, buttons) using Grid system",
     props=[
         prop("items", "array", "List of items to display"),
-        prop("item_type", "string", "Type of items",
-             options=["card", "tile", "button"], default="card"),
+        prop(
+            "item_type",
+            "string",
+            "Type of items",
+            options=["card", "tile", "button"],
+            default="card",
+        ),
         prop("columns", "number", "Number of columns", default=2),
     ],
     examples=[
@@ -35,10 +40,10 @@ grid.render(slide, left=0.5, top=2.0, width=9.0, height=5.0)
             """,
             items=[{"title": "Feature 1"}, {"title": "Feature 2"}],
             item_type="card",
-            columns=2
+            columns=2,
         )
     ],
-    tags=["grid", "cards", "layout", "content"]
+    tags=["grid", "cards", "layout", "content"],
 )
 class ContentGrid(Component):
     """
@@ -61,11 +66,13 @@ class ContentGrid(Component):
         grid.render(slide, left=0.5, top=2.0, width=9.0, height=5.0)
     """
 
-    def __init__(self,
-                 items: List[Dict[str, Any]],
-                 item_type: Literal["card", "tile", "button"] = "card",
-                 columns: int = 2,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        items: List[Dict[str, Any]],
+        item_type: Literal["card", "tile", "button"] = "card",
+        columns: int = 2,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize content grid.
 
@@ -120,67 +127,59 @@ class ContentGrid(Component):
                 top=top,
                 width=width,
                 height=height,
-                auto_height=False
+                auto_height=False,
             )
 
             if self.item_type == "card":
                 # Create card background
-                card = Card(
-                    variant=item_data.get('variant', 'default'),
-                    theme=self.theme
-                )
+                card = Card(variant=item_data.get("variant", "default"), theme=self.theme)
                 shape = card.render(slide, **pos)
                 shapes.append(shape)
 
                 # Add title text on top of card
-                if 'title' in item_data:
+                if "title" in item_data:
                     title_text = TextBox(
-                        text=item_data['title'],
-                        font_size=14,
-                        bold=True,
-                        theme=self.theme
+                        text=item_data["title"], font_size=14, bold=True, theme=self.theme
                     )
                     title_shape = title_text.render(
                         slide,
                         left=pos["left"] + 0.2,
                         top=pos["top"] + 0.2,
                         width=pos["width"] - 0.4,
-                        height=0.5
+                        height=0.5,
                     )
                     shapes.append(title_shape)
 
                 # Add description if present
-                if 'description' in item_data:
+                if "description" in item_data:
                     desc_text = TextBox(
-                        text=item_data['description'],
-                        font_size=11,
-                        theme=self.theme
+                        text=item_data["description"], font_size=11, theme=self.theme
                     )
                     desc_shape = desc_text.render(
                         slide,
                         left=pos["left"] + 0.2,
                         top=pos["top"] + 0.8,
                         width=pos["width"] - 0.4,
-                        height=pos["height"] - 1.0
+                        height=pos["height"] - 1.0,
                     )
                     shapes.append(desc_shape)
 
             elif self.item_type == "tile":
                 tile = Tile(
-                    label=item_data.get('label', item_data.get('title', '')),
-                    text=item_data.get('value', ''),
-                    variant=item_data.get('variant', 'default'),
-                    theme=self.theme
+                    label=item_data.get("label", item_data.get("title", "")),
+                    text=item_data.get("value", ""),
+                    variant=item_data.get("variant", "default"),
+                    theme=self.theme,
                 )
                 shape = tile.render(slide, **pos)
                 shapes.append(shape)
 
             else:  # button
                 button = Button(
-                    text=item_data.get('text', item_data.get('title', '')),
-                    variant=item_data.get('variant', 'default'),
-                    size='md',
-                    theme=self.theme
+                    text=item_data.get("text", item_data.get("title", "")),
+                    variant=item_data.get("variant", "default"),
+                    size="md",
+                    theme=self.theme,
                 )
                 shape = button.render(slide, **pos)
                 shapes.append(shape)

@@ -4,34 +4,39 @@ Code Examples Demo for PowerPoint MCP Server
 
 Demonstrates code blocks in presentations with syntax highlighting.
 """
+
 import asyncio
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from chuk_mcp_pptx.server import (
-    pptx_create, pptx_add_slide, pptx_save,
-    pptx_apply_theme, pptx_add_code_block,
-    pptx_add_shape
+    pptx_create,
+    pptx_add_slide,
+    pptx_save,
+    pptx_apply_theme,
+    pptx_add_code_block,
+    pptx_add_shape,
 )
 
 
 async def create_code_examples():
     """Create presentation with various code examples."""
-    
+
     print("\n💻 PowerPoint MCP Server - Code Examples")
-    print("="*70)
+    print("=" * 70)
     print("📝 Creating Code Examples Presentation")
-    print("="*60)
-    
+    print("=" * 60)
+
     # Create presentation
     print("\n1. Creating presentation...")
     await pptx_create("code_examples")
-    
+
     # Apply dark theme for better code visibility
     print("2. Applying dark theme...")
     await pptx_apply_theme(theme="dark_purple")
-    
+
     # Title slide
     print("3. Creating title slide...")
     await pptx_add_slide(
@@ -40,17 +45,14 @@ async def create_code_examples():
             "Beautiful code blocks in presentations",
             "Multiple programming languages",
             "Syntax highlighting appearance",
-            "Dark theme optimized"
-        ]
+            "Dark theme optimized",
+        ],
     )
-    
+
     # Python example
     print("\n4. Adding Python code example...")
-    await pptx_add_slide(
-        title="Python Example",
-        content=[]
-    )
-    
+    await pptx_add_slide(title="Python Example", content=[])
+
     python_code = """def fibonacci(n):
     \"\"\"Generate Fibonacci sequence up to n terms.\"\"\"
     if n <= 0:
@@ -69,7 +71,7 @@ async def create_code_examples():
 # Example usage
 result = fibonacci(10)
 print(f"Fibonacci sequence: {result}")"""
-    
+
     await pptx_add_code_block(
         slide_index=1,
         code=python_code,
@@ -78,16 +80,13 @@ print(f"Fibonacci sequence: {result}")"""
         top=1.8,
         width=8.0,
         height=3.5,
-        theme="dark_purple"
+        theme="dark_purple",
     )
-    
+
     # JavaScript example
     print("5. Adding JavaScript code example...")
-    await pptx_add_slide(
-        title="JavaScript Example",
-        content=[]
-    )
-    
+    await pptx_add_slide(title="JavaScript Example", content=[])
+
     js_code = """// React component with hooks
 import React, { useState, useEffect } from 'react';
 
@@ -116,7 +115,7 @@ const DataFetcher = ({ apiUrl }) => {
     if (error) return <div>Error: {error}</div>;
     return <div>{JSON.stringify(data)}</div>;
 };"""
-    
+
     await pptx_add_code_block(
         slide_index=2,
         code=js_code,
@@ -125,16 +124,13 @@ const DataFetcher = ({ apiUrl }) => {
         top=1.8,
         width=9.0,
         height=4.0,
-        theme="dark_blue"
+        theme="dark_blue",
     )
-    
+
     # SQL example
     print("6. Adding SQL code example...")
-    await pptx_add_slide(
-        title="SQL Query Example",
-        content=[]
-    )
-    
+    await pptx_add_slide(title="SQL Query Example", content=[])
+
     sql_code = """-- Complex query with CTEs and window functions
 WITH monthly_sales AS (
     SELECT 
@@ -167,7 +163,7 @@ SELECT
 FROM ranked_products
 WHERE rank <= 5
 ORDER BY month, rank;"""
-    
+
     await pptx_add_code_block(
         slide_index=3,
         code=sql_code,
@@ -176,16 +172,13 @@ ORDER BY month, rank;"""
         top=1.8,
         width=9.0,
         height=4.0,
-        theme="dark_green"
+        theme="dark_green",
     )
-    
+
     # Rust example
     print("7. Adding Rust code example...")
-    await pptx_add_slide(
-        title="Rust System Programming",
-        content=[]
-    )
-    
+    await pptx_add_slide(title="Rust System Programming", content=[])
+
     rust_code = """use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -226,7 +219,7 @@ fn main() {
     
     println!("Final counter: {:?}", *counter.lock().unwrap());
 }"""
-    
+
     await pptx_add_code_block(
         slide_index=4,
         code=rust_code,
@@ -235,16 +228,13 @@ fn main() {
         top=1.8,
         width=9.0,
         height=4.0,
-        theme="dark_modern"
+        theme="dark_modern",
     )
-    
+
     # Mixed slide with code and explanation
     print("8. Adding mixed content slide...")
-    await pptx_add_slide(
-        title="API Design Pattern",
-        content=[]
-    )
-    
+    await pptx_add_slide(title="API Design Pattern", content=[])
+
     # Add explanation shape
     await pptx_add_shape(
         slide_index=5,
@@ -253,9 +243,9 @@ fn main() {
         top=1.8,
         width=4.0,
         height=1.0,
-        text="RESTful API with authentication"
+        text="RESTful API with authentication",
     )
-    
+
     # Add code
     api_code = """from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
@@ -275,7 +265,7 @@ async def create_user(user: User):
 async def get_user(user_id: int):
     # Fetch user from database
     return {"id": user_id, "username": "john"}"""
-    
+
     await pptx_add_code_block(
         slide_index=5,
         code=api_code,
@@ -284,16 +274,13 @@ async def get_user(user_id: int):
         top=3.0,
         width=9.0,
         height=2.5,
-        theme="cyberpunk"
+        theme="cyberpunk",
     )
-    
+
     # Docker example
     print("9. Adding Docker configuration example...")
-    await pptx_add_slide(
-        title="Container Configuration",
-        content=[]
-    )
-    
+    await pptx_add_slide(title="Container Configuration", content=[])
+
     docker_code = """# Multi-stage Docker build for Python app
 FROM python:3.11-slim AS builder
 
@@ -311,7 +298,7 @@ ENV PATH=/root/.local/bin:$PATH
 EXPOSE 8000
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]"""
-    
+
     await pptx_add_code_block(
         slide_index=6,
         code=docker_code,
@@ -320,9 +307,9 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]"""
         top=2.0,
         width=8.0,
         height=3.5,
-        theme="dark_blue"
+        theme="dark_blue",
     )
-    
+
     # Summary slide
     print("10. Adding summary slide...")
     await pptx_add_slide(
@@ -333,16 +320,16 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]"""
             "✅ Monospace fonts for code clarity",
             "✅ Language labels for context",
             "✅ Customizable size and positioning",
-            "✅ Perfect for technical presentations"
-        ]
+            "✅ Perfect for technical presentations",
+        ],
     )
-    
+
     # Save presentation
     print("\n11. Saving presentation...")
     await pptx_save("../outputs/code_examples.pptx")
     print("   ✅ Saved to outputs/code_examples.pptx")
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("🎉 Code Examples presentation created successfully!")
     print("📁 File saved as: outputs/code_examples.pptx")
     print("\n💡 Features demonstrated:")
@@ -359,8 +346,8 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]"""
 async def main():
     """Main execution function."""
     await create_code_examples()
-    
-    print("\n" + "="*70)
+
+    print("\n" + "=" * 70)
     print("📚 Use cases for code in presentations:")
     print("   1. Technical documentation")
     print("   2. Code reviews and walkthroughs")

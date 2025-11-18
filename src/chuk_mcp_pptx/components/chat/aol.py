@@ -8,13 +8,10 @@ Recreates the classic 2000s messaging experience.
 from typing import Optional, Dict, Any, List
 from pptx.util import Pt, Inches
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
-from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
 from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
-from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
-from ...constants import MessageVariant
 
 
 class AIMBubble(Component):
@@ -48,12 +45,14 @@ class AIMBubble(Component):
         msg.render(slide, left=1, top=3, width=7)
     """
 
-    def __init__(self,
-                 text: str,
-                 screen_name: str,
-                 variant: str = "received",
-                 timestamp: Optional[str] = None,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        screen_name: str,
+        variant: str = "received",
+        timestamp: Optional[str] = None,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize AIM bubble.
 
@@ -109,7 +108,7 @@ class AIMBubble(Component):
             Inches(left),
             Inches(current_top),
             Inches(width),
-            Inches(0.22)  # Increased from 0.18
+            Inches(0.22),  # Increased from 0.18
         )
         sn_frame = sn_box.text_frame
         sn_frame.text = f"{self.screen_name}:"
@@ -125,10 +124,7 @@ class AIMBubble(Component):
 
         # Message text
         text_box = slide.shapes.add_textbox(
-            Inches(left),
-            Inches(current_top),
-            Inches(width),
-            Inches(0.5)
+            Inches(left), Inches(current_top), Inches(width), Inches(0.5)
         )
         text_frame = text_box.text_frame
         text_frame.text = self.text
@@ -151,10 +147,7 @@ class AIMBubble(Component):
         # Timestamp (small, gray)
         if self.timestamp:
             ts_box = slide.shapes.add_textbox(
-                Inches(left),
-                Inches(current_top + 0.02),
-                Inches(width),
-                Inches(0.15)
+                Inches(left), Inches(current_top + 0.02), Inches(width), Inches(0.15)
             )
             ts_frame = ts_box.text_frame
             ts_frame.text = self.timestamp
@@ -192,10 +185,12 @@ class AIMConversation(Component):
         conversation.render(slide, left=1, top=2, width=7)
     """
 
-    def __init__(self,
-                 messages: List[Dict[str, Any]],
-                 spacing: float = 0.15,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        messages: List[Dict[str, Any]],
+        spacing: float = 0.15,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize AIM conversation.
 
@@ -219,7 +214,7 @@ class AIMConversation(Component):
                 screen_name=msg_data.get("screen_name", "User"),
                 variant=msg_data.get("variant", "received"),
                 timestamp=msg_data.get("timestamp"),
-                theme=self.theme
+                theme=self.theme,
             )
 
             msg_shapes = message.render(slide, left, current_top, width)

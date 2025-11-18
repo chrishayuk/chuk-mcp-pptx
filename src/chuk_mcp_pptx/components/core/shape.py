@@ -5,7 +5,7 @@ Shape components for PowerPoint presentations.
 Provides basic geometric shapes with design system integration.
 """
 
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any
 from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
@@ -50,9 +50,14 @@ SHAPE_TYPES = {
     category=ComponentCategory.UI,
     description="Geometric shape component with theme integration",
     props=[
-        prop("shape_type", "string", "Type of shape",
-             options=list(SHAPE_TYPES.keys()),
-             default="rectangle", example="star"),
+        prop(
+            "shape_type",
+            "string",
+            "Type of shape",
+            options=list(SHAPE_TYPES.keys()),
+            default="rectangle",
+            example="star",
+        ),
         prop("text", "string", "Text content", example="Click me"),
         prop("fill_color", "string", "Fill color (hex or semantic)", example="#FF5733"),
         prop("line_color", "string", "Border color", example="primary.DEFAULT"),
@@ -69,7 +74,7 @@ SHAPE_TYPES = {
 shape = Shape(shape_type="star", fill_color="warning.DEFAULT")
 shape.render(slide, left=2, top=2, width=2, height=2)
             """,
-            shape_type="star"
+            shape_type="star",
         ),
         example(
             "Rounded rectangle with text",
@@ -82,10 +87,10 @@ shape = Shape(
 shape.render(slide, left=1, top=1, width=3, height=1.5)
             """,
             shape_type="rounded_rectangle",
-            text="Important"
+            text="Important",
         ),
     ],
-    tags=["shape", "geometry", "basic", "ui"]
+    tags=["shape", "geometry", "basic", "ui"],
 )
 class Shape(Component):
     """
@@ -111,13 +116,15 @@ class Shape(Component):
         shape.render(slide, left=1, top=1, width=4, height=2)
     """
 
-    def __init__(self,
-                 shape_type: str = "rectangle",
-                 text: Optional[str] = None,
-                 fill_color: Optional[str] = None,
-                 line_color: Optional[str] = None,
-                 line_width: float = 1.0,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        shape_type: str = "rectangle",
+        text: Optional[str] = None,
+        fill_color: Optional[str] = None,
+        line_color: Optional[str] = None,
+        line_width: float = 1.0,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize shape component.
 
@@ -136,8 +143,7 @@ class Shape(Component):
         self.line_color = line_color
         self.line_width = line_width
 
-    def render(self, slide, left: float, top: float,
-               width: float, height: float) -> Any:
+    def render(self, slide, left: float, top: float, width: float, height: float) -> Any:
         """
         Render shape to slide.
 
@@ -156,11 +162,7 @@ class Shape(Component):
 
         # Create shape
         shape = slide.shapes.add_shape(
-            mso_shape,
-            Inches(left),
-            Inches(top),
-            Inches(width),
-            Inches(height)
+            mso_shape, Inches(left), Inches(top), Inches(width), Inches(height)
         )
 
         # Apply fill color
@@ -194,9 +196,7 @@ class Shape(Component):
             # Parse hex color
             color_str = color_str[1:]
             return RGBColor(
-                int(color_str[0:2], 16),
-                int(color_str[2:4], 16),
-                int(color_str[4:6], 16)
+                int(color_str[0:2], 16), int(color_str[2:4], 16), int(color_str[4:6], 16)
             )
         else:
             # Use semantic color from theme

@@ -5,7 +5,7 @@ Provides pre-calculated position sets for common slide layouts like
 dashboards, comparisons, hero sections, and galleries.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 from ..tokens.spacing import GAPS
 
 
@@ -18,7 +18,7 @@ def _calculate_cell_position(
     gap_value: float,
     left: float,
     top: float,
-    auto_height: bool = True
+    auto_height: bool = True,
 ) -> Dict[str, float]:
     """
     Calculate position for a grid cell.
@@ -30,11 +30,7 @@ def _calculate_cell_position(
     cell_width = (col_span * col_width) + ((col_span - 1) * gap_value)
     cell_height = row_height
 
-    pos = {
-        "left": round(cell_left, 3),
-        "top": round(cell_top, 3),
-        "width": round(cell_width, 3)
-    }
+    pos = {"left": round(cell_left, 3), "top": round(cell_top, 3), "width": round(cell_width, 3)}
 
     if not auto_height:
         pos["height"] = round(cell_height, 3)
@@ -43,11 +39,7 @@ def _calculate_cell_position(
 
 
 def get_dashboard_positions(
-    gap: str = "md",
-    left: float = 0.5,
-    top: float = 1.8,
-    width: float = 9.0,
-    height: float = 5.5
+    gap: str = "md", left: float = 0.5, top: float = 1.8, width: float = 9.0, height: float = 5.5
 ) -> Dict[str, Any]:
     """
     Get positions for a dashboard layout.
@@ -80,9 +72,7 @@ def get_dashboard_positions(
 
     def calc_cell(col_span, col_start, row_start, auto_height=True):
         return _calculate_cell_position(
-            col_span, col_start, row_start,
-            col_width, row_height, gap_value,
-            left, top, auto_height
+            col_span, col_start, row_start, col_width, row_height, gap_value, left, top, auto_height
         )
 
     return {
@@ -91,9 +81,9 @@ def get_dashboard_positions(
             calc_cell(4, 4, 0, auto_height=False),  # Metric 2: cols 4-7
             calc_cell(4, 8, 0, auto_height=False),  # Metric 3: cols 8-11
         ],
-        "main": calc_cell(8, 0, 1, auto_height=False),      # Main: cols 0-7, row 1
-        "sidebar": calc_cell(4, 8, 1, auto_height=False),   # Sidebar: cols 8-11, row 1
-        "description": "Dashboard layout with 3 metrics (top row) + main content (8 cols) + sidebar (4 cols)"
+        "main": calc_cell(8, 0, 1, auto_height=False),  # Main: cols 0-7, row 1
+        "sidebar": calc_cell(4, 8, 1, auto_height=False),  # Sidebar: cols 8-11, row 1
+        "description": "Dashboard layout with 3 metrics (top row) + main content (8 cols) + sidebar (4 cols)",
     }
 
 
@@ -103,7 +93,7 @@ def get_comparison_positions(
     top: float = 1.8,
     width: float = 9.0,
     height: float = 5.5,
-    include_header: bool = False
+    include_header: bool = False,
 ) -> Dict[str, Any]:
     """
     Get positions for a two-column comparison layout.
@@ -137,22 +127,18 @@ def get_comparison_positions(
 
     def calc_cell(col_span, col_start, row_start, auto_height=True):
         return _calculate_cell_position(
-            col_span, col_start, row_start,
-            col_width, row_height, gap_value,
-            left, top, auto_height
+            col_span, col_start, row_start, col_width, row_height, gap_value, left, top, auto_height
         )
 
-    layout = {
-        "description": "Two-column comparison layout"
-    }
+    layout = {"description": "Two-column comparison layout"}
 
     if include_header:
         layout["header"] = calc_cell(12, 0, 0, auto_height=False)  # Full width header
-        layout["left"] = calc_cell(6, 0, 1, auto_height=False)     # Left column, row 1
-        layout["right"] = calc_cell(6, 6, 1, auto_height=False)    # Right column, row 1
+        layout["left"] = calc_cell(6, 0, 1, auto_height=False)  # Left column, row 1
+        layout["right"] = calc_cell(6, 6, 1, auto_height=False)  # Right column, row 1
     else:
-        layout["left"] = calc_cell(6, 0, 0, auto_height=False)     # Left column, row 0
-        layout["right"] = calc_cell(6, 6, 0, auto_height=False)    # Right column, row 0
+        layout["left"] = calc_cell(6, 0, 0, auto_height=False)  # Left column, row 0
+        layout["right"] = calc_cell(6, 6, 0, auto_height=False)  # Right column, row 0
 
     return layout
 
@@ -163,7 +149,7 @@ def get_hero_positions(
     top: float = 1.8,
     width: float = 9.0,
     height: float = 5.5,
-    image_side: str = "left"
+    image_side: str = "left",
 ) -> Dict[str, Any]:
     """
     Get positions for a hero section layout.
@@ -206,7 +192,7 @@ def get_hero_positions(
         pos = {
             "left": round(cell_left, 3),
             "top": round(cell_top, 3),
-            "width": round(cell_width, 3)
+            "width": round(cell_width, 3),
         }
 
         if not auto_height:
@@ -218,15 +204,15 @@ def get_hero_positions(
     if image_side == "left":
         layout = {
             "hero_image": calc_cell(7, 0, 0, row_span=3, auto_height=False),  # Full height, left
-            "title": calc_cell(5, 7, 0),      # Title in text area
-            "subtitle": calc_cell(5, 7, 1),   # Subtitle in text area
-            "body": calc_cell(5, 7, 2),       # Body in text area
+            "title": calc_cell(5, 7, 0),  # Title in text area
+            "subtitle": calc_cell(5, 7, 1),  # Subtitle in text area
+            "body": calc_cell(5, 7, 2),  # Body in text area
         }
     else:  # image_side == "right"
         layout = {
-            "title": calc_cell(5, 0, 0),      # Title in text area
-            "subtitle": calc_cell(5, 0, 1),   # Subtitle in text area
-            "body": calc_cell(5, 0, 2),       # Body in text area
+            "title": calc_cell(5, 0, 0),  # Title in text area
+            "subtitle": calc_cell(5, 0, 1),  # Subtitle in text area
+            "body": calc_cell(5, 0, 2),  # Body in text area
             "hero_image": calc_cell(7, 5, 0, row_span=3, auto_height=False),  # Full height, right
         }
 
@@ -241,7 +227,7 @@ def get_gallery_positions(
     top: float = 1.8,
     width: float = 9.0,
     height: float = 5.5,
-    layout_style: str = "2x2"
+    layout_style: str = "2x2",
 ) -> Dict[str, Any]:
     """
     Get positions for a photo gallery grid layout.
@@ -299,7 +285,7 @@ def get_gallery_positions(
             "left": round(cell_left, 3),
             "top": round(cell_top, 3),
             "width": round(cell_width, 3),
-            "height": round(row_height, 3)
+            "height": round(row_height, 3),
         }
 
     # Build gallery items
@@ -312,5 +298,5 @@ def get_gallery_positions(
         "items": items,
         "pattern": layout_style,
         "count": len(items),
-        "description": f"Gallery with {len(items)} equal-sized items ({layout_style})"
+        "description": f"Gallery with {len(items)} equal-sized items ({layout_style})",
     }

@@ -2,9 +2,9 @@
 Radar, Combo, and other specialized chart components.
 """
 
-from typing import Dict, Any, List, Optional, Tuple, Union
-from pptx.chart.data import CategoryChartData, XyChartData
-from pptx.enum.chart import XL_CHART_TYPE, XL_DATA_LABEL_POSITION
+from typing import Dict, List, Optional, Tuple
+from pptx.chart.data import CategoryChartData
+from pptx.enum.chart import XL_CHART_TYPE
 from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
 
@@ -14,23 +14,25 @@ from .base import ChartComponent
 class RadarChart(ChartComponent):
     """
     Radar (Spider) chart component for multi-criteria comparison.
-    
+
     Features:
     - Multiple data series
     - Filled or line variants
     - Custom scaling
     - Beautiful grid styling
     """
-    
-    def __init__(self,
-                 categories: List[str],
-                 series: Dict[str, List[float]],
-                 variant: str = "filled",
-                 max_value: Optional[float] = None,
-                 **kwargs):
+
+    def __init__(
+        self,
+        categories: List[str],
+        series: Dict[str, List[float]],
+        variant: str = "filled",
+        max_value: Optional[float] = None,
+        **kwargs,
+    ):
         """
         Initialize radar chart.
-        
+
         Args:
             categories: Criteria/axis labels
             series: Dictionary of series names to values
@@ -43,12 +45,12 @@ class RadarChart(ChartComponent):
         self.series = series
         self.variant = variant
         self.max_value = max_value
-        
+
         # Validate data during initialization
         is_valid, error = self.validate_data()
         if not is_valid:
             raise ValueError(f"Invalid chart data: {error}")
-        
+
         # Set chart type based on variant
         variant_map = {
             "filled": XL_CHART_TYPE.RADAR_FILLED,
@@ -56,25 +58,28 @@ class RadarChart(ChartComponent):
             "lines": XL_CHART_TYPE.RADAR,
         }
         self.chart_type = variant_map.get(variant, XL_CHART_TYPE.RADAR_FILLED)
-    
+
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """Validate radar chart data."""
         if not self.categories:
             return False, "No categories provided"
-        
+
         if not self.series:
             return False, "No data series provided"
-        
+
         if len(self.categories) < 3:
             return False, "Radar chart needs at least 3 categories"
-        
+
         expected_length = len(self.categories)
         for name, values in self.series.items():
             if len(values) != expected_length:
-                return False, f"Series '{name}' has {len(values)} values, expected {expected_length}"
-        
+                return (
+                    False,
+                    f"Series '{name}' has {len(values)} values, expected {expected_length}",
+                )
+
         return True, None
-    
+
     def _prepare_chart_data(self) -> CategoryChartData:
         """Prepare radar chart data."""
         chart_data = CategoryChartData()
@@ -111,7 +116,7 @@ class RadarChart(ChartComponent):
                         fill = series.format.fill
                         fill.solid()
                         fill.fore_color.rgb = RGBColor(*rgb)
-                        if hasattr(fill, 'transparency'):
+                        if hasattr(fill, "transparency"):
                             fill.transparency = 0.3
 
                     # Line styling
@@ -120,7 +125,7 @@ class RadarChart(ChartComponent):
                     line.width = Pt(2.5)
 
                     # Marker styling for appropriate variants
-                    if hasattr(series, 'marker') and self.variant in ["markers", "filled"]:
+                    if hasattr(series, "marker") and self.variant in ["markers", "filled"]:
                         series.marker.style = 1  # Circle
                         series.marker.size = 8
 
@@ -133,7 +138,7 @@ class RadarChart(ChartComponent):
                         marker_line.width = Pt(1)
 
         # Configure radar-specific styling
-        if hasattr(chart, 'value_axis'):
+        if hasattr(chart, "value_axis"):
             value_axis = chart.value_axis
             value_axis.has_major_gridlines = True
 
@@ -152,22 +157,24 @@ class RadarChart(ChartComponent):
 class ComboChart(ChartComponent):
     """
     Combination chart with multiple chart types.
-    
+
     Features:
     - Mixed column/line series
     - Secondary axis support
     - Custom styling per series type
     """
-    
-    def __init__(self,
-                 categories: List[str],
-                 column_series: Dict[str, List[float]],
-                 line_series: Dict[str, List[float]],
-                 secondary_axis: Optional[List[str]] = None,
-                 **kwargs):
+
+    def __init__(
+        self,
+        categories: List[str],
+        column_series: Dict[str, List[float]],
+        line_series: Dict[str, List[float]],
+        secondary_axis: Optional[List[str]] = None,
+        **kwargs,
+    ):
         """
         Initialize combo chart.
-        
+
         Args:
             categories: Category labels
             column_series: Dictionary of column series
@@ -180,37 +187,43 @@ class ComboChart(ChartComponent):
         self.column_series = column_series
         self.line_series = line_series
         self.secondary_axis = secondary_axis or []
-        
+
         # Validate data during initialization
         is_valid, error = self.validate_data()
         if not is_valid:
             raise ValueError(f"Invalid chart data: {error}")
-        
+
         # Start with column chart type
         self.chart_type = XL_CHART_TYPE.COLUMN_CLUSTERED
-    
+
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """Validate combo chart data."""
         if not self.categories:
             return False, "No categories provided"
-        
+
         if not self.column_series and not self.line_series:
             return False, "No data series provided"
-        
+
         expected_length = len(self.categories)
-        
+
         # Validate column series
         for name, values in self.column_series.items():
             if len(values) != expected_length:
-                return False, f"Column series '{name}' has {len(values)} values, expected {expected_length}"
-        
+                return (
+                    False,
+                    f"Column series '{name}' has {len(values)} values, expected {expected_length}",
+                )
+
         # Validate line series
         for name, values in self.line_series.items():
             if len(values) != expected_length:
-                return False, f"Line series '{name}' has {len(values)} values, expected {expected_length}"
-        
+                return (
+                    False,
+                    f"Line series '{name}' has {len(values)} values, expected {expected_length}",
+                )
+
         return True, None
-    
+
     def _prepare_chart_data(self) -> CategoryChartData:
         """Prepare combo chart data."""
         chart_data = CategoryChartData()
@@ -290,19 +303,21 @@ class ComboChart(ChartComponent):
 class GaugeChart(ChartComponent):
     """
     Gauge chart for showing progress or KPI values.
-    
+
     Uses doughnut chart with custom styling to create gauge appearance.
     """
-    
-    def __init__(self,
-                 value: float,
-                 min_value: float = 0,
-                 max_value: float = 100,
-                 thresholds: Optional[Dict[str, float]] = None,
-                 **kwargs):
+
+    def __init__(
+        self,
+        value: float,
+        min_value: float = 0,
+        max_value: float = 100,
+        thresholds: Optional[Dict[str, float]] = None,
+        **kwargs,
+    ):
         """
         Initialize gauge chart.
-        
+
         Args:
             value: Current value to display
             min_value: Minimum value on gauge
@@ -315,45 +330,47 @@ class GaugeChart(ChartComponent):
         self.min_value = min_value
         self.max_value = max_value
         self.thresholds = thresholds or {}
-        
+
         self.chart_type = XL_CHART_TYPE.DOUGHNUT
-        
+
         # Calculate gauge segments
         self._calculate_segments()
-        
+
         # Validate data after calculation
         is_valid, error = self.validate_data()
         if not is_valid:
             raise ValueError(f"Invalid chart data: {error}")
-    
+
     def _calculate_segments(self):
         """Calculate gauge segments for visualization."""
         total_range = self.max_value - self.min_value
-        
+
         # Create segments: filled (value) and empty (remaining)
         value_portion = (self.value - self.min_value) / total_range
         empty_portion = 1 - value_portion
-        
+
         # Add invisible segment to create gauge effect (half circle)
-        invisible_portion = 0.5
-        
+
         self.categories = ["Value", "Empty", "Hidden"]
         self.values = [
             value_portion * 50,  # Scale to half circle
             empty_portion * 50,
-            50  # Hidden bottom half
+            50,  # Hidden bottom half
         ]
-    
+
     def validate_data(self) -> Tuple[bool, Optional[str]]:
         """Validate gauge data."""
         if self.min_value >= self.max_value:
             return False, "min_value must be less than max_value"
-        
+
         if not (self.min_value <= self.value <= self.max_value):
-            return False, f"value ({self.value}) must be between min_value ({self.min_value}) and max_value ({self.max_value})"
-        
+            return (
+                False,
+                f"value ({self.value}) must be between min_value ({self.min_value}) and max_value ({self.max_value})",
+            )
+
         return True, None
-    
+
     def _prepare_chart_data(self) -> CategoryChartData:
         """Prepare gauge chart data."""
         chart_data = CategoryChartData()
@@ -363,13 +380,13 @@ class GaugeChart(ChartComponent):
 
     def render(self, slide, **kwargs):
         """Render gauge chart with custom styling and integrated labels."""
-        from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+        from pptx.enum.text import PP_ALIGN
 
         # Get position parameters
-        left = kwargs.get('left', 1.0)
-        top = kwargs.get('top', 2.0)
-        width = kwargs.get('width', 3.0)
-        height = kwargs.get('height', 2.5)
+        left = kwargs.get("left", 1.0)
+        top = kwargs.get("top", 2.0)
+        width = kwargs.get("width", 3.0)
+        height = kwargs.get("height", 2.5)
 
         # Call base render to create chart
         chart = super().render(slide, **kwargs)
@@ -401,10 +418,7 @@ class GaugeChart(ChartComponent):
         # Add title above gauge if provided
         if self.title:
             title_box = slide.shapes.add_textbox(
-                Inches(left),
-                Inches(top - 0.5),
-                Inches(width),
-                Inches(0.4)
+                Inches(left), Inches(top - 0.5), Inches(width), Inches(0.4)
             )
             title_frame = title_box.text_frame
             title_frame.text = self.title
@@ -416,10 +430,7 @@ class GaugeChart(ChartComponent):
 
         # Add value display in center/below gauge
         value_box = slide.shapes.add_textbox(
-            Inches(left),
-            Inches(top + height * 0.4),
-            Inches(width),
-            Inches(0.6)
+            Inches(left), Inches(top + height * 0.4), Inches(width), Inches(0.6)
         )
         value_frame = value_box.text_frame
         value_frame.text = f"{self.value:.0f}"
@@ -431,10 +442,7 @@ class GaugeChart(ChartComponent):
 
         # Add percentage or range label
         label_box = slide.shapes.add_textbox(
-            Inches(left),
-            Inches(top + height * 0.65),
-            Inches(width),
-            Inches(0.3)
+            Inches(left), Inches(top + height * 0.65), Inches(width), Inches(0.3)
         )
         label_frame = label_box.text_frame
         percentage = ((self.value - self.min_value) / (self.max_value - self.min_value)) * 100

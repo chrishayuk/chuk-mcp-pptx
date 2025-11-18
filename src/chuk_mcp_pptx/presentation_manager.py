@@ -6,16 +6,17 @@ Each presentation can be auto-saved to VFS for persistence and multi-server acce
 
 Uses Pydantic models throughout for type safety and validation.
 """
+
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
-import json
 import logging
 from datetime import datetime
-from pathlib import Path
 from typing import TYPE_CHECKING
 from pptx import Presentation
+from pptx.presentation import Presentation as PresentationType
 
 from .models import (
     PresentationMetadata,
@@ -38,7 +39,7 @@ class PresentationManager:
     Presentations and metadata are Pydantic models for type safety.
     """
 
-    def __init__(self, vfs: "AsyncVirtualFileSystem", base_path: str = "presentations"):
+    def __init__(self, vfs: "AsyncVirtualFileSystem", base_path: str = "presentations") -> None:
         """
         Initialize the presentation manager.
 
@@ -48,7 +49,7 @@ class PresentationManager:
         """
         self.vfs = vfs
         self.base_path = base_path
-        self._presentations: dict[str, Presentation] = {}
+        self._presentations: dict[str, PresentationType] = {}
         self._metadata: dict[str, PresentationMetadata] = {}
         self._current_presentation: str | None = None
         self._vfs_initialized: bool = False
@@ -64,12 +65,12 @@ class PresentationManager:
     def _get_vfs_path(self, name: str) -> str:
         """Get the VFS path for a presentation."""
         # Sanitize the name to prevent directory traversal
-        safe_name = "".join(c for c in name if c.isalnum() or c in ('-', '_'))
+        safe_name = "".join(c for c in name if c.isalnum() or c in ("-", "_"))
         if not safe_name:
             safe_name = "presentation"
         return f"{self.base_path}/{safe_name}.pptx"
 
-    async def _save_to_vfs(self, name: str, prs: Presentation) -> bool:
+    async def _save_to_vfs(self, name: str, prs: PresentationType) -> bool:
         """
         Save presentation to VFS.
 
@@ -89,9 +90,9 @@ class PresentationManager:
                 await self.vfs.mkdir(self.base_path)
                 logger.info(f"Created VFS directory: {self.base_path}")
 
-            # Convert presentation to bytes
+            # Convert presentation to bytes (wrap blocking I/O)
             buffer = io.BytesIO()
-            prs.save(buffer)
+            await asyncio.to_thread(prs.save, buffer)
             buffer.seek(0)
             data = buffer.read()
 
@@ -104,7 +105,7 @@ class PresentationManager:
             logger.error(f"Failed to save to VFS: {e}")
             return False
 
-    async def _load_from_vfs(self, name: str) -> Presentation | None:
+    async def _load_from_vfs(self, name: str) -> PresentationType | None:
         """
         Load presentation from VFS.
 
@@ -156,7 +157,7 @@ class PresentationManager:
                 logger.warning(f"Presentation not found in VFS for deletion: {file_path}")
                 return False
         except Exception as e:
-            logger.error(f"Failed to delete from VFS: {e}")
+            logger.error(f"Failed to delete from VFS: {e}")  # nosec B608
             return False
 
     async def create(self, name: str, theme: str | None = None) -> PresentationMetadata:
@@ -191,7 +192,9 @@ class PresentationManager:
 
         return metadata
 
-    async def get(self, name: str | None = None) -> tuple[Presentation, PresentationMetadata] | None:
+    async def get(
+        self, name: str | None = None
+    ) -> tuple[PresentationType, PresentationMetadata] | None:
         """
         Get a presentation and its metadata by name.
 
@@ -223,24 +226,24 @@ class PresentationManager:
             return (prs, metadata)
 
         # Try loading from VFS
-        prs = await self._load_from_vfs(pres_name)
-        if prs:
-            self._presentations[pres_name] = prs
+        loaded_prs = await self._load_from_vfs(pres_name)
+        if loaded_prs is not None:
+            self._presentations[pres_name] = loaded_prs
 
             # Create metadata
             metadata = PresentationMetadata(
                 name=pres_name,
-                slide_count=len(prs.slides),
+                slide_count=len(loaded_prs.slides),
                 vfs_path=self._get_vfs_path(pres_name),
                 is_saved=True,
             )
             self._metadata[pres_name] = metadata
 
-            return (prs, metadata)
+            return (loaded_prs, metadata)
 
         return None
 
-    def get_presentation(self, name: str | None = None) -> Presentation | None:
+    def get_presentation(self, name: str | None = None) -> PresentationType | None:
         """
         Get just the presentation object (synchronous).
 
@@ -329,7 +332,9 @@ class PresentationManager:
 
         # Update current if we deleted it
         if self._current_presentation == name:
-            self._current_presentation = next(iter(self._presentations), None) if self._presentations else None
+            self._current_presentation = (
+                next(iter(self._presentations), None) if self._presentations else None
+            )
 
         # Delete from VFS
         await self._delete_from_vfs(name)
@@ -364,16 +369,16 @@ class PresentationManager:
                 existing_names = {p.name for p in presentations}
 
                 for file in files:
-                    if file.endswith('.pptx'):
+                    if file.endswith(".pptx"):
                         name = file[:-5]  # Remove .pptx extension
                         if name not in existing_names:
                             # Load to get slide count
-                            prs = await self._load_from_vfs(name)
-                            if prs:
-                                self._presentations[name] = prs
+                            loaded_prs = await self._load_from_vfs(name)
+                            if loaded_prs is not None:
+                                self._presentations[name] = loaded_prs
                                 metadata = PresentationMetadata(
                                     name=name,
-                                    slide_count=len(prs.slides),
+                                    slide_count=len(loaded_prs.slides),
                                     vfs_path=self._get_vfs_path(name),
                                     is_saved=True,
                                 )
@@ -382,7 +387,7 @@ class PresentationManager:
                                 presentations.append(
                                     PresentationInfo(
                                         name=name,
-                                        slide_count=len(prs.slides),
+                                        slide_count=len(loaded_prs.slides),
                                         is_current=False,
                                         file_path=self._get_vfs_path(name),
                                     )
@@ -439,9 +444,7 @@ class PresentationManager:
 
         # Ensure we have enough slide metadata entries
         while len(metadata.slides) <= slide_index:
-            metadata.slides.append(
-                SlideMetadata(index=len(metadata.slides), layout="Blank")
-            )
+            metadata.slides.append(SlideMetadata(index=len(metadata.slides), layout="Blank"))
 
         # Get the slide
         if slide_index < len(prs.slides):
@@ -465,7 +468,7 @@ class PresentationManager:
 
             metadata.update_modified()
 
-    def export_base64(self, name: str | None = None) -> str | None:
+    async def export_base64(self, name: str | None = None) -> str | None:
         """
         Export presentation as base64.
 
@@ -482,9 +485,9 @@ class PresentationManager:
         prs = self._presentations[pres_name]
         try:
             buffer = io.BytesIO()
-            prs.save(buffer)
+            await asyncio.to_thread(prs.save, buffer)
             buffer.seek(0)
-            return base64.b64encode(buffer.read()).decode('utf-8')
+            return base64.b64encode(buffer.read()).decode("utf-8")
         except Exception as e:
             logger.error(f"Failed to export as base64: {e}")
             return None
@@ -514,7 +517,7 @@ class PresentationManager:
             logger.error(f"Failed to import from base64: {e}")
             return False
 
-    def clear_all(self):
+    def clear_all(self) -> None:
         """Clear all presentations from memory."""
         self._presentations.clear()
         self._current_presentation = None
@@ -539,7 +542,7 @@ class PresentationManager:
         try:
             prs = self._presentations[name]
             buffer = io.BytesIO()
-            prs.save(buffer)
+            await asyncio.to_thread(prs.save, buffer)
             buffer.seek(0)
             data = buffer.read()
 
