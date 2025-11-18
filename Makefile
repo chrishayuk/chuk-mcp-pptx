@@ -51,7 +51,11 @@ dev-install:
 
 run:
 	@echo "Starting chuk-mcp-pptx server..."
-	$(PYTHON) -m chuk_mcp_pptx.async_server
+	@if command -v uv >/dev/null 2>&1; then \
+		uv run python -m chuk_mcp_pptx.server; \
+	else \
+		python -m chuk_mcp_pptx.server; \
+	fi
 
 test:
 	@echo "Running tests..."
@@ -175,7 +179,11 @@ clean-all: clean
 	rm -rf *.pptx
 
 version:
-	@$(PYTHON) -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])"
+	@if command -v uv >/dev/null 2>&1; then \
+		uv run python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])"; \
+	else \
+		python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])"; \
+	fi
 
 bump-patch:
 	@echo "Bumping patch version..."
