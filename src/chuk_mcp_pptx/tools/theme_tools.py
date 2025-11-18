@@ -12,16 +12,9 @@ from ..tokens.colors import PALETTE, get_semantic_tokens
 from ..tokens.typography import FONT_FAMILIES, get_text_style
 from ..tokens.spacing import PADDING, RADIUS
 
-from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
 from ..constants import (
-    SlideLayoutIndex,
     ErrorMessages,
-    SuccessMessages,
-    ShapeType,
-    Spacing,
-    Defaults,
 )
-
 
 
 def register_theme_tools(mcp, manager):
@@ -55,9 +48,15 @@ def register_theme_tools(mcp, manager):
         theme_list = []
         for theme_name in themes:
             theme_obj = theme_manager.get_theme(theme_name)
+            if theme_obj is None:
+                continue
             mode = theme_obj.mode
             # Access primary color through property
-            primary = theme_obj.primary.get("DEFAULT", "N/A") if isinstance(theme_obj.primary, dict) else "N/A"
+            primary = (
+                theme_obj.primary.get("DEFAULT", "N/A")
+                if isinstance(theme_obj.primary, dict)
+                else "N/A"
+            )
             theme_list.append(f"• {theme_name} ({mode}): Primary: {primary}")
 
         return "Available themes:\n" + "\n".join(theme_list)
@@ -80,15 +79,19 @@ def register_theme_tools(mcp, manager):
             info = await pptx_get_theme_info("dark-violet")
             # Returns theme configuration with all colors and settings
         """
+
         def _get_info():
             theme_manager = ThemeManager()
             info = theme_manager.get_theme_info(theme_name)
 
             if not info:
-                return json.dumps({
-                    "error": f"Theme '{theme_name}' not found",
-                    "hint": "Use pptx_list_themes() to see available themes"
-                }, indent=2)
+                return json.dumps(
+                    {
+                        "error": f"Theme '{theme_name}' not found",
+                        "hint": "Use pptx_list_themes() to see available themes",
+                    },
+                    indent=2,
+                )
 
             return json.dumps(info, indent=2)
 
@@ -99,7 +102,7 @@ def register_theme_tools(mcp, manager):
         name: str = "custom",
         primary_hue: str = "blue",
         mode: str = "dark",
-        font_family: str = "Inter"
+        font_family: str = "Inter",
     ) -> str:
         """
         Create a custom theme with specified design parameters.
@@ -133,21 +136,25 @@ def register_theme_tools(mcp, manager):
             # Use the theme with pptx_apply_theme():
             # await pptx_apply_theme(slide_index=0, theme="brand-theme")
         """
+
         def _create_theme():
             # Validate primary_hue
             valid_hues = list(PALETTE.keys())
             if primary_hue not in valid_hues:
-                return json.dumps({
-                    "error": f"Invalid primary_hue '{primary_hue}'",
-                    "hint": f"Choose from: {', '.join(valid_hues)}"
-                }, indent=2)
+                return json.dumps(
+                    {
+                        "error": f"Invalid primary_hue '{primary_hue}'",
+                        "hint": f"Choose from: {', '.join(valid_hues)}",
+                    },
+                    indent=2,
+                )
 
             # Validate mode
             if mode not in ["dark", "light"]:
-                return json.dumps({
-                    "error": f"Invalid mode '{mode}'",
-                    "hint": "Choose 'dark' or 'light'"
-                }, indent=2)
+                return json.dumps(
+                    {"error": f"Invalid mode '{mode}'", "hint": "Choose 'dark' or 'light'"},
+                    indent=2,
+                )
 
             # Validate font_family
             valid_fonts = list(FONT_FAMILIES.values())
@@ -161,9 +168,7 @@ def register_theme_tools(mcp, manager):
             try:
                 semantic_colors = get_semantic_tokens(primary_hue, mode)
             except Exception as e:
-                return json.dumps({
-                    "error": f"Failed to generate theme: {str(e)}"
-                }, indent=2)
+                return json.dumps({"error": f"Failed to generate theme: {str(e)}"}, indent=2)
 
             # Build complete theme configuration
             theme_config = {
@@ -178,20 +183,17 @@ def register_theme_tools(mcp, manager):
                         "h1": get_text_style("h1"),
                         "h2": get_text_style("h2"),
                         "h3": get_text_style("h3"),
-                        "h4": get_text_style("h4")
+                        "h4": get_text_style("h4"),
                     },
                     "body": get_text_style("body"),
-                    "small": get_text_style("small")
+                    "small": get_text_style("small"),
                 },
-                "spacing": {
-                    "padding": PADDING,
-                    "radius": RADIUS
-                },
+                "spacing": {"padding": PADDING, "radius": RADIUS},
                 "usage": {
                     "description": f"Custom {mode} theme with {primary_hue} as primary color",
                     "apply": "Use pptx_apply_theme() to apply this theme to slides",
-                    "components": "Components will automatically use these colors when theme is active"
-                }
+                    "components": "Components will automatically use these colors when theme is active",
+                },
             }
 
             if font_warning:
@@ -203,9 +205,7 @@ def register_theme_tools(mcp, manager):
 
     @mcp.tool
     async def pptx_apply_theme(
-        slide_index: int | None = None,
-        theme: str = "dark",
-        presentation: str | None = None
+        slide_index: int | None = None, theme: str = "dark", presentation: str | None = None
     ) -> str:
         """
         Apply a theme to slides.
@@ -239,9 +239,14 @@ def register_theme_tools(mcp, manager):
             available_themes = theme_manager.list_themes()
 
             if theme not in available_themes:
-                return f"Error: Unknown theme '{theme}'. Available: {', '.join(available_themes[:10])}"
+                return (
+                    f"Error: Unknown theme '{theme}'. Available: {', '.join(available_themes[:10])}"
+                )
 
             theme_obj = theme_manager.get_theme(theme)
+
+            if theme_obj is None:
+                return f"Error: Could not load theme '{theme}'"
 
             if slide_index is not None:
                 if slide_index >= len(prs.slides):
@@ -268,7 +273,7 @@ def register_theme_tools(mcp, manager):
         slide_index: int,
         shape_index: int,
         theme_style: str = "card",
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Apply a theme style to a specific component/shape.
@@ -347,7 +352,7 @@ def register_theme_tools(mcp, manager):
             "primary": "Primary color styling (brand color)",
             "secondary": "Secondary color styling (subtle)",
             "accent": "Accent color styling (highlight)",
-            "muted": "Muted styling (low emphasis)"
+            "muted": "Muted styling (low emphasis)",
         }
 
         style_list = [f"• {name}: {desc}" for name, desc in styles.items()]
@@ -355,10 +360,10 @@ def register_theme_tools(mcp, manager):
 
     # Return all tools
     return {
-        'pptx_list_themes': pptx_list_themes,
-        'pptx_get_theme_info': pptx_get_theme_info,
-        'pptx_create_custom_theme': pptx_create_custom_theme,
-        'pptx_apply_theme': pptx_apply_theme,
-        'pptx_apply_component_theme': pptx_apply_component_theme,
-        'pptx_list_component_themes': pptx_list_component_themes,
+        "pptx_list_themes": pptx_list_themes,
+        "pptx_get_theme_info": pptx_get_theme_info,
+        "pptx_create_custom_theme": pptx_create_custom_theme,
+        "pptx_apply_theme": pptx_apply_theme,
+        "pptx_apply_component_theme": pptx_apply_component_theme,
+        "pptx_list_component_themes": pptx_list_component_themes,
     }

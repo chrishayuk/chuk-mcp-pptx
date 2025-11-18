@@ -12,6 +12,7 @@ from pptx.enum.text import PP_ALIGN
 from ...composition import ComposableComponent
 from ...variants import BUTTON_VARIANTS
 from ...registry import component, ComponentCategory, prop, example
+from ...constants import ComponentSizing
 
 
 @component(
@@ -20,12 +21,17 @@ from ...registry import component, ComponentCategory, prop, example
     description="Interactive button component with multiple variants and sizes",
     props=[
         prop("text", "string", "Button label text", required=True, example="Click me"),
-        prop("variant", "string", "Visual variant",
-             options=["default", "secondary", "outline", "ghost", "destructive"],
-             default="default", example="default"),
-        prop("size", "string", "Button size",
-             options=["sm", "md", "lg"],
-             default="md", example="md"),
+        prop(
+            "variant",
+            "string",
+            "Visual variant",
+            options=["default", "secondary", "outline", "ghost", "destructive"],
+            default="default",
+            example="default",
+        ),
+        prop(
+            "size", "string", "Button size", options=["sm", "md", "lg"], default="md", example="md"
+        ),
         prop("left", "number", "Left position in inches", required=True, example=1.0),
         prop("top", "number", "Top position in inches", required=True, example=1.0),
         prop("width", "number", "Width in inches (optional)", example=2.0),
@@ -33,7 +39,7 @@ from ...registry import component, ComponentCategory, prop, example
     ],
     variants={
         "variant": ["default", "secondary", "outline", "ghost", "destructive"],
-        "size": ["sm", "md", "lg"]
+        "size": ["sm", "md", "lg"],
     },
     examples=[
         example(
@@ -44,7 +50,7 @@ button.render(slide, left=1, top=1)
             """,
             text="Submit",
             variant="default",
-            size="md"
+            size="md",
         ),
         example(
             "Destructive action",
@@ -54,7 +60,7 @@ button.render(slide, left=1, top=2)
             """,
             text="Delete",
             variant="destructive",
-            size="sm"
+            size="sm",
         ),
         example(
             "Ghost button",
@@ -64,10 +70,10 @@ button.render(slide, left=1, top=3)
             """,
             text="Cancel",
             variant="ghost",
-            size="lg"
-        )
+            size="lg",
+        ),
     ],
-    tags=["button", "ui", "interactive", "action"]
+    tags=["button", "ui", "interactive", "action"],
 )
 class Button(ComposableComponent):
     """
@@ -89,11 +95,13 @@ class Button(ComposableComponent):
         button.render(slide, left=2, top=2, width=3, height=0.6)
     """
 
-    def __init__(self,
-                 text: str,
-                 variant: str = "default",
-                 size: str = "md",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        variant: str = "default",
+        size: str = "md",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize button component.
 
@@ -109,14 +117,16 @@ class Button(ComposableComponent):
         self.size = size
 
         # Get variant props
-        self.variant_props = BUTTON_VARIANTS.build(
-            variant=variant,
-            size=size
-        )
+        self.variant_props = BUTTON_VARIANTS.build(variant=variant, size=size)
 
-    def render(self, slide, left: float, top: float,
-               width: Optional[float] = None,
-               height: Optional[float] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+    ) -> Any:
         """
         Render button to slide.
 
@@ -140,7 +150,7 @@ class Button(ComposableComponent):
             Inches(left),
             Inches(top),
             Inches(btn_width),
-            Inches(btn_height)
+            Inches(btn_height),
         )
 
         # Apply variant styling
@@ -154,8 +164,16 @@ class Button(ComposableComponent):
     def _get_default_width(self) -> float:
         """Get default width based on text length and size."""
         # Rough estimation: base width + character width
-        base_widths = {"sm": 1.5, "md": 2.0, "lg": 2.5}
-        char_widths = {"sm": 0.06, "md": 0.07, "lg": 0.08}
+        base_widths = {
+            "sm": ComponentSizing.BUTTON_BASE_WIDTH_SM,
+            "md": ComponentSizing.BUTTON_BASE_WIDTH_MD,
+            "lg": ComponentSizing.BUTTON_BASE_WIDTH_LG,
+        }
+        char_widths = {
+            "sm": ComponentSizing.CHAR_WIDTH_SM,
+            "md": ComponentSizing.CHAR_WIDTH_MD,
+            "lg": ComponentSizing.CHAR_WIDTH_LG,
+        }
 
         base = base_widths.get(self.size, 2.0)
         char_width = char_widths.get(self.size, 0.07)
@@ -208,10 +226,12 @@ class Button(ComposableComponent):
         # Font styling
         paragraph.font.size = Pt(props.get("font_size", 14))
         # Handle both Theme objects and dict themes
-        if hasattr(self.theme, 'typography'):
+        if hasattr(self.theme, "typography"):
             font_family = self.theme.typography.get("font_family", "Inter")
         else:
-            font_family = self.theme.get("font_family", "Inter") if isinstance(self.theme, dict) else "Inter"
+            font_family = (
+                self.theme.get("font_family", "Inter") if isinstance(self.theme, dict) else "Inter"
+            )
         paragraph.font.name = font_family
 
         # Text color
@@ -228,20 +248,24 @@ class Button(ComposableComponent):
     category=ComponentCategory.UI,
     description="Button component with icon instead of text, perfect for actions",
     props=[
-        prop("icon", "string", "Icon name or Unicode character",
-             required=True, example="play"),
-        prop("variant", "string", "Visual variant",
-             options=["default", "secondary", "outline", "ghost", "destructive"],
-             default="ghost", example="ghost"),
-        prop("size", "string", "Button size",
-             options=["sm", "md", "lg"],
-             default="md", example="md"),
+        prop("icon", "string", "Icon name or Unicode character", required=True, example="play"),
+        prop(
+            "variant",
+            "string",
+            "Visual variant",
+            options=["default", "secondary", "outline", "ghost", "destructive"],
+            default="ghost",
+            example="ghost",
+        ),
+        prop(
+            "size", "string", "Button size", options=["sm", "md", "lg"], default="md", example="md"
+        ),
         prop("left", "number", "Left position in inches", required=True),
         prop("top", "number", "Top position in inches", required=True),
     ],
     variants={
         "variant": ["default", "secondary", "outline", "ghost", "destructive"],
-        "size": ["sm", "md", "lg"]
+        "size": ["sm", "md", "lg"],
     },
     examples=[
         example(
@@ -251,10 +275,10 @@ button = IconButton(icon="play", variant="ghost")
 button.render(slide, left=1, top=1)
             """,
             icon="play",
-            variant="ghost"
+            variant="ghost",
         )
     ],
-    tags=["button", "icon", "ui", "action"]
+    tags=["button", "icon", "ui", "action"],
 )
 class IconButton(Button):
     """
@@ -297,11 +321,13 @@ class IconButton(Button):
         "success": "✔",
     }
 
-    def __init__(self,
-                 icon: str,
-                 variant: str = "ghost",
-                 size: str = "md",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        icon: str,
+        variant: str = "ghost",
+        size: str = "md",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize icon button.
 
@@ -320,9 +346,14 @@ class IconButton(Button):
         sizes = {"sm": 0.5, "md": 0.6, "lg": 0.8}
         return sizes.get(self.size, 0.6)
 
-    def render(self, slide, left: float, top: float,
-               width: Optional[float] = None,
-               height: Optional[float] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+    ) -> Any:
         """
         Render icon button (square by default).
 
@@ -344,11 +375,15 @@ class IconButton(Button):
     description="Group of buttons displayed together",
     props=[
         prop("buttons", "array", "List of button configurations", required=True),
-        prop("orientation", "string", "Layout orientation",
-             options=["horizontal", "vertical"],
-             default="horizontal", example="horizontal"),
-        prop("spacing", "number", "Space between buttons in inches",
-             default=0.1, example=0.1),
+        prop(
+            "orientation",
+            "string",
+            "Layout orientation",
+            options=["horizontal", "vertical"],
+            default="horizontal",
+            example="horizontal",
+        ),
+        prop("spacing", "number", "Space between buttons in inches", default=0.1, example=0.1),
     ],
     examples=[
         example(
@@ -363,10 +398,10 @@ group = ButtonGroup(
 )
 group.render(slide, left=1, top=1)
             """,
-            orientation="horizontal"
+            orientation="horizontal",
         )
     ],
-    tags=["button", "group", "ui", "layout"]
+    tags=["button", "group", "ui", "layout"],
 )
 class ButtonGroup(ComposableComponent):
     """
@@ -374,11 +409,13 @@ class ButtonGroup(ComposableComponent):
     Handles layout and spacing automatically.
     """
 
-    def __init__(self,
-                 buttons: list,
-                 orientation: str = "horizontal",
-                 spacing: float = 0.1,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        buttons: list,
+        orientation: str = "horizontal",
+        spacing: float = 0.1,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize button group.
 

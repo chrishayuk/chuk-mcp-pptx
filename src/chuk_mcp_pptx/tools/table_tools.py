@@ -5,34 +5,24 @@ Table Tools for PowerPoint MCP Server
 Provides async MCP tools for creating and managing tables in presentations.
 Includes layout validation and boundary checking like charts and images.
 """
-import asyncio
 
-from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
+from ..models import ErrorResponse, SuccessResponse, ComponentResponse
 from ..constants import (
-    SlideLayoutIndex,
     ErrorMessages,
-    SuccessMessages,
-    ShapeType,
-    Spacing,
-    Defaults,
 )
 
-from typing import Optional
-from pptx.util import Inches, Pt
-from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
+from pptx.util import Pt
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.dml.color import RGBColor
 
 
 def register_table_tools(mcp, manager):
     """Register all table-related tools with the MCP server."""
 
-    from ..layout.helpers import (
-        validate_position, get_safe_content_area,
-        SLIDE_WIDTH, SLIDE_HEIGHT
-    )
+    from ..layout.helpers import validate_position, get_safe_content_area
     from ..components.core import Table
     from ..themes.theme_manager import ThemeManager
-    
+
     @mcp.tool
     async def pptx_add_data_table(
         slide_index: int,
@@ -43,15 +33,15 @@ def register_table_tools(mcp, manager):
         width: float = 8.0,
         height: float = 4.0,
         style: str = "medium",
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Add a formatted data table to a slide with layout validation.
-        
+
         Creates a table with headers and data rows, with optional styling.
         Automatically validates position to ensure it fits within slide boundaries
         and doesn't overlap with titles or other placeholders.
-        
+
         Args:
             slide_index: Index of the slide to add table to (0-based)
             headers: List of column header strings
@@ -62,10 +52,10 @@ def register_table_tools(mcp, manager):
             height: Height in inches (will be validated)
             style: Table style (light, medium, dark)
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message confirming table addition with final position
-            
+
         Example:
             await pptx_add_data_table(
                 slide_index=1,
@@ -94,45 +84,57 @@ def register_table_tools(mcp, manager):
                 ).model_dump_json()
 
             slide = prs.slides[slide_index]
-            
+
             # Get safe content area considering if there's a title
             safe_area = get_safe_content_area(has_title=bool(slide.shapes.title))
-            
+
             # Validate and adjust position to fit within slide
             validated_left, validated_top, validated_width, validated_height = validate_position(
                 left, top, width, height
             )
-            
+
             # Further adjust if position is too close to title area
-            if slide.shapes.title and validated_top < safe_area['top']:
-                validated_top = safe_area['top']
-            
+            if slide.shapes.title and validated_top < safe_area["top"]:
+                validated_top = safe_area["top"]
+
             # Remove any overlapping placeholders (except title)
             placeholders_to_remove = []
             for shape in slide.shapes:
-                if hasattr(shape, 'shape_type'):
+                if hasattr(shape, "shape_type"):
                     # Check if it's a placeholder (but not a title)
                     if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
                         # Skip title placeholders
-                        if hasattr(shape, 'placeholder_format'):
+                        if hasattr(shape, "placeholder_format"):
                             from pptx.enum.shapes import PP_PLACEHOLDER
-                            if shape.placeholder_format.type in [PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE]:
+
+                            if shape.placeholder_format.type in [
+                                PP_PLACEHOLDER.TITLE,
+                                PP_PLACEHOLDER.CENTER_TITLE,
+                            ]:
                                 continue
-                        
+
                         # Check if placeholder overlaps with table area
-                        shape_left = shape.left.inches if hasattr(shape.left, 'inches') else 0
-                        shape_top = shape.top.inches if hasattr(shape.top, 'inches') else 0
-                        shape_right = shape_left + (shape.width.inches if hasattr(shape.width, 'inches') else 0)
-                        shape_bottom = shape_top + (shape.height.inches if hasattr(shape.height, 'inches') else 0)
-                        
+                        shape_left = shape.left.inches if hasattr(shape.left, "inches") else 0
+                        shape_top = shape.top.inches if hasattr(shape.top, "inches") else 0
+                        shape_right = shape_left + (
+                            shape.width.inches if hasattr(shape.width, "inches") else 0
+                        )
+                        shape_bottom = shape_top + (
+                            shape.height.inches if hasattr(shape.height, "inches") else 0
+                        )
+
                         table_right = validated_left + validated_width
                         table_bottom = validated_top + validated_height
-                        
+
                         # Check for overlap
-                        if not (shape_right < validated_left or shape_left > table_right or 
-                               shape_bottom < validated_top or shape_top > table_bottom):
+                        if not (
+                            shape_right < validated_left
+                            or shape_left > table_right
+                            or shape_bottom < validated_top
+                            or shape_top > table_bottom
+                        ):
                             placeholders_to_remove.append(shape)
-            
+
             # Remove overlapping placeholders
             for placeholder in placeholders_to_remove:
                 slide.shapes._spTree.remove(placeholder.element)
@@ -142,28 +144,18 @@ def register_table_tools(mcp, manager):
             theme = theme_manager.get_theme(metadata.theme) if metadata.theme else None
 
             # Map style to variant
-            variant_map = {
-                "light": "minimal",
-                "medium": "default",
-                "dark": "bordered"
-            }
+            variant_map = {"light": "minimal", "medium": "default", "dark": "bordered"}
             variant = variant_map.get(style, "default")
 
             # Create and render table using new Table component
-            table_comp = Table(
-                headers=headers,
-                data=data,
-                variant=variant,
-                size="md",
-                theme=theme
-            )
+            table_comp = Table(headers=headers, data=data, variant=variant, size="md", theme=theme)
 
-            table_shape = table_comp.render(
+            table_comp.render(
                 slide,
                 left=validated_left,
                 top=validated_top,
                 width=validated_width,
-                height=validated_height
+                height=validated_height,
             )
 
             # Update in VFS
@@ -171,21 +163,26 @@ def register_table_tools(mcp, manager):
 
             # Report if position was adjusted
             position_note = ""
-            if (validated_left != left or validated_top != top or
-                validated_width != width or validated_height != height):
+            if (
+                validated_left != left
+                or validated_top != top
+                or validated_width != width
+                or validated_height != height
+            ):
                 position_note = f" (position adjusted to fit: {validated_left:.1f}, {validated_top:.1f}, {validated_width:.1f}x{validated_height:.1f})"
 
             message = f"Added {len(data)} row table to slide {slide_index}{position_note}"
             return ComponentResponse(
                 presentation=metadata.name,
                 slide_index=slide_index,
+                component="table",
                 message=message,
-                slide_count=metadata.slide_count
+                variant=None,
             ).model_dump_json()
 
         except Exception as e:
             return ErrorResponse(error=f"Error adding table: {str(e)}").model_dump_json()
-    
+
     @mcp.tool
     async def pptx_add_comparison_table(
         slide_index: int,
@@ -202,14 +199,14 @@ def register_table_tools(mcp, manager):
         width: float = 8.0,
         height: float = 4.0,
         style: str = "light",
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Add a comparison table for multiple options with layout validation.
-        
+
         Creates a table comparing 2-3 options across multiple categories.
         Validates position to ensure proper fit within slide boundaries.
-        
+
         Args:
             slide_index: Index of the slide to add table to (0-based)
             title: Title for the comparison table
@@ -226,10 +223,10 @@ def register_table_tools(mcp, manager):
             height: Height in inches
             style: Table style (light, medium, dark)
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message confirming comparison table addition
-            
+
         Example:
             await pptx_add_comparison_table(
                 slide_index=2,
@@ -267,34 +264,46 @@ def register_table_tools(mcp, manager):
                 data.append(row)
 
             slide = prs.slides[slide_index]
-            
+
             # Get safe content area
-            safe_area = get_safe_content_area(has_title=bool(slide.shapes.title))
-            
+            get_safe_content_area(has_title=bool(slide.shapes.title))
+
             # Validate position
             validated_left, validated_top, validated_width, validated_height = validate_position(
                 left, top, width, height
             )
-            
+
             # Remove overlapping placeholders (except title)
             placeholders_to_remove = []
             for shape in slide.shapes:
-                if hasattr(shape, 'shape_type'):
+                if hasattr(shape, "shape_type"):
                     if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
-                        if hasattr(shape, 'placeholder_format'):
+                        if hasattr(shape, "placeholder_format"):
                             from pptx.enum.shapes import PP_PLACEHOLDER
-                            if shape.placeholder_format.type in [PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE]:
+
+                            if shape.placeholder_format.type in [
+                                PP_PLACEHOLDER.TITLE,
+                                PP_PLACEHOLDER.CENTER_TITLE,
+                            ]:
                                 continue
-                        
-                        shape_left = shape.left.inches if hasattr(shape.left, 'inches') else 0
-                        shape_top = shape.top.inches if hasattr(shape.top, 'inches') else 0
-                        shape_right = shape_left + (shape.width.inches if hasattr(shape.width, 'inches') else 0)
-                        shape_bottom = shape_top + (shape.height.inches if hasattr(shape.height, 'inches') else 0)
-                        
-                        if not (shape_right < validated_left or shape_left > validated_left + validated_width or
-                               shape_bottom < validated_top or shape_top > validated_top + validated_height):
+
+                        shape_left = shape.left.inches if hasattr(shape.left, "inches") else 0
+                        shape_top = shape.top.inches if hasattr(shape.top, "inches") else 0
+                        shape_right = shape_left + (
+                            shape.width.inches if hasattr(shape.width, "inches") else 0
+                        )
+                        shape_bottom = shape_top + (
+                            shape.height.inches if hasattr(shape.height, "inches") else 0
+                        )
+
+                        if not (
+                            shape_right < validated_left
+                            or shape_left > validated_left + validated_width
+                            or shape_bottom < validated_top
+                            or shape_top > validated_top + validated_height
+                        ):
                             placeholders_to_remove.append(shape)
-            
+
             for placeholder in placeholders_to_remove:
                 slide.shapes._spTree.remove(placeholder.element)
 
@@ -303,28 +312,18 @@ def register_table_tools(mcp, manager):
             theme = theme_manager.get_theme(metadata.theme) if metadata.theme else None
 
             # Map style to variant
-            variant_map = {
-                "light": "minimal",
-                "medium": "default",
-                "dark": "bordered"
-            }
+            variant_map = {"light": "minimal", "medium": "default", "dark": "bordered"}
             variant = variant_map.get(style, "default")
 
             # Create and render table using new Table component
-            table_comp = Table(
-                headers=headers,
-                data=data,
-                variant=variant,
-                size="md",
-                theme=theme
-            )
+            table_comp = Table(headers=headers, data=data, variant=variant, size="md", theme=theme)
 
-            table_shape = table_comp.render(
+            table_comp.render(
                 slide,
                 left=validated_left,
                 top=validated_top,
                 width=validated_width,
-                height=validated_height
+                height=validated_height,
             )
 
             # Update in VFS
@@ -335,13 +334,14 @@ def register_table_tools(mcp, manager):
             return ComponentResponse(
                 presentation=metadata.name,
                 slide_index=slide_index,
+                component="comparison_table",
                 message=message,
-                slide_count=metadata.slide_count
+                variant=None,
             ).model_dump_json()
 
         except Exception as e:
             return ErrorResponse(error=f"Error adding comparison table: {str(e)}").model_dump_json()
-    
+
     @mcp.tool
     async def pptx_update_table_cell(
         slide_index: int,
@@ -351,13 +351,13 @@ def register_table_tools(mcp, manager):
         new_value: str,
         bold: bool | None = None,
         color: str | None = None,
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Update a specific cell in an existing table.
-        
+
         Modifies the text and optionally the formatting of a table cell.
-        
+
         Args:
             slide_index: Index of the slide containing the table (0-based)
             table_index: Index of the table on the slide (0-based)
@@ -367,10 +367,10 @@ def register_table_tools(mcp, manager):
             bold: Whether to make text bold
             color: Hex color for text (e.g., "#FF0000")
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message confirming cell update
-            
+
         Example:
             await pptx_update_table_cell(
                 slide_index=1,
@@ -435,7 +435,7 @@ def register_table_tools(mcp, manager):
                         g = int(c_color[2:4], 16)
                         b = int(c_color[4:6], 16)
                         paragraph.font.color.rgb = RGBColor(r, g, b)
-                    except:
+                    except (ValueError, IndexError):
                         pass
 
             # Update in VFS
@@ -446,7 +446,7 @@ def register_table_tools(mcp, manager):
 
         except Exception as e:
             return ErrorResponse(error=f"Error updating table cell: {str(e)}").model_dump_json()
-    
+
     @mcp.tool
     async def pptx_format_table(
         slide_index: int,
@@ -455,13 +455,13 @@ def register_table_tools(mcp, manager):
         header_color: str | None = None,
         alternate_rows: bool = False,
         border_width: float | None = None,
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Apply formatting to an entire table.
-        
+
         Formats headers, alternating rows, borders, and other table styling.
-        
+
         Args:
             slide_index: Index of the slide containing the table (0-based)
             table_index: Index of the table on the slide (0-based)
@@ -470,10 +470,10 @@ def register_table_tools(mcp, manager):
             alternate_rows: Whether to alternate row colors
             border_width: Width of table borders in points
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message with formatting applied
-            
+
         Example:
             await pptx_format_table(
                 slide_index=1,
@@ -528,7 +528,7 @@ def register_table_tools(mcp, manager):
                             b = int(h_color[4:6], 16)
                             cell.fill.solid()
                             cell.fill.fore_color.rgb = RGBColor(r, g, b)
-                        except:
+                        except (ValueError, IndexError):
                             pass
 
                 formatting_applied.append("header formatting")
@@ -561,11 +561,11 @@ def register_table_tools(mcp, manager):
 
         except Exception as e:
             return ErrorResponse(error=f"Error formatting table: {str(e)}").model_dump_json()
-    
+
     # Return the tools for external access
     return {
-        'pptx_add_data_table': pptx_add_data_table,
-        'pptx_add_comparison_table': pptx_add_comparison_table,
-        'pptx_update_table_cell': pptx_update_table_cell,
-        'pptx_format_table': pptx_format_table
+        "pptx_add_data_table": pptx_add_data_table,
+        "pptx_add_comparison_table": pptx_add_comparison_table,
+        "pptx_update_table_cell": pptx_update_table_cell,
+        "pptx_format_table": pptx_format_table,
     }

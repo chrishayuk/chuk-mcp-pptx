@@ -12,23 +12,15 @@ Handles:
 Note: Grid-based component positioning is handled by component_tools.py.
 Slide templates (dashboard, comparison, etc.) are in slide_templates/.
 """
-import asyncio
-import json
 
-from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
+from ..models import ErrorResponse, SuccessResponse
 from ..constants import (
-    SlideLayoutIndex,
     ErrorMessages,
-    SuccessMessages,
-    ShapeType,
-    Spacing,
-    Defaults,
 )
 
-from typing import Any
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
-from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 # Import design system typography tokens
 from ..tokens.typography import FONT_SIZES
@@ -47,12 +39,10 @@ def register_layout_tools(mcp, manager):
     # - Apply master layout settings
 
     @mcp.tool
-    async def pptx_list_layouts(
-        presentation: str | None = None
-    ) -> str:
+    async def pptx_list_layouts(presentation: str | None = None) -> str:
         """
         List all available slide layouts in the presentation.
-        
+
         Shows the built-in layouts from the slide master including:
         - Title Slide
         - Title and Content
@@ -65,13 +55,13 @@ def register_layout_tools(mcp, manager):
         - Picture with Caption
         - Title and Vertical Text
         - Vertical Title and Text
-        
+
         Args:
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             List of available layouts with indices and descriptions
-            
+
         Example:
             layouts = await pptx_list_layouts()
             # Returns:
@@ -87,10 +77,10 @@ def register_layout_tools(mcp, manager):
                 return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
             prs, metadata = result
-            
+
             layouts = []
             layouts.append("=== AVAILABLE SLIDE LAYOUTS ===\n")
-            
+
             for i, layout in enumerate(prs.slide_master.slide_layouts):
                 layout_name = str(layout.name)
 
@@ -106,59 +96,61 @@ def register_layout_tools(mcp, manager):
                     "Content with Caption": "Content area with side caption",
                     "Picture with Caption": "Image with description",
                     "Title and Vertical Text": "Vertical text layout",
-                    "Vertical Title and Text": "Vertical oriented content"
+                    "Vertical Title and Text": "Vertical oriented content",
                 }
 
                 desc = descriptions.get(layout_name, "Custom layout")
                 layouts.append(f"{i:2}: {layout_name:30} - {desc}")
-                
+
                 # List placeholders in this layout
                 placeholders = []
                 for shape in layout.placeholders:
                     placeholders.append(str(shape.name))
-                
+
                 if placeholders:
                     layouts.append(f"    Placeholders: {', '.join(placeholders)}")
-            
+
             layouts.append(f"\nTotal layouts: {len(prs.slide_master.slide_layouts)}")
-            layouts.append("\nUse pptx_add_slide_with_layout() to create slides with specific layouts")
-            
+            layouts.append(
+                "\nUse pptx_add_slide_with_layout() to create slides with specific layouts"
+            )
+
             return "\n".join(layouts)
-        
+
         except Exception as e:
             return ErrorResponse(error=str(e)).model_dump_json()
-    
+
     @mcp.tool
     async def pptx_add_slide_with_layout(
         layout_index: int,
         title: str | None = None,
         content: list[str] | None = None,
         subtitle: str | None = None,
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Add a slide using a specific layout from the slide master.
-        
+
         Creates a new slide with the specified layout and populates
         placeholders with provided content.
-        
+
         Args:
             layout_index: Index of the layout to use (0-based)
             title: Title text for the slide (if layout has title placeholder)
             content: Content for the main placeholder (list for bullets)
             subtitle: Subtitle text (for layouts with subtitle)
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message with slide index
-            
+
         Example:
             # Create a two-content comparison slide
             await pptx_add_slide_with_layout(
                 layout_index=4,  # Comparison layout
                 title="Product Comparison"
             )
-            
+
             # Create a section header
             await pptx_add_slide_with_layout(
                 layout_index=2,  # Section Header
@@ -171,37 +163,39 @@ def register_layout_tools(mcp, manager):
                 return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
             prs, metadata = result
-            
+
             if layout_index >= len(prs.slide_master.slide_layouts):
-                return SuccessResponse(message=f"Error: Layout index {layout_index} out of range. Use pptx_list_layouts() to see available layouts").model_dump_json()
-            
+                return SuccessResponse(
+                    message=f"Error: Layout index {layout_index} out of range. Use pptx_list_layouts() to see available layouts"
+                ).model_dump_json()
+
             # Get the layout
             layout = prs.slide_master.slide_layouts[layout_index]
-            
+
             # Add slide with this layout
             slide = prs.slides.add_slide(layout)
-            
+
             # Populate placeholders
             if title and slide.shapes.title:
                 slide.shapes.title.text = title
-            
+
             # Handle different placeholder types
             for shape in slide.placeholders:
                 # Skip if already handled
                 if shape == slide.shapes.title:
                     continue
-                
+
                 # Handle subtitle placeholder
                 if subtitle and shape.placeholder_format.type == 2:  # SUBTITLE
                     shape.text = subtitle
-                
+
                 # Handle content placeholder
                 elif content and shape.placeholder_format.type == 7:  # CONTENT
                     if isinstance(content, list):
                         # Add as bullet points
                         text_frame = shape.text_frame
                         text_frame.clear()
-                        
+
                         for i, item in enumerate(content):
                             if i == 0:
                                 p = text_frame.paragraphs[0]
@@ -215,6 +209,7 @@ def register_layout_tools(mcp, manager):
             # Apply presentation theme to the slide
             if metadata and metadata.theme:
                 from ..themes.theme_manager import ThemeManager
+
                 theme_manager = ThemeManager()
                 theme_obj = theme_manager.get_theme(metadata.theme)
                 if theme_obj:
@@ -225,11 +220,13 @@ def register_layout_tools(mcp, manager):
 
             slide_idx = len(prs.slides) - 1
             layout_name = str(layout.name)
-            return SuccessResponse(message=f"Added slide {slide_idx} using layout '{layout_name}'").model_dump_json()
-        
+            return SuccessResponse(
+                message=f"Added slide {slide_idx} using layout '{layout_name}'"
+            ).model_dump_json()
+
         except Exception as e:
             return ErrorResponse(error=str(e)).model_dump_json()
-    
+
     @mcp.tool
     async def pptx_customize_layout(
         slide_index: int,
@@ -237,14 +234,14 @@ def register_layout_tools(mcp, manager):
         add_footer: str | None = None,
         add_page_number: bool = False,
         add_date: str | None = None,
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Customize the layout of an existing slide.
-        
+
         Adds background colors, footers, page numbers, and other
         layout customizations to a slide.
-        
+
         Args:
             slide_index: Index of the slide to customize (0-based)
             background_color: Hex color for background (e.g., "#F0F0F0")
@@ -252,10 +249,10 @@ def register_layout_tools(mcp, manager):
             add_page_number: Whether to add slide number
             add_date: Date text to add
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message with customizations applied
-            
+
         Example:
             await pptx_customize_layout(
                 slide_index=1,
@@ -271,7 +268,7 @@ def register_layout_tools(mcp, manager):
                 return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
             prs, metadata = result
-            
+
             if slide_index >= len(prs.slides):
                 return ErrorResponse(
                     error=f"Slide index {slide_index} not found in presentation"
@@ -279,13 +276,15 @@ def register_layout_tools(mcp, manager):
 
             slide = prs.slides[slide_index]
             customizations = []
-            
+
             # Set background color
             if background_color:
                 from pptx.dml.color import RGBColor
 
                 # Parse hex color
-                bg_color = background_color[1:] if background_color.startswith("#") else background_color
+                bg_color = (
+                    background_color[1:] if background_color.startswith("#") else background_color
+                )
 
                 try:
                     r = int(bg_color[0:2], 16)
@@ -296,9 +295,9 @@ def register_layout_tools(mcp, manager):
                     fill.solid()
                     fill.fore_color.rgb = RGBColor(r, g, b)
                     customizations.append(f"background color {bg_color}")
-                except:
+                except (ValueError, AttributeError):
                     customizations.append("background color (failed - invalid format)")
-            
+
             # Add footer
             if add_footer:
                 footer_box = slide.shapes.add_textbox(
@@ -308,7 +307,7 @@ def register_layout_tools(mcp, manager):
                 footer_box.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
                 footer_box.text_frame.paragraphs[0].font.size = Pt(FONT_SIZES["xs"])
                 customizations.append("footer text")
-            
+
             # Add page number
             if add_page_number:
                 page_box = slide.shapes.add_textbox(
@@ -318,7 +317,7 @@ def register_layout_tools(mcp, manager):
                 page_box.text_frame.paragraphs[0].alignment = PP_ALIGN.RIGHT
                 page_box.text_frame.paragraphs[0].font.size = Pt(FONT_SIZES["xs"])
                 customizations.append("page number")
-            
+
             # Add date
             if add_date:
                 date_box = slide.shapes.add_textbox(
@@ -327,42 +326,46 @@ def register_layout_tools(mcp, manager):
                 date_box.text_frame.text = add_date
                 date_box.text_frame.paragraphs[0].font.size = Pt(FONT_SIZES["xs"])
                 customizations.append("date")
-            
+
             # Update in VFS if enabled
             await manager.update(presentation)
-            
+
             if customizations:
-                return SuccessResponse(message=f"Customized slide {slide_index}: {', '.join(customizations)}").model_dump_json()
+                return SuccessResponse(
+                    message=f"Customized slide {slide_index}: {', '.join(customizations)}"
+                ).model_dump_json()
             else:
-                return SuccessResponse(message=f"No customizations applied to slide {slide_index}").model_dump_json()
-        
+                return SuccessResponse(
+                    message=f"No customizations applied to slide {slide_index}"
+                ).model_dump_json()
+
         except Exception as e:
             return ErrorResponse(error=str(e)).model_dump_json()
-    
+
     @mcp.tool
     async def pptx_apply_master_layout(
         layout_name: str,
         font_name: str | None = None,
         title_color: str | None = None,
         body_color: str | None = None,
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Apply master layout settings to all slides.
-        
+
         Sets consistent formatting across the entire presentation by
         modifying the slide master.
-        
+
         Args:
             layout_name: Name of the layout theme ("corporate", "modern", "minimal")
             font_name: Font family to use throughout
             title_color: Hex color for all titles
             body_color: Hex color for body text
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message with number of slides affected
-            
+
         Example:
             await pptx_apply_master_layout(
                 layout_name="corporate",
@@ -377,9 +380,9 @@ def register_layout_tools(mcp, manager):
                 return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
             prs, metadata = result
-            
+
             from pptx.dml.color import RGBColor
-            
+
             # Parse colors
             title_rgb = None
             body_rgb = None
@@ -391,7 +394,7 @@ def register_layout_tools(mcp, manager):
                     g = int(t_color[2:4], 16)
                     b = int(t_color[4:6], 16)
                     title_rgb = RGBColor(r, g, b)
-                except:
+                except (ValueError, IndexError):
                     pass
 
             if body_color:
@@ -401,12 +404,12 @@ def register_layout_tools(mcp, manager):
                     g = int(b_color[2:4], 16)
                     b = int(b_color[4:6], 16)
                     body_rgb = RGBColor(r, g, b)
-                except:
+                except (ValueError, IndexError):
                     pass
-            
+
             # Apply to all slides
             slides_updated = 0
-            
+
             for slide in prs.slides:
                 # Update title formatting
                 if slide.shapes.title:
@@ -417,7 +420,7 @@ def register_layout_tools(mcp, manager):
                     if title_rgb:
                         for paragraph in title.text_frame.paragraphs:
                             paragraph.font.color.rgb = title_rgb
-                
+
                 # Update body text formatting
                 for shape in slide.shapes:
                     if shape.has_text_frame and shape != slide.shapes.title:
@@ -426,12 +429,12 @@ def register_layout_tools(mcp, manager):
                                 paragraph.font.name = font_name
                             if body_rgb:
                                 paragraph.font.color.rgb = body_rgb
-                
+
                 slides_updated += 1
-            
+
             # Update in VFS if enabled
             await manager.update(presentation)
-            
+
             settings = []
             if font_name:
                 settings.append(f"font: {font_name}")
@@ -439,29 +442,28 @@ def register_layout_tools(mcp, manager):
                 settings.append(f"title color: #{title_color}")
             if body_color:
                 settings.append(f"body color: #{body_color}")
-            
-            return SuccessResponse(message=f"Applied master layout '{layout_name}' to {slides_updated} slides ({', '.join(settings)})").model_dump_json()
-        
+
+            return SuccessResponse(
+                message=f"Applied master layout '{layout_name}' to {slides_updated} slides ({', '.join(settings)})"
+            ).model_dump_json()
+
         except Exception as e:
             return ErrorResponse(error=str(e)).model_dump_json()
-    
+
     @mcp.tool
-    async def pptx_duplicate_slide(
-        slide_index: int,
-        presentation: str | None = None
-    ) -> str:
+    async def pptx_duplicate_slide(slide_index: int, presentation: str | None = None) -> str:
         """
         Duplicate an existing slide.
-        
+
         Creates a copy of a slide with all its content and formatting.
-        
+
         Args:
             slide_index: Index of the slide to duplicate (0-based)
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message with new slide index
-            
+
         Example:
             await pptx_duplicate_slide(slide_index=2)
             # Creates a copy of slide 2 as a new slide
@@ -472,68 +474,70 @@ def register_layout_tools(mcp, manager):
                 return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
             prs, metadata = result
-            
+
             if slide_index >= len(prs.slides):
-                return ErrorResponse(error=f"Slide index {slide_index} not found in presentation").model_dump_json()
-            
+                return ErrorResponse(
+                    error=f"Slide index {slide_index} not found in presentation"
+                ).model_dump_json()
+
             # Get the source slide
             source_slide = prs.slides[slide_index]
-            
+
             # Create new slide with same layout
             new_slide = prs.slides.add_slide(source_slide.slide_layout)
-            
+
             # Copy shapes (simplified - full duplication would require more complex logic)
             for shape in source_slide.shapes:
-                if shape.shape_type == MSO_SHAPE.TEXT_BOX:
+                if shape.shape_type == MSO_SHAPE_TYPE.TEXT_BOX:
                     # Copy text boxes
                     new_shape = new_slide.shapes.add_textbox(
                         shape.left, shape.top, shape.width, shape.height
                     )
                     if shape.has_text_frame:
                         new_shape.text_frame.text = shape.text_frame.text
-                elif hasattr(shape, 'text') and shape != source_slide.shapes.title:
+                elif hasattr(shape, "text") and shape != source_slide.shapes.title:
                     # Copy other text content
                     try:
                         for new_shape in new_slide.shapes:
                             if new_shape.shape_id == shape.shape_id:
-                                if hasattr(new_shape, 'text'):
+                                if hasattr(new_shape, "text"):
                                     new_shape.text = shape.text
                                 break
-                    except:
+                    except (AttributeError, KeyError):
                         pass
-            
+
             # Copy title if exists
             if source_slide.shapes.title and new_slide.shapes.title:
                 new_slide.shapes.title.text = source_slide.shapes.title.text
-            
+
             # Update in VFS if enabled
             await manager.update(presentation)
-            
+
             new_idx = len(prs.slides) - 1
-            return SuccessResponse(message=f"Duplicated slide {slide_index} as new slide {new_idx}").model_dump_json()
-        
+            return SuccessResponse(
+                message=f"Duplicated slide {slide_index} as new slide {new_idx}"
+            ).model_dump_json()
+
         except Exception as e:
             return ErrorResponse(error=str(e)).model_dump_json()
-    
+
     @mcp.tool
     async def pptx_reorder_slides(
-        slide_index: int,
-        new_position: int,
-        presentation: str | None = None
+        slide_index: int, new_position: int, presentation: str | None = None
     ) -> str:
         """
         Move a slide to a different position in the presentation.
-        
+
         Reorders slides by moving a slide from one position to another.
-        
+
         Args:
             slide_index: Current index of the slide to move (0-based)
             new_position: Target position for the slide (0-based)
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message confirming the move
-            
+
         Example:
             await pptx_reorder_slides(slide_index=5, new_position=2)
             # Moves slide 5 to position 2
@@ -544,31 +548,39 @@ def register_layout_tools(mcp, manager):
                 return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
             prs, metadata = result
-            
+
             if slide_index >= len(prs.slides):
-                return ErrorResponse(error=f"Slide index {slide_index} not found in presentation").model_dump_json()
-            
+                return ErrorResponse(
+                    error=f"Slide index {slide_index} not found in presentation"
+                ).model_dump_json()
+
             if new_position >= len(prs.slides):
-                return SuccessResponse(message=f"Error: New position {new_position} out of range").model_dump_json()
-            
+                return SuccessResponse(
+                    message=f"Error: New position {new_position} out of range"
+                ).model_dump_json()
+
             if slide_index == new_position:
-                return SuccessResponse(message=f"Slide {slide_index} is already at position {new_position}").model_dump_json()
-            
+                return SuccessResponse(
+                    message=f"Slide {slide_index} is already at position {new_position}"
+                ).model_dump_json()
+
             # Get the XML parts
             slides = prs.slides._sldIdLst
             slide_id = slides[slide_index]
-            
+
             # Remove from current position
             slides.remove(slide_id)
-            
+
             # Insert at new position
             slides.insert(new_position, slide_id)
-            
+
             # Update in VFS if enabled
             await manager.update(presentation)
-            
-            return SuccessResponse(message=f"Moved slide from position {slide_index} to position {new_position}").model_dump_json()
-        
+
+            return SuccessResponse(
+                message=f"Moved slide from position {slide_index} to position {new_position}"
+            ).model_dump_json()
+
         except Exception as e:
             return ErrorResponse(error=str(e)).model_dump_json()
 
@@ -583,10 +595,10 @@ def register_layout_tools(mcp, manager):
 
     # Return the tools for external access
     return {
-        'pptx_list_layouts': pptx_list_layouts,
-        'pptx_add_slide_with_layout': pptx_add_slide_with_layout,
-        'pptx_customize_layout': pptx_customize_layout,
-        'pptx_apply_master_layout': pptx_apply_master_layout,
-        'pptx_duplicate_slide': pptx_duplicate_slide,
-        'pptx_reorder_slides': pptx_reorder_slides,
+        "pptx_list_layouts": pptx_list_layouts,
+        "pptx_add_slide_with_layout": pptx_add_slide_with_layout,
+        "pptx_customize_layout": pptx_customize_layout,
+        "pptx_apply_master_layout": pptx_apply_master_layout,
+        "pptx_duplicate_slide": pptx_duplicate_slide,
+        "pptx_reorder_slides": pptx_reorder_slides,
     }

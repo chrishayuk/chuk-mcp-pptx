@@ -12,6 +12,8 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES
+from ...constants import ComponentSizing
 from ..core.avatar import Avatar
 from ...tokens.typography import get_text_style
 
@@ -59,15 +61,17 @@ class ChatMessage(Component):
         msg.render(slide, left=1, top=4, width=6)
     """
 
-    def __init__(self,
-                 text: str,
-                 sender: Optional[str] = None,
-                 timestamp: Optional[str] = None,
-                 avatar_text: Optional[str] = None,
-                 avatar_icon: Optional[str] = None,
-                 variant: str = "received",
-                 show_avatar: bool = False,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        sender: Optional[str] = None,
+        timestamp: Optional[str] = None,
+        avatar_text: Optional[str] = None,
+        avatar_icon: Optional[str] = None,
+        variant: str = "received",
+        show_avatar: bool = False,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize chat message.
 
@@ -129,8 +133,7 @@ class ChatMessage(Component):
 
         return text_height + padding + meta_height
 
-    def render(self, slide, left: float, top: float,
-               width: float = 4.0) -> list:
+    def render(self, slide, left: float, top: float, width: float = 4.0) -> list:
         """
         Render chat message to slide.
 
@@ -168,7 +171,7 @@ class ChatMessage(Component):
             bubble_left = left
             if self.show_avatar:
                 bubble_left += avatar_size + avatar_gap
-                bubble_width -= (avatar_size + avatar_gap)
+                bubble_width -= avatar_size + avatar_gap
             show_avatar_right = False
             show_avatar_left = self.show_avatar
 
@@ -183,14 +186,9 @@ class ChatMessage(Component):
                 variant="filled",
                 size="sm",
                 color_variant="default",
-                theme=self.theme
+                theme=self.theme,
             )
-            avatar_shape = avatar.render(
-                slide,
-                left=left,
-                top=top,
-                diameter=avatar_size
-            )
+            avatar_shape = avatar.render(slide, left=left, top=top, diameter=avatar_size)
             shapes.append(avatar_shape)
 
         # Create message bubble
@@ -199,7 +197,7 @@ class ChatMessage(Component):
             Inches(bubble_left),
             Inches(top),
             Inches(bubble_width),
-            Inches(bubble_height)
+            Inches(bubble_height),
         )
 
         # Style bubble
@@ -209,7 +207,7 @@ class ChatMessage(Component):
         # Border for received messages
         if self.variant == "received":
             bubble.line.color.rgb = self.get_color("border.DEFAULT")
-            bubble.line.width = Pt(0.5)
+            bubble.line.width = Pt(ComponentSizing.BORDER_WIDTH_THIN)
         else:
             bubble.line.fill.background()
 
@@ -235,13 +233,13 @@ class ChatMessage(Component):
                 # Both sent and received should be left-aligned within bubble
                 current_p.alignment = PP_ALIGN.LEFT
 
-            current_p.font.size = Pt(10)
+            current_p.font.size = Pt(FONT_SIZES["xs"])
             current_p.font.bold = True
             current_p.font.color.rgb = self._get_meta_color()
 
             # Add new paragraph for message text
             current_p = text_frame.add_paragraph()
-            current_p.space_before = Pt(4)
+            current_p.space_before = Pt(ComponentSizing.SPACE_MD)
 
         # Message text
         current_p.text = self.text
@@ -259,7 +257,7 @@ class ChatMessage(Component):
         if self.timestamp:
             p = text_frame.add_paragraph()
             p.text = self.timestamp
-            p.space_before = Pt(6)
+            p.space_before = Pt(ComponentSizing.SPACE_LG)
             if self.variant == "system":
                 p.alignment = PP_ALIGN.CENTER
             elif self.variant == "sent":
@@ -267,7 +265,7 @@ class ChatMessage(Component):
             else:
                 p.alignment = PP_ALIGN.RIGHT  # Timestamp typically right-aligned
 
-            p.font.size = Pt(9)
+            p.font.size = Pt(FONT_SIZES["xs"])
             p.font.color.rgb = self._get_meta_color()
 
         shapes.append(bubble)
@@ -280,15 +278,10 @@ class ChatMessage(Component):
                 variant="filled",
                 size="sm",
                 color_variant="primary",
-                theme=self.theme
+                theme=self.theme,
             )
             avatar_left = bubble_left + bubble_width + avatar_gap
-            avatar_shape = avatar.render(
-                slide,
-                left=avatar_left,
-                top=top,
-                diameter=avatar_size
-            )
+            avatar_shape = avatar.render(slide, left=avatar_left, top=top, diameter=avatar_size)
             shapes.append(avatar_shape)
 
         return shapes
@@ -355,10 +348,12 @@ class ChatConversation(Component):
         conversation.render(slide, left=1, top=2, width=7)
     """
 
-    def __init__(self,
-                 messages: List[Dict[str, Any]],
-                 spacing: float = 0.25,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        messages: List[Dict[str, Any]],
+        spacing: float = 0.25,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize chat conversation.
 
@@ -371,8 +366,7 @@ class ChatConversation(Component):
         self.messages = messages
         self.spacing = spacing
 
-    def render(self, slide, left: float, top: float,
-               width: float = 6.0) -> list:
+    def render(self, slide, left: float, top: float, width: float = 6.0) -> list:
         """
         Render chat conversation to slide.
 
@@ -398,7 +392,7 @@ class ChatConversation(Component):
                 avatar_icon=msg_data.get("avatar_icon"),
                 variant=msg_data.get("variant", "received"),
                 show_avatar=msg_data.get("show_avatar", False),
-                theme=self.theme
+                theme=self.theme,
             )
 
             # Render message

@@ -10,7 +10,8 @@ Demonstrates chat interfaces that look like real platforms:
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pptx import Presentation
 from pptx.util import Inches
@@ -24,7 +25,7 @@ from chuk_mcp_pptx.components.chat import (
     TeamsConversation,
     FacebookMessengerConversation,
     AIMConversation,
-    MSNConversation
+    MSNConversation,
 )
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 
@@ -45,7 +46,11 @@ def create_imessage_slide(prs, theme):
     messages = [
         {"text": "Hey! Are you free for lunch?", "variant": "received", "timestamp": "11:30 AM"},
         {"text": "Yes! Where do you want to go?", "variant": "sent", "timestamp": "11:31 AM"},
-        {"text": "How about that new Italian place?", "variant": "received", "timestamp": "11:32 AM"},
+        {
+            "text": "How about that new Italian place?",
+            "variant": "received",
+            "timestamp": "11:32 AM",
+        },
         {"text": "Perfect! See you at noon", "variant": "sent", "timestamp": "11:33 AM"},
         {"text": "👍", "variant": "received"},
     ]
@@ -68,10 +73,20 @@ def create_android_messages_slide(prs, theme):
 
     # Conversation
     messages = [
-        {"text": "Meeting in 10 minutes!", "sender": "Sarah", "variant": "received", "timestamp": "2:50 PM"},
+        {
+            "text": "Meeting in 10 minutes!",
+            "sender": "Sarah",
+            "variant": "received",
+            "timestamp": "2:50 PM",
+        },
         {"text": "On my way", "variant": "sent", "timestamp": "2:51 PM"},
         {"text": "Should I bring my laptop?", "variant": "sent", "timestamp": "2:51 PM"},
-        {"text": "Yes, we'll need it for the presentation", "sender": "Sarah", "variant": "received", "timestamp": "2:52 PM"},
+        {
+            "text": "Yes, we'll need it for the presentation",
+            "sender": "Sarah",
+            "variant": "received",
+            "timestamp": "2:52 PM",
+        },
         {"text": "Got it 👍", "variant": "sent", "timestamp": "2:52 PM"},
     ]
 
@@ -93,21 +108,15 @@ def create_chatgpt_slide(prs, theme):
 
     # Conversation using ChatGPTConversation component
     messages = [
-        {
-            "text": "Explain recursion in simple terms",
-            "variant": "user"
-        },
+        {"text": "Explain recursion in simple terms", "variant": "user"},
         {
             "text": "Recursion is when a function calls itself to solve a problem by breaking it into smaller, similar problems. Think of it like Russian nesting dolls - each doll contains a smaller version of itself until you reach the smallest one.",
-            "variant": "assistant"
+            "variant": "assistant",
         },
-        {
-            "text": "Can you show a simple example in Python?",
-            "variant": "user"
-        },
+        {"text": "Can you show a simple example in Python?", "variant": "user"},
         {
             "text": "Here's a classic example - calculating factorial:\n\ndef factorial(n):\n    if n == 0:\n        return 1\n    return n * factorial(n-1)",
-            "variant": "assistant"
+            "variant": "assistant",
         },
     ]
 
@@ -132,7 +141,11 @@ def create_whatsapp_slide(prs, theme):
         {"text": "Hey! Are we still meeting today?", "variant": "received", "timestamp": "10:15"},
         {"text": "Yes! 3pm at the coffee shop", "variant": "sent", "timestamp": "10:16"},
         {"text": "Perfect, see you then!", "variant": "received", "timestamp": "10:17"},
-        {"text": "Bringing my laptop for the presentation", "variant": "sent", "timestamp": "10:18"},
+        {
+            "text": "Bringing my laptop for the presentation",
+            "variant": "sent",
+            "timestamp": "10:18",
+        },
         {"text": "👍 Great idea", "variant": "received", "timestamp": "10:19"},
     ]
 
@@ -154,10 +167,25 @@ def create_whatsapp_group_chat(prs, theme):
 
     # Group conversation with sender names
     messages = [
-        {"text": "Who's bringing the snacks?", "sender": "Alice", "variant": "received", "timestamp": "14:00"},
+        {
+            "text": "Who's bringing the snacks?",
+            "sender": "Alice",
+            "variant": "received",
+            "timestamp": "14:00",
+        },
         {"text": "I can bring chips and drinks!", "variant": "sent", "timestamp": "14:01"},
-        {"text": "I'll bring pizza 🍕", "sender": "Bob", "variant": "received", "timestamp": "14:02"},
-        {"text": "Perfect! I'll bring dessert", "sender": "Carol", "variant": "received", "timestamp": "14:03"},
+        {
+            "text": "I'll bring pizza 🍕",
+            "sender": "Bob",
+            "variant": "received",
+            "timestamp": "14:02",
+        },
+        {
+            "text": "Perfect! I'll bring dessert",
+            "sender": "Carol",
+            "variant": "received",
+            "timestamp": "14:03",
+        },
         {"text": "This is going to be great!", "variant": "sent", "timestamp": "14:04"},
     ]
 
@@ -210,10 +238,32 @@ def create_slack_slide(prs, theme):
 
     # Conversation
     messages = [
-        {"text": "Quick standup in 5 minutes!", "sender": "Sarah", "timestamp": "9:00 AM", "avatar_text": "SM"},
-        {"text": "On my way", "sender": "John", "timestamp": "9:01 AM", "avatar_text": "JD", "reactions": ["👍 2"]},
-        {"text": "Can someone share the Zoom link?", "sender": "Mike", "timestamp": "9:02 AM", "avatar_text": "MC"},
-        {"text": "Just posted it in the calendar event", "sender": "Sarah", "timestamp": "9:03 AM", "avatar_text": "SM", "reactions": ["✅ 3"]},
+        {
+            "text": "Quick standup in 5 minutes!",
+            "sender": "Sarah",
+            "timestamp": "9:00 AM",
+            "avatar_text": "SM",
+        },
+        {
+            "text": "On my way",
+            "sender": "John",
+            "timestamp": "9:01 AM",
+            "avatar_text": "JD",
+            "reactions": ["👍 2"],
+        },
+        {
+            "text": "Can someone share the Zoom link?",
+            "sender": "Mike",
+            "timestamp": "9:02 AM",
+            "avatar_text": "MC",
+        },
+        {
+            "text": "Just posted it in the calendar event",
+            "sender": "Sarah",
+            "timestamp": "9:03 AM",
+            "avatar_text": "SM",
+            "reactions": ["✅ 3"],
+        },
     ]
 
     conversation = SlackConversation(messages, theme=theme.__dict__)
@@ -233,21 +283,15 @@ def create_chatgpt_code_example(prs, theme):
         title_shape.text_frame.paragraphs[0].font.color.rgb = theme.get_color("foreground.DEFAULT")
 
     messages = [
-        {
-            "text": "How do I reverse a string in Python?",
-            "variant": "user"
-        },
+        {"text": "How do I reverse a string in Python?", "variant": "user"},
         {
             "text": "There are several ways! The simplest is using slicing:\n\ntext = 'hello'\nreversed_text = text[::-1]\nprint(reversed_text)  # 'olleh'",
-            "variant": "assistant"
+            "variant": "assistant",
         },
-        {
-            "text": "What about reversing a list?",
-            "variant": "user"
-        },
+        {"text": "What about reversing a list?", "variant": "user"},
         {
             "text": "For lists, you can use .reverse() method or reversed():\n\nmy_list = [1, 2, 3]\nmy_list.reverse()  # [3, 2, 1]",
-            "variant": "assistant"
+            "variant": "assistant",
         },
     ]
 
@@ -269,9 +313,26 @@ def create_teams_slide(prs, theme):
 
     # Conversation
     messages = [
-        {"text": "Meeting notes have been shared", "sender": "Sarah Johnson", "timestamp": "Today at 10:30 AM", "avatar_text": "SJ"},
-        {"text": "Great presentation today!", "sender": "Mike Chen", "timestamp": "Today at 10:35 AM", "avatar_text": "MC", "reactions": ["👍 5", "❤️ 2"]},
-        {"text": "Thanks everyone! Let's sync up tomorrow", "sender": "Sarah Johnson", "timestamp": "Today at 10:40 AM", "avatar_text": "SJ", "reply_count": 3},
+        {
+            "text": "Meeting notes have been shared",
+            "sender": "Sarah Johnson",
+            "timestamp": "Today at 10:30 AM",
+            "avatar_text": "SJ",
+        },
+        {
+            "text": "Great presentation today!",
+            "sender": "Mike Chen",
+            "timestamp": "Today at 10:35 AM",
+            "avatar_text": "MC",
+            "reactions": ["👍 5", "❤️ 2"],
+        },
+        {
+            "text": "Thanks everyone! Let's sync up tomorrow",
+            "sender": "Sarah Johnson",
+            "timestamp": "Today at 10:40 AM",
+            "avatar_text": "SJ",
+            "reply_count": 3,
+        },
     ]
 
     conversation = TeamsConversation(messages, theme=theme.__dict__)
@@ -316,10 +377,30 @@ def create_aol_slide(prs, theme):
 
     # Conversation
     messages = [
-        {"text": "Hey! What's up?", "screen_name": "sk8rgrl2004", "variant": "received", "timestamp": "5:30 PM"},
-        {"text": "Not much, you?", "screen_name": "xXCoolDude2003Xx", "variant": "sent", "timestamp": "5:31 PM"},
-        {"text": "Want to hang out later?", "screen_name": "sk8rgrl2004", "variant": "received", "timestamp": "5:32 PM"},
-        {"text": "Yeah! Let's go to the mall", "screen_name": "xXCoolDude2003Xx", "variant": "sent", "timestamp": "5:33 PM"},
+        {
+            "text": "Hey! What's up?",
+            "screen_name": "sk8rgrl2004",
+            "variant": "received",
+            "timestamp": "5:30 PM",
+        },
+        {
+            "text": "Not much, you?",
+            "screen_name": "xXCoolDude2003Xx",
+            "variant": "sent",
+            "timestamp": "5:31 PM",
+        },
+        {
+            "text": "Want to hang out later?",
+            "screen_name": "sk8rgrl2004",
+            "variant": "received",
+            "timestamp": "5:32 PM",
+        },
+        {
+            "text": "Yeah! Let's go to the mall",
+            "screen_name": "xXCoolDude2003Xx",
+            "variant": "sent",
+            "timestamp": "5:33 PM",
+        },
     ]
 
     conversation = AIMConversation(messages, theme=theme.__dict__)
@@ -340,10 +421,33 @@ def create_msn_slide(prs, theme):
 
     # Conversation
     messages = [
-        {"text": "Hey! What are you up to?", "display_name": "AwesomeGirl", "variant": "received", "timestamp": "21:00", "emoticon": "😊"},
-        {"text": "Not much, just listening to music", "display_name": "CoolGuy", "variant": "sent", "timestamp": "21:01", "emoticon": "🎵"},
-        {"text": "Nice! What are you listening to?", "display_name": "AwesomeGirl", "variant": "received", "timestamp": "21:02"},
-        {"text": "The new album that just came out", "display_name": "CoolGuy", "variant": "sent", "timestamp": "21:03", "emoticon": "🎧"},
+        {
+            "text": "Hey! What are you up to?",
+            "display_name": "AwesomeGirl",
+            "variant": "received",
+            "timestamp": "21:00",
+            "emoticon": "😊",
+        },
+        {
+            "text": "Not much, just listening to music",
+            "display_name": "CoolGuy",
+            "variant": "sent",
+            "timestamp": "21:01",
+            "emoticon": "🎵",
+        },
+        {
+            "text": "Nice! What are you listening to?",
+            "display_name": "AwesomeGirl",
+            "variant": "received",
+            "timestamp": "21:02",
+        },
+        {
+            "text": "The new album that just came out",
+            "display_name": "CoolGuy",
+            "variant": "sent",
+            "timestamp": "21:03",
+            "emoticon": "🎧",
+        },
     ]
 
     conversation = MSNConversation(messages, theme=theme.__dict__)

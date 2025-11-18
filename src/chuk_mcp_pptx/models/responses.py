@@ -3,6 +3,7 @@ Response Models for PowerPoint MCP Server Tools
 
 All tool responses are Pydantic models for type safety and consistent API.
 """
+
 from pydantic import BaseModel, Field
 from typing import Literal
 
@@ -132,7 +133,9 @@ class StatusResponse(BaseModel):
 
     server: str = Field(default="chuk-mcp-pptx", description="Server name")
     version: str = Field(default="0.1.0", description="Server version")
-    storage_provider: str = Field(..., description="Active storage provider (file/memory/sqlite/s3)")
+    storage_provider: str = Field(
+        ..., description="Active storage provider (file/memory/sqlite/s3)"
+    )
     storage_path: str = Field(..., description="Base path for presentations in VFS")
     presentations_loaded: int = Field(..., description="Number of presentations in memory", ge=0)
     current_presentation: str | None = Field(None, description="Current active presentation")

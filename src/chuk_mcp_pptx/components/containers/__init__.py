@@ -14,14 +14,12 @@ from .generic import ChatContainer
 
 __all__ = [
     # Mobile device containers
-    'iPhoneContainer',
-    'SamsungContainer',
-
+    "iPhoneContainer",
+    "SamsungContainer",
     # Desktop/Window containers
-    'BrowserWindow',
-    'MacOSWindow',
-    'WindowsWindow',
-
+    "BrowserWindow",
+    "MacOSWindow",
+    "WindowsWindow",
     # Generic containers
-    'ChatContainer',
+    "ChatContainer",
 ]

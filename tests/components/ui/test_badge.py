@@ -5,11 +5,10 @@ Tests variants, rendering, and all badge types.
 
 import pytest
 from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.enum.shapes import MSO_SHAPE
+from pptx.util import Inches
 
 from chuk_mcp_pptx.components.core.badge import Badge, DotBadge, CountBadge
-from chuk_mcp_pptx.themes import Theme, ThemeManager
+from chuk_mcp_pptx.themes import ThemeManager
 from chuk_mcp_pptx.registry import get_component_schema, list_components
 
 
@@ -141,6 +140,7 @@ class TestBadgeRendering:
         shape = badge.render(slide, left=1.0, top=1.0)
         paragraph = shape.text_frame.paragraphs[0]
         from pptx.enum.text import PP_ALIGN
+
         assert paragraph.alignment == PP_ALIGN.CENTER
 
     def test_badge_is_rounded_rectangle(self, slide):
@@ -148,6 +148,7 @@ class TestBadgeRendering:
         badge = Badge(text="Test")
         shape = badge.render(slide, left=1.0, top=1.0)
         from pptx.enum.shapes import MSO_SHAPE_TYPE
+
         assert shape.shape_type == MSO_SHAPE_TYPE.AUTO_SHAPE
 
     def test_all_variant_combinations_render(self, slide):

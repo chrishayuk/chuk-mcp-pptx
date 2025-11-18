@@ -11,7 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...tokens.typography import FONT_SIZES
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
+from ...tokens.platform_colors import get_chat_color, CHAT_COLORS
+from ...constants import Theme, Platform, ColorKey
 
 
 class iMessageBubble(Component):
@@ -45,11 +47,13 @@ class iMessageBubble(Component):
         msg.render(slide, left=1, top=3, width=7)
     """
 
-    def __init__(self,
-                 text: str,
-                 variant: str = "received",
-                 timestamp: Optional[str] = None,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        variant: str = "received",
+        timestamp: Optional[str] = None,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize iMessage bubble.
 
@@ -66,19 +70,16 @@ class iMessageBubble(Component):
 
     def _get_bubble_color(self) -> RGBColor:
         """Get iMessage-specific bubble color."""
-        if self.variant == "sent":
-            # iOS blue (#0B93F6) - Updated to more accurate iOS blue
-            return RGBColor(11, 147, 246)
-        else:
-            # iOS light gray (#E8E8ED) - More accurate gray
-            return RGBColor(232, 232, 237)
+        hex_color = get_chat_color(Platform.IOS, self.variant, Theme.LIGHT)
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _get_text_color(self) -> RGBColor:
         """Get text color."""
-        if self.variant == "sent":
-            return RGBColor(255, 255, 255)  # White
+        if self.variant == ColorKey.SENT:
+            hex_color = CHAT_COLORS[Platform.IOS][ColorKey.TEXT_SENT]
         else:
-            return RGBColor(0, 0, 0)  # Black
+            hex_color = CHAT_COLORS[Platform.IOS][ColorKey.TEXT_RECEIVED]
+        return RGBColor(*self.hex_to_rgb(hex_color))
 
     def _calculate_bubble_height(self, width: float) -> float:
         """Estimate bubble height based on text length."""
@@ -108,7 +109,7 @@ class iMessageBubble(Component):
             Inches(bubble_left),
             Inches(top),
             Inches(bubble_width),
-            Inches(bubble_height)
+            Inches(bubble_height),
         )
 
         # Style bubble - iMessage has more rounded corners
@@ -133,7 +134,7 @@ class iMessageBubble(Component):
         p.text = self.text
         p.alignment = PP_ALIGN.LEFT  # All text left-aligned within bubble
         p.font.size = Pt(FONT_SIZES["lg"])  # 16pt (was 15pt, using closest design token)
-        p.font.name = "SF Pro Text"  # iOS system font (fallback to system)
+        p.font.name = FONT_FAMILIES["sans"][0]  # Use design system sans font
         p.font.color.rgb = self._get_text_color()
 
         shapes.append(bubble)
@@ -144,14 +145,15 @@ class iMessageBubble(Component):
                 Inches(bubble_left),
                 Inches(top + bubble_height + 0.05),
                 Inches(bubble_width),
-                Inches(0.2)
+                Inches(0.2),
             )
             ts_frame = ts_box.text_frame
             ts_frame.text = self.timestamp
             ts_p = ts_frame.paragraphs[0]
             ts_p.alignment = PP_ALIGN.CENTER
             ts_p.font.size = Pt(FONT_SIZES["xs"])
-            ts_p.font.color.rgb = RGBColor(142, 142, 147)  # iOS gray
+            # Use muted text color from design system
+            ts_p.font.color.rgb = self.get_color("muted.foreground")
             shapes.append(ts_box)
 
         return shapes
@@ -172,10 +174,12 @@ class iMessageConversation(Component):
         conversation.render(slide, left=1, top=2, width=8)
     """
 
-    def __init__(self,
-                 messages: List[Dict[str, Any]],
-                 spacing: float = 0.15,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        messages: List[Dict[str, Any]],
+        spacing: float = 0.15,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize iMessage conversation.
 
@@ -198,7 +202,7 @@ class iMessageConversation(Component):
                 text=msg_data.get("text", ""),
                 variant=msg_data.get("variant", "received"),
                 timestamp=msg_data.get("timestamp"),
-                theme=self.theme
+                theme=self.theme,
             )
 
             msg_shapes = message.render(slide, left, current_top, width)

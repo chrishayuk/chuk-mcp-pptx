@@ -10,11 +10,15 @@ Provides:
 """
 
 from ..components.core import Container, Grid, Stack, Spacer, Divider
-from .helpers import (
+from .boundaries import (
     SLIDE_WIDTH,
     SLIDE_HEIGHT,
     SLIDE_WIDTH_4_3,
     SLIDE_HEIGHT_4_3,
+    adjust_to_boundaries,
+    validate_boundaries,
+)
+from .helpers import (
     CONTENT_WIDTH,
     CONTENT_HEIGHT,
     CONTENT_LEFT,
@@ -43,6 +47,8 @@ __all__ = [
     "CONTENT_TOP",
     # Helper functions
     "validate_position",
+    "validate_boundaries",
+    "adjust_to_boundaries",
     "calculate_grid_layout",
     "get_logo_position",
     "get_safe_content_area",

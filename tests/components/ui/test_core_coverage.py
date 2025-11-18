@@ -5,14 +5,13 @@ Focuses on edge cases and less-used code paths.
 
 import pytest
 from pptx import Presentation
-from pptx.util import Inches
 
 from chuk_mcp_pptx.components.core.progress import ProgressBar
 from chuk_mcp_pptx.components.core.tile import Tile, IconTile, ValueTile
 from chuk_mcp_pptx.components.core.timeline import Timeline
 from chuk_mcp_pptx.components.core.avatar import Avatar, AvatarWithLabel, AvatarGroup
-from chuk_mcp_pptx.components.core.button import Button, IconButton, ButtonGroup
-from chuk_mcp_pptx.components.core.badge import Badge, DotBadge, CountBadge
+from chuk_mcp_pptx.components.core.button import IconButton, ButtonGroup
+from chuk_mcp_pptx.components.core.badge import DotBadge, CountBadge
 from chuk_mcp_pptx.components.core.card import Card, MetricCard
 
 
@@ -63,11 +62,7 @@ class TestProgressBarCoverage:
     def test_render_segmented_with_label(self, slide, dark_theme):
         """Test segmented with label."""
         progress = ProgressBar(
-            value=50,
-            style="segmented",
-            segments=5,
-            label="Milestones",
-            theme=dark_theme
+            value=50, style="segmented", segments=5, label="Milestones", theme=dark_theme
         )
         shapes = progress.render(slide, left=1, top=2, width=4)
         # Label + 5 segments
@@ -140,7 +135,7 @@ class TestTimelineCoverage:
             {"date": "Q1", "title": "Start"},
             {"date": "Q2", "title": "Milestone", "highlight": True},
             {"date": "Q3", "title": "Launch", "highlight": True},
-            {"date": "Q4", "title": "Complete"}
+            {"date": "Q4", "title": "Complete"},
         ]
         timeline = Timeline(events, theme=dark_theme)
         shapes = timeline.render(slide, left=1, top=2, width=6)
@@ -151,7 +146,7 @@ class TestTimelineCoverage:
         events = [
             {"date": "2020", "title": "Event 1"},
             {"date": "2021", "title": "Event 2"},
-            {"date": "2022", "title": "Event 3"}
+            {"date": "2022", "title": "Event 3"},
         ]
 
         for style in ["line", "arrow", "dots"]:
@@ -168,10 +163,7 @@ class TestTimelineCoverage:
 
     def test_timeline_many_events(self, slide, dark_theme):
         """Test timeline with many events."""
-        events = [
-            {"date": f"Q{i}", "title": f"Event {i}"}
-            for i in range(1, 9)
-        ]
+        events = [{"date": f"Q{i}", "title": f"Event {i}"} for i in range(1, 9)]
         timeline = Timeline(events, theme=dark_theme)
         shapes = timeline.render(slide, left=1, top=2, width=8)
         assert len(shapes) > 0
@@ -207,7 +199,7 @@ class TestAvatarCoverage:
             label="John Doe",
             sublabel="Developer",
             orientation="vertical",
-            theme=dark_theme
+            theme=dark_theme,
         )
         shapes = avatar_label.render(slide, left=1, top=2, width=2)
         assert len(shapes) >= 1
@@ -219,7 +211,7 @@ class TestAvatarCoverage:
             label="John Doe",
             sublabel="Manager",
             orientation="horizontal",
-            theme=dark_theme
+            theme=dark_theme,
         )
         shapes = avatar_label.render(slide, left=1, top=2, width=3)
         assert len(shapes) >= 1
@@ -227,45 +219,28 @@ class TestAvatarCoverage:
     def test_avatar_with_label_no_sublabel(self, slide, dark_theme):
         """Test AvatarWithLabel without sublabel."""
         avatar_label = AvatarWithLabel(
-            text="AB",
-            label="Only Label",
-            orientation="horizontal",
-            theme=dark_theme
+            text="AB", label="Only Label", orientation="horizontal", theme=dark_theme
         )
         shapes = avatar_label.render(slide, left=1, top=2, width=3)
         assert len(shapes) >= 1
 
     def test_avatar_group_no_overlap(self, slide, dark_theme):
         """Test AvatarGroup without overlap."""
-        members = [
-            {"text": "A"},
-            {"text": "B"},
-            {"text": "C"}
-        ]
+        members = [{"text": "A"}, {"text": "B"}, {"text": "C"}]
         group = AvatarGroup(members, overlap=False, theme=dark_theme)
         shapes = group.render(slide, left=1, top=2)
         assert len(shapes) == 3
 
     def test_avatar_group_with_overlap(self, slide, dark_theme):
         """Test AvatarGroup with overlap."""
-        members = [
-            {"text": "A"},
-            {"text": "B"},
-            {"text": "C"}
-        ]
+        members = [{"text": "A"}, {"text": "B"}, {"text": "C"}]
         group = AvatarGroup(members, overlap=True, theme=dark_theme)
         shapes = group.render(slide, left=1, top=2)
         assert len(shapes) == 3
 
     def test_avatar_group_max_display_exceeded(self, slide, dark_theme):
         """Test AvatarGroup with max_display limit."""
-        members = [
-            {"text": "A"},
-            {"text": "B"},
-            {"text": "C"},
-            {"text": "D"},
-            {"text": "E"}
-        ]
+        members = [{"text": "A"}, {"text": "B"}, {"text": "C"}, {"text": "D"}, {"text": "E"}]
         group = AvatarGroup(members, max_display=3, theme=dark_theme)
         shapes = group.render(slide, left=1, top=2)
         # Should show 3 avatars + "+2" indicator
@@ -286,7 +261,7 @@ class TestButtonCoverage:
         """Test ButtonGroup with vertical orientation."""
         buttons = [
             {"text": "Button 1", "variant": "default", "size": "md"},
-            {"text": "Button 2", "variant": "secondary", "size": "md"}
+            {"text": "Button 2", "variant": "secondary", "size": "md"},
         ]
         group = ButtonGroup(buttons, orientation="vertical", theme=dark_theme)
         shapes = group.render(slide, left=1, top=2)
@@ -327,11 +302,7 @@ class TestCardCoverage:
         """Test MetricCard with all trend types."""
         for trend in ["up", "down", "neutral"]:
             metric = MetricCard(
-                label="Metric",
-                value="100",
-                change="+5%",
-                trend=trend,
-                theme=dark_theme
+                label="Metric", value="100", change="+5%", trend=trend, theme=dark_theme
             )
             shape = metric.render(slide, left=1, top=2, width=3, height=2)
             assert shape is not None

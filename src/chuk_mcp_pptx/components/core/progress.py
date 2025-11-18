@@ -57,15 +57,17 @@ class ProgressBar(Component):
         progress.render(slide, left=1, top=2, width=6)
     """
 
-    def __init__(self,
-                 value: float,
-                 label: Optional[str] = None,
-                 show_percentage: bool = False,
-                 variant: str = "default",
-                 style: str = "linear",
-                 segments: int = 1,
-                 height: float = 0.3,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        value: float,
+        label: Optional[str] = None,
+        show_percentage: bool = False,
+        variant: str = "default",
+        style: str = "linear",
+        segments: int = 1,
+        height: float = 0.3,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize progress bar.
 
@@ -94,7 +96,7 @@ class ProgressBar(Component):
             "default": "primary.DEFAULT",
             "success": "success.DEFAULT",
             "warning": "warning.DEFAULT",
-            "error": "destructive.DEFAULT"
+            "error": "destructive.DEFAULT",
         }
         color_path = color_map.get(self.variant, "primary.DEFAULT")
         return self.get_color(color_path)
@@ -117,7 +119,6 @@ class ProgressBar(Component):
             List of rendered shapes
         """
         from pptx.util import Inches
-        from pptx.enum.shapes import MSO_SHAPE
 
         shapes = []
         current_top = top
@@ -125,10 +126,7 @@ class ProgressBar(Component):
         # Render label if provided
         if self.label:
             label_box = slide.shapes.add_textbox(
-                Inches(left),
-                Inches(current_top),
-                Inches(width),
-                Inches(0.3)
+                Inches(left), Inches(current_top), Inches(width), Inches(0.3)
             )
             label_frame = label_box.text_frame
             label_frame.text = self.label
@@ -154,10 +152,7 @@ class ProgressBar(Component):
         if self.show_percentage:
             pct_top = current_top + self.height + 0.05
             pct_box = slide.shapes.add_textbox(
-                Inches(left + width - 0.8),
-                Inches(pct_top),
-                Inches(0.8),
-                Inches(0.25)
+                Inches(left + width - 0.8), Inches(pct_top), Inches(0.8), Inches(0.25)
             )
             pct_frame = pct_box.text_frame
             pct_frame.text = f"{self.value:.0f}%"
@@ -187,7 +182,7 @@ class ProgressBar(Component):
             Inches(left),
             Inches(top),
             Inches(width),
-            Inches(self.height)
+            Inches(self.height),
         )
         bg_shape.fill.solid()
         bg_shape.fill.fore_color.rgb = self._get_background_color()
@@ -202,7 +197,7 @@ class ProgressBar(Component):
                 Inches(left),
                 Inches(top),
                 Inches(filled_width),
-                Inches(self.height)
+                Inches(self.height),
             )
             fill_shape.fill.solid()
             fill_shape.fill.fore_color.rgb = self._get_progress_color()
@@ -230,7 +225,7 @@ class ProgressBar(Component):
                 Inches(seg_left),
                 Inches(top),
                 Inches(segment_width),
-                Inches(self.height)
+                Inches(self.height),
             )
             seg_shape.fill.solid()
 

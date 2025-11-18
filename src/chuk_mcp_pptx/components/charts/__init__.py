@@ -13,27 +13,32 @@ from .line_area import LineChart, AreaChart, SparklineChart
 try:
     from .scatter_bubble import ScatterChart, BubbleChart, Matrix3DChart
 except ImportError:
-    ScatterChart = None
-    BubbleChart = None
-    Matrix3DChart = None
+    ScatterChart = None  # type: ignore[misc, assignment]
+    BubbleChart = None  # type: ignore[misc, assignment]
+    Matrix3DChart = None  # type: ignore[misc, assignment]
 
 try:
     from .radar_combo import RadarChart, ComboChart, GaugeChart
 except ImportError:
-    RadarChart = None
-    ComboChart = None
-    GaugeChart = None
+    RadarChart = None  # type: ignore[misc, assignment]
+    ComboChart = None  # type: ignore[misc, assignment]
+    GaugeChart = None  # type: ignore[misc, assignment]
 
 try:
     from .funnel import FunnelChart, GanttChart, HeatmapChart
 except ImportError:
-    FunnelChart = None
-    GanttChart = None
-    HeatmapChart = None
+    FunnelChart = None  # type: ignore[misc, assignment]
+    GanttChart = None  # type: ignore[misc, assignment]
+    HeatmapChart = None  # type: ignore[misc, assignment]
 
 # Legacy chart component (for backward compatibility)
 try:
-    from ..chart import Chart, BarChart as LegacyBarChart, LineChart as LegacyLineChart, PieChart as LegacyPieChart
+    from ..chart import (
+        Chart,
+        BarChart as LegacyBarChart,
+        LineChart as LegacyLineChart,
+        PieChart as LegacyPieChart,
+    )
 except ImportError:
     # Fallback if legacy chart module doesn't exist
     Chart = None
@@ -43,40 +48,33 @@ except ImportError:
 
 __all__ = [
     # Base
-    'ChartComponent',
-    
+    "ChartComponent",
     # Column & Bar Charts
-    'ColumnChart',
-    'BarChart', 
-    'WaterfallChart',
-    
+    "ColumnChart",
+    "BarChart",
+    "WaterfallChart",
     # Line & Area Charts
-    'LineChart',
-    'AreaChart',
-    'SparklineChart',
-    
+    "LineChart",
+    "AreaChart",
+    "SparklineChart",
     # Pie & Doughnut Charts
-    'PieChart',
-    'DoughnutChart',
-    
+    "PieChart",
+    "DoughnutChart",
     # Scatter & Bubble Charts
-    'ScatterChart',
-    'BubbleChart',
-    'Matrix3DChart',
-    
+    "ScatterChart",
+    "BubbleChart",
+    "Matrix3DChart",
     # Specialized Charts
-    'RadarChart',
-    'ComboChart',
-    'GaugeChart',
-
+    "RadarChart",
+    "ComboChart",
+    "GaugeChart",
     # Business Charts
-    'FunnelChart',
-    'GanttChart',
-    'HeatmapChart',
-    
+    "FunnelChart",
+    "GanttChart",
+    "HeatmapChart",
     # Legacy (backward compatibility)
-    'Chart',
-    'LegacyBarChart',
-    'LegacyLineChart', 
-    'LegacyPieChart',
+    "Chart",
+    "LegacyBarChart",
+    "LegacyLineChart",
+    "LegacyPieChart",
 ]

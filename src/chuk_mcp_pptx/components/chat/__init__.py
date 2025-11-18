@@ -17,32 +17,28 @@ from .msn import MSNBubble, MSNConversation
 
 __all__ = [
     # Generic chat
-    'ChatMessage',
-    'ChatConversation',
-
+    "ChatMessage",
+    "ChatConversation",
     # Modern platforms
-    'iMessageBubble',
-    'iMessageConversation',
-    'AndroidMessageBubble',
-    'AndroidConversation',
-    'WhatsAppBubble',
-    'WhatsAppConversation',
-    'ChatGPTMessage',
-    'ChatGPTConversation',
-
+    "iMessageBubble",
+    "iMessageConversation",
+    "AndroidMessageBubble",
+    "AndroidConversation",
+    "WhatsAppBubble",
+    "WhatsAppConversation",
+    "ChatGPTMessage",
+    "ChatGPTConversation",
     # Workplace platforms
-    'SlackMessage',
-    'SlackConversation',
-    'TeamsMessage',
-    'TeamsConversation',
-
+    "SlackMessage",
+    "SlackConversation",
+    "TeamsMessage",
+    "TeamsConversation",
     # Social platforms
-    'FacebookMessengerBubble',
-    'FacebookMessengerConversation',
-
+    "FacebookMessengerBubble",
+    "FacebookMessengerConversation",
     # Legacy/nostalgic platforms
-    'AIMBubble',
-    'AIMConversation',
-    'MSNBubble',
-    'MSNConversation',
+    "AIMBubble",
+    "AIMConversation",
+    "MSNBubble",
+    "MSNConversation",
 ]

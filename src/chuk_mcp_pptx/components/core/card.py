@@ -4,14 +4,18 @@ Enhanced Card component with variants and composition support.
 Uses the new variant system and compositional API.
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 
 from ...composition import (
-    ComposableComponent, CardHeader, CardContent, CardFooter,
-    CardTitle, CardDescription, CompositionBuilder
+    ComposableComponent,
+    CardHeader,
+    CardContent,
+    CardFooter,
+    CardTitle,
+    CardDescription,
 )
 from ...variants import CARD_VARIANTS
 from ...registry import component, ComponentCategory, prop, example
@@ -23,14 +27,22 @@ from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING
     category=ComponentCategory.CONTAINER,
     description="Versatile container component with support for variants and composition",
     props=[
-        prop("variant", "string", "Visual style variant",
-             options=["default", "outlined", "elevated", "ghost"],
-             default="default",
-             example="outlined"),
-        prop("padding", "string", "Padding size",
-             options=["none", "sm", "md", "lg", "xl"],
-             default="md",
-             example="lg"),
+        prop(
+            "variant",
+            "string",
+            "Visual style variant",
+            options=["default", "outlined", "elevated", "ghost"],
+            default="default",
+            example="outlined",
+        ),
+        prop(
+            "padding",
+            "string",
+            "Padding size",
+            options=["none", "sm", "md", "lg", "xl"],
+            default="md",
+            example="lg",
+        ),
         prop("left", "number", "Left position in inches", required=True, example=1.0),
         prop("top", "number", "Top position in inches", required=True, example=1.0),
         prop("width", "number", "Width in inches", default=3.0, example=4.0),
@@ -38,11 +50,11 @@ from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING
     ],
     variants={
         "variant": ["default", "outlined", "elevated", "ghost"],
-        "padding": ["none", "sm", "md", "lg", "xl"]
+        "padding": ["none", "sm", "md", "lg", "xl"],
     },
     composition={
         "supports": ["CardHeader", "CardTitle", "CardDescription", "CardContent", "CardFooter"],
-        "builder": "CompositionBuilder"
+        "builder": "CompositionBuilder",
     },
     examples=[
         example(
@@ -54,7 +66,7 @@ card.add_child(CardContent("This is the main content area"))
 card.render(slide, left=1, top=1)
             """,
             variant="outlined",
-            padding="lg"
+            padding="lg",
         ),
         example(
             "Metric card with composition builder",
@@ -67,10 +79,10 @@ for child in children:
     card.add_child(child)
 card.render(slide, left=2, top=2)
             """,
-            variant="elevated"
-        )
+            variant="elevated",
+        ),
     ],
-    tags=["container", "card", "layout", "composition"]
+    tags=["container", "card", "layout", "composition"],
 )
 class Card(ComposableComponent):
     """
@@ -102,10 +114,9 @@ class Card(ComposableComponent):
     Content = CardContent
     Footer = CardFooter
 
-    def __init__(self,
-                 variant: str = "default",
-                 padding: str = "md",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, variant: str = "default", padding: str = "md", theme: Optional[Dict[str, Any]] = None
+    ):
         """
         Initialize enhanced card.
 
@@ -119,10 +130,7 @@ class Card(ComposableComponent):
         self.padding = padding
 
         # Get variant props
-        self.variant_props = CARD_VARIANTS.build(
-            variant=variant,
-            padding=padding
-        )
+        self.variant_props = CARD_VARIANTS.build(variant=variant, padding=padding)
 
     def _calculate_min_width(self) -> float:
         """Calculate minimum width needed for content."""
@@ -131,7 +139,7 @@ class Card(ComposableComponent):
 
         # Estimate based on title length if present
         for child in self._children:
-            if hasattr(child, 'text'):
+            if hasattr(child, "text"):
                 # Rough estimate: 0.08 inches per character for titles
                 text_len = len(child.text)
                 min_width = (text_len * 0.08) + 1.0  # Add padding
@@ -154,12 +162,12 @@ class Card(ComposableComponent):
 
         # Estimate height per child component based on actual font sizes
         for child in self._children:
-            if hasattr(child, 'text') and hasattr(child, '__class__'):
+            if hasattr(child, "text") and hasattr(child, "__class__"):
                 class_name = child.__class__.__name__
-                if 'Title' in class_name:
+                if "Title" in class_name:
                     # h5 font is 16pt = ~0.22" + space before (6pt = ~0.08") + line spacing
                     total_height += 0.35
-                elif 'Description' in class_name:
+                elif "Description" in class_name:
                     # body font is 14pt with 6pt space before
                     # More accurate: account for character width based on card width
                     text_len = len(child.text)
@@ -175,8 +183,14 @@ class Card(ComposableComponent):
 
         return max(1.5, min(total_height, 4.5))  # Cap between 1.5 and 4.5 inches
 
-    def render(self, slide, left: float, top: float,
-               width: Optional[float] = None, height: Optional[float] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+    ) -> Any:
         """
         Render card to slide.
 
@@ -213,7 +227,7 @@ class Card(ComposableComponent):
             Inches(left),
             Inches(top),
             Inches(card_width),
-            Inches(card_height)
+            Inches(card_height),
         )
 
         # Apply variant styles
@@ -253,9 +267,7 @@ class Card(ComposableComponent):
         # Border
         border_width = props.get("border_width", 0)
         if border_width > 0:
-            shape.line.color.rgb = self.get_color(
-                props.get("border_color", "border.DEFAULT")
-            )
+            shape.line.color.rgb = self.get_color(props.get("border_color", "border.DEFAULT"))
             shape.line.width = Pt(border_width)
         else:
             shape.line.fill.background()
@@ -263,7 +275,7 @@ class Card(ComposableComponent):
         # Shadow (for elevated variant)
         if props.get("shadow"):
             shape.shadow.visible = True
-            shape.shadow.blur_radius = Pt(10)
+            shape.shadow.blur_radius = Pt(FONT_SIZES["xs"])
             shape.shadow.distance = Pt(4)
             shape.shadow.angle = 90
             shape.shadow.transparency = 0.3
@@ -278,7 +290,13 @@ class Card(ComposableComponent):
         prop("value", "string", "Metric value", required=True, example="$1.2M"),
         prop("change", "string", "Change indicator", example="+12%"),
         prop("trend", "string", "Trend direction", options=["up", "down", "neutral"], example="up"),
-        prop("variant", "string", "Visual variant", options=["default", "outlined", "elevated"], default="outlined"),
+        prop(
+            "variant",
+            "string",
+            "Visual variant",
+            options=["default", "outlined", "elevated"],
+            default="outlined",
+        ),
         prop("left", "number", "Left position in inches", required=True),
         prop("top", "number", "Top position in inches", required=True),
         prop("width", "number", "Width in inches", default=2.5),
@@ -300,10 +318,10 @@ metric.render(slide, left=1, top=1)
             label="Revenue",
             value="$1.2M",
             change="+12%",
-            trend="up"
+            trend="up",
         )
     ],
-    tags=["metric", "kpi", "data", "card"]
+    tags=["metric", "kpi", "data", "card"],
 )
 class MetricCard(Card):
     """
@@ -311,13 +329,15 @@ class MetricCard(Card):
     Displays KPIs with optional trend indicators.
     """
 
-    def __init__(self,
-                 label: str,
-                 value: str,
-                 change: Optional[str] = None,
-                 trend: Optional[str] = None,
-                 variant: str = "outlined",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        label: str,
+        value: str,
+        change: Optional[str] = None,
+        trend: Optional[str] = None,
+        variant: str = "outlined",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize metric card.
 
@@ -375,8 +395,14 @@ class MetricCard(Card):
 
         return max(1.2, min(total_height, 2.5))
 
-    def render(self, slide, left: float, top: float,
-               width: Optional[float] = None, height: Optional[float] = None):
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+    ):
         """Render metric card."""
         # Use calculated width and height if not provided
         card_width = width if width is not None else self._calculate_min_width()

@@ -259,20 +259,21 @@ PALETTE = {
     },
 }
 
+
 # Semantic token definitions
 def get_semantic_tokens(primary_hue: str = "blue", mode: str = "dark") -> Dict[str, Any]:
     """
     Get semantic color tokens based on primary hue and mode.
-    
+
     Args:
         primary_hue: Primary color from palette (e.g., "blue", "violet")
         mode: "dark" or "light"
-    
+
     Returns:
         Dictionary of semantic color tokens
     """
     is_dark = mode == "dark"
-    
+
     return {
         # Background tokens
         "background": {
@@ -280,14 +281,12 @@ def get_semantic_tokens(primary_hue: str = "blue", mode: str = "dark") -> Dict[s
             "secondary": PALETTE["zinc"][900] if is_dark else PALETTE["zinc"][50],
             "tertiary": PALETTE["zinc"][800] if is_dark else PALETTE["zinc"][100],
         },
-        
         # Foreground tokens
         "foreground": {
             "DEFAULT": PALETTE["zinc"][50] if is_dark else PALETTE["zinc"][900],
             "secondary": PALETTE["zinc"][200] if is_dark else PALETTE["zinc"][700],
             "muted": PALETTE["zinc"][400] if is_dark else PALETTE["zinc"][500],
         },
-        
         # Primary colors
         "primary": {
             "DEFAULT": PALETTE[primary_hue][500 if is_dark else 600],
@@ -295,7 +294,6 @@ def get_semantic_tokens(primary_hue: str = "blue", mode: str = "dark") -> Dict[s
             "hover": PALETTE[primary_hue][400 if is_dark else 700],
             "active": PALETTE[primary_hue][300 if is_dark else 800],
         },
-        
         # Secondary colors
         "secondary": {
             "DEFAULT": PALETTE["zinc"][800 if is_dark else 200],
@@ -303,7 +301,6 @@ def get_semantic_tokens(primary_hue: str = "blue", mode: str = "dark") -> Dict[s
             "hover": PALETTE["zinc"][700 if is_dark else 300],
             "active": PALETTE["zinc"][600 if is_dark else 400],
         },
-        
         # Accent colors
         "accent": {
             "DEFAULT": PALETTE[primary_hue][400 if is_dark else 500],
@@ -311,26 +308,22 @@ def get_semantic_tokens(primary_hue: str = "blue", mode: str = "dark") -> Dict[s
             "hover": PALETTE[primary_hue][300 if is_dark else 600],
             "active": PALETTE[primary_hue][200 if is_dark else 700],
         },
-        
         # Muted colors
         "muted": {
             "DEFAULT": PALETTE["zinc"][800 if is_dark else 100],
             "foreground": PALETTE["zinc"][400 if is_dark else 600],
         },
-        
         # Card colors
         "card": {
             "DEFAULT": PALETTE["zinc"][900 if is_dark else 50],
             "foreground": PALETTE["zinc"][50 if is_dark else 900],
             "hover": PALETTE["zinc"][800 if is_dark else 100],
         },
-        
         # Border colors
         "border": {
             "DEFAULT": PALETTE["zinc"][800 if is_dark else 200],
             "secondary": PALETTE["zinc"][700 if is_dark else 300],
         },
-        
         # Status colors
         "destructive": {
             "DEFAULT": PALETTE["red"][600 if is_dark else 500],
@@ -348,7 +341,6 @@ def get_semantic_tokens(primary_hue: str = "blue", mode: str = "dark") -> Dict[s
             "DEFAULT": PALETTE["blue"][600 if is_dark else 500],
             "foreground": "#ffffff",
         },
-        
         # Chart colors (for data visualization)
         "chart": [
             PALETTE[primary_hue][500],
@@ -362,14 +354,58 @@ def get_semantic_tokens(primary_hue: str = "blue", mode: str = "dark") -> Dict[s
         ],
     }
 
+
 # Gradient definitions
 GRADIENTS = {
-    "sunset": ["#ff6b6b", "#f7b731", "#5f27cd"],
-    "ocean": ["#667eea", "#764ba2", "#f093fb"],
-    "forest": ["#00b09b", "#96c93d", "#ffe000"],
-    "flame": ["#ff416c", "#ff4b2b", "#ffc837"],
-    "aurora": ["#00c9ff", "#92fe9d", "#fc00ff"],
-    "cosmic": ["#7303c0", "#ec38bc", "#03001e"],
-    "mint": ["#00b4d8", "#0077b6", "#03045e"],
-    "lavender": ["#e0aaff", "#c77dff", "#7209b7"],
+    "sunset": [PALETTE["red"][500], PALETTE["amber"][500], PALETTE["violet"][700]],
+    "ocean": [PALETTE["blue"][500], PALETTE["purple"][500], PALETTE["pink"][300]],
+    "forest": [PALETTE["teal"][500], PALETTE["lime"][500], PALETTE["yellow"][400]],
+    "flame": [PALETTE["rose"][500], PALETTE["red"][500], PALETTE["amber"][400]],
+    "aurora": [PALETTE["cyan"][400], PALETTE["green"][300], PALETTE["fuchsia"][500]],
+    "cosmic": [PALETTE["purple"][700], PALETTE["fuchsia"][500], PALETTE["slate"][950]],
+    "mint": [PALETTE["cyan"][500], PALETTE["blue"][700], PALETTE["indigo"][900]],
+    "lavender": [PALETTE["purple"][300], PALETTE["purple"][500], PALETTE["purple"][800]],
+}
+
+# Utility color definitions for common UI patterns
+UTILITY_COLORS = {
+    # Chart default colors (colorful and distinct)
+    "chart_defaults": [
+        PALETTE["blue"][500],
+        PALETTE["green"][500],
+        PALETTE["orange"][500],
+        PALETTE["violet"][500],
+        PALETTE["pink"][500],
+        PALETTE["cyan"][500],
+        PALETTE["yellow"][500],
+        PALETTE["red"][500],
+    ],
+    # Table colors
+    "table": {
+        "header": PALETTE["slate"][200],
+        "header_text": PALETTE["slate"][900],
+        "row_even": PALETTE["slate"][50],
+        "row_odd": PALETTE["slate"][100],
+        "row_text": PALETTE["slate"][900],
+        "border": PALETTE["slate"][300],
+    },
+    # Status/feedback colors
+    "status": {
+        "success": PALETTE["green"][500],
+        "success_light": PALETTE["green"][100],
+        "warning": PALETTE["yellow"][500],
+        "warning_light": PALETTE["yellow"][100],
+        "error": PALETTE["red"][500],
+        "error_light": PALETTE["red"][100],
+        "info": PALETTE["blue"][500],
+        "info_light": PALETTE["blue"][100],
+    },
+    # Device/platform specific colors
+    "device": {
+        "phantom_black": PALETTE["slate"][900],
+        "phantom_white": PALETTE["slate"][50],
+        "screen_dark": PALETTE["slate"][950],
+        "button_dark": PALETTE["slate"][700],
+        "button_darker": PALETTE["slate"][800],
+    },
 }

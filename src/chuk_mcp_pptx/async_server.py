@@ -6,36 +6,26 @@ This server provides async MCP tools for creating and managing PowerPoint presen
 using the python-pptx library. It supports multiple presentations with virtual filesystem
 integration for flexible storage (file, memory, sqlite, s3).
 """
+
 import asyncio
-import json
 import logging
-import os
-from pathlib import Path
-from typing import List, Optional
-import base64
-import io
 
 from chuk_mcp_server import ChukMCPServer
 from chuk_virtual_fs import AsyncVirtualFileSystem
-from pptx.util import Inches
 from .presentation_manager import PresentationManager
 from .models import (
     ErrorResponse,
     SuccessResponse,
     PresentationResponse,
     SlideResponse,
-    ListPresentationsResponse,
 )
 from .constants import (
     SlideLayoutIndex,
     ErrorMessages,
     SuccessMessages,
-    ShapeType,
 )
+
 # Text utilities now handled by tools/text.py via register_text_tools()
-from .utilities.chart_utils import (
-    add_chart, add_pie_chart, add_scatter_chart, add_data_table
-)
 # Shape utilities now available as components in components.core
 
 # Import modular tools modules
@@ -50,6 +40,7 @@ from .tools.registry_tools import register_registry_tools
 from .tools.token_tools import register_token_tools
 from .tools.semantic_tools import register_semantic_tools
 from .tools.theme_tools import register_theme_tools
+from .tools.shape_tools import register_shape_tools
 from .themes.theme_manager import ThemeManager
 
 logging.basicConfig(level=logging.INFO)
@@ -79,7 +70,6 @@ text_tools = register_text_tools(mcp, manager)
 inspection_tools = register_inspection_tools(mcp, manager)
 table_tools = register_table_tools(mcp, manager)
 layout_tools = register_layout_tools(mcp, manager)
-from .tools.shape_tools import register_shape_tools
 shape_tools = register_shape_tools(mcp, manager)
 
 # Register design system tools (NEW)
@@ -93,55 +83,55 @@ semantic_tools = register_semantic_tools(mcp, manager)
 
 # Make tools available at module level for easier imports
 if chart_tools:
-    pptx_add_chart = chart_tools['pptx_add_chart']
+    pptx_add_chart = chart_tools["pptx_add_chart"]
 
 if image_tools:
-    pptx_add_image_slide = image_tools['pptx_add_image_slide']
-    pptx_add_image = image_tools['pptx_add_image']
-    pptx_add_background_image = image_tools['pptx_add_background_image']
-    pptx_add_image_gallery = image_tools['pptx_add_image_gallery']
-    pptx_add_image_with_caption = image_tools['pptx_add_image_with_caption']
-    pptx_add_logo = image_tools['pptx_add_logo']
-    pptx_replace_image = image_tools['pptx_replace_image']
+    pptx_add_image_slide = image_tools["pptx_add_image_slide"]
+    pptx_add_image = image_tools["pptx_add_image"]
+    pptx_add_background_image = image_tools["pptx_add_background_image"]
+    pptx_add_image_gallery = image_tools["pptx_add_image_gallery"]
+    pptx_add_image_with_caption = image_tools["pptx_add_image_with_caption"]
+    pptx_add_logo = image_tools["pptx_add_logo"]
+    pptx_replace_image = image_tools["pptx_replace_image"]
 
 if inspection_tools:
-    pptx_inspect_slide = inspection_tools['pptx_inspect_slide']
-    pptx_fix_slide_layout = inspection_tools['pptx_fix_slide_layout']
-    pptx_analyze_presentation_layout = inspection_tools['pptx_analyze_presentation_layout']
+    pptx_inspect_slide = inspection_tools["pptx_inspect_slide"]
+    pptx_fix_slide_layout = inspection_tools["pptx_fix_slide_layout"]
+    pptx_analyze_presentation_layout = inspection_tools["pptx_analyze_presentation_layout"]
 
 if table_tools:
-    pptx_add_data_table = table_tools['pptx_add_data_table']
-    pptx_add_comparison_table = table_tools['pptx_add_comparison_table']
-    pptx_update_table_cell = table_tools['pptx_update_table_cell']
-    pptx_format_table = table_tools['pptx_format_table']
+    pptx_add_data_table = table_tools["pptx_add_data_table"]
+    pptx_add_comparison_table = table_tools["pptx_add_comparison_table"]
+    pptx_update_table_cell = table_tools["pptx_update_table_cell"]
+    pptx_format_table = table_tools["pptx_format_table"]
 
 if layout_tools:
-    pptx_list_layouts = layout_tools['pptx_list_layouts']
-    pptx_add_slide_with_layout = layout_tools['pptx_add_slide_with_layout']
-    pptx_customize_layout = layout_tools['pptx_customize_layout']
-    pptx_apply_master_layout = layout_tools['pptx_apply_master_layout']
-    pptx_duplicate_slide = layout_tools['pptx_duplicate_slide']
-    pptx_reorder_slides = layout_tools['pptx_reorder_slides']
+    pptx_list_layouts = layout_tools["pptx_list_layouts"]
+    pptx_add_slide_with_layout = layout_tools["pptx_add_slide_with_layout"]
+    pptx_customize_layout = layout_tools["pptx_customize_layout"]
+    pptx_apply_master_layout = layout_tools["pptx_apply_master_layout"]
+    pptx_duplicate_slide = layout_tools["pptx_duplicate_slide"]
+    pptx_reorder_slides = layout_tools["pptx_reorder_slides"]
 
 if shape_tools:
-    pptx_add_arrow = shape_tools['pptx_add_arrow']
-    pptx_add_smart_art = shape_tools['pptx_add_smart_art']
-    pptx_add_code_block = shape_tools['pptx_add_code_block']
+    pptx_add_arrow = shape_tools["pptx_add_arrow"]
+    pptx_add_smart_art = shape_tools["pptx_add_smart_art"]
+    pptx_add_code_block = shape_tools["pptx_add_code_block"]
 
 # Theme tools now in their own module
 if theme_tools:
-    pptx_list_themes = theme_tools['pptx_list_themes']
-    pptx_get_theme_info = theme_tools['pptx_get_theme_info']
-    pptx_create_custom_theme = theme_tools['pptx_create_custom_theme']
-    pptx_apply_theme = theme_tools['pptx_apply_theme']
-    pptx_apply_component_theme = theme_tools['pptx_apply_component_theme']
-    pptx_list_component_themes = theme_tools['pptx_list_component_themes']
+    pptx_list_themes = theme_tools["pptx_list_themes"]
+    pptx_get_theme_info = theme_tools["pptx_get_theme_info"]
+    pptx_create_custom_theme = theme_tools["pptx_create_custom_theme"]
+    pptx_apply_theme = theme_tools["pptx_apply_theme"]
+    pptx_apply_component_theme = theme_tools["pptx_apply_component_theme"]
+    pptx_list_component_themes = theme_tools["pptx_list_component_themes"]
 
 # Note: Function references are already created by the register_*_tools() calls above
 # No need for backward compatibility layer as tools are registered directly with mcp
 
 
-@mcp.tool
+@mcp.tool  # type: ignore[arg-type]
 async def pptx_create(name: str, theme: str | None = None) -> str:
     """
     Create a new PowerPoint presentation.
@@ -179,11 +169,9 @@ async def pptx_create(name: str, theme: str | None = None) -> str:
         return ErrorResponse(error=str(e)).model_dump_json()
 
 
-@mcp.tool
+@mcp.tool  # type: ignore[arg-type]
 async def pptx_add_title_slide(
-    title: str,
-    subtitle: str = "",
-    presentation: str | None = None
+    title: str, subtitle: str = "", presentation: str | None = None
 ) -> str:
     """
     Add a title slide to the current presentation.
@@ -237,9 +225,7 @@ async def pptx_add_title_slide(
         return SlideResponse(
             presentation=pres_name,
             slide_index=slide_index,
-            message=SuccessMessages.SLIDE_ADDED.format(
-                slide_type="title", presentation=pres_name
-            ),
+            message=SuccessMessages.SLIDE_ADDED.format(slide_type="title", presentation=pres_name),
             slide_count=len(prs.slides),
         ).model_dump_json()
     except Exception as e:
@@ -247,12 +233,8 @@ async def pptx_add_title_slide(
         return ErrorResponse(error=str(e)).model_dump_json()
 
 
-@mcp.tool
-async def pptx_add_slide(
-    title: str,
-    content: list[str],
-    presentation: str | None = None
-) -> str:
+@mcp.tool  # type: ignore[arg-type]
+async def pptx_add_slide(title: str, content: list[str], presentation: str | None = None) -> str:
     """
     Add a text content slide with title and bullet points.
 
@@ -335,11 +317,8 @@ async def pptx_add_slide(
 # The function is registered via register_text_tools()
 
 
-@mcp.tool
-async def pptx_save(
-    path: str,
-    presentation: str | None = None
-) -> str:
+@mcp.tool  # type: ignore[arg-type]
+async def pptx_save(path: str, presentation: str | None = None) -> str:
     """
     Save the presentation to a PowerPoint file.
 
@@ -360,15 +339,17 @@ async def pptx_save(
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
-        prs.save(path)
+        await asyncio.to_thread(prs.save, path)
 
         # Get file size
         from pathlib import Path
+
         size_bytes = Path(path).stat().st_size if Path(path).exists() else None
 
         pres_name = presentation or manager.get_current_name() or "presentation"
 
         from .models import ExportResponse
+
         return ExportResponse(
             name=pres_name,
             format="file",
@@ -378,12 +359,10 @@ async def pptx_save(
         ).model_dump_json()
     except Exception as e:
         logger.error(f"Failed to save presentation: {e}")
-        return ErrorResponse(
-            error=ErrorMessages.SAVE_FAILED.format(error=str(e))
-        ).model_dump_json()
+        return ErrorResponse(error=ErrorMessages.SAVE_FAILED.format(error=str(e))).model_dump_json()
 
 
-@mcp.tool
+@mcp.tool  # type: ignore[arg-type]
 async def pptx_export_base64(presentation: str | None = None) -> str:
     """
     Export the presentation as a base64-encoded string.
@@ -401,13 +380,14 @@ async def pptx_export_base64(presentation: str | None = None) -> str:
         result = await pptx_export_base64()
     """
     try:
-        data = manager.export_base64(presentation)
+        data = await manager.export_base64(presentation)
         if not data:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
         pres_name = presentation or manager.get_current_name() or "presentation"
 
         from .models import ExportResponse
+
         return ExportResponse(
             name=pres_name,
             format="base64",
@@ -420,7 +400,7 @@ async def pptx_export_base64(presentation: str | None = None) -> str:
         return ErrorResponse(error=str(e)).model_dump_json()
 
 
-@mcp.tool
+@mcp.tool  # type: ignore[arg-type]
 async def pptx_import_base64(data: str, name: str) -> str:
     """
     Import a presentation from a base64-encoded string.
@@ -450,6 +430,7 @@ async def pptx_import_base64(data: str, name: str) -> str:
         slide_count = len(prs.slides) if prs else 0
 
         from .models import ImportResponse
+
         return ImportResponse(
             name=name,
             source="base64",
@@ -461,7 +442,7 @@ async def pptx_import_base64(data: str, name: str) -> str:
         return ErrorResponse(error=str(e)).model_dump_json()
 
 
-@mcp.tool
+@mcp.tool  # type: ignore[arg-type]
 async def pptx_list() -> str:
     """
     List all presentations currently in memory and VFS.
@@ -482,7 +463,7 @@ async def pptx_list() -> str:
         return ErrorResponse(error=str(e)).model_dump_json()
 
 
-@mcp.tool
+@mcp.tool  # type: ignore[arg-type]
 async def pptx_switch(name: str) -> str:
     """
     Switch to a different presentation.
@@ -505,15 +486,13 @@ async def pptx_switch(name: str) -> str:
                 error=ErrorMessages.PRESENTATION_NOT_FOUND.format(name=name)
             ).model_dump_json()
 
-        return SuccessResponse(
-            message=f"Switched to presentation '{name}'"
-        ).model_dump_json()
+        return SuccessResponse(message=f"Switched to presentation '{name}'").model_dump_json()
     except Exception as e:
         logger.error(f"Failed to switch presentation: {e}")
         return ErrorResponse(error=str(e)).model_dump_json()
 
 
-@mcp.tool
+@mcp.tool  # type: ignore[arg-type]
 async def pptx_delete(name: str) -> str:
     """
     Delete a presentation from memory and VFS.
@@ -536,15 +515,13 @@ async def pptx_delete(name: str) -> str:
                 error=ErrorMessages.PRESENTATION_NOT_FOUND.format(name=name)
             ).model_dump_json()
 
-        return SuccessResponse(
-            message=f"Deleted presentation '{name}'"
-        ).model_dump_json()
+        return SuccessResponse(message=f"Deleted presentation '{name}'").model_dump_json()
     except Exception as e:
         logger.error(f"Failed to delete presentation: {e}")
         return ErrorResponse(error=str(e)).model_dump_json()
 
 
-@mcp.tool
+@mcp.tool  # type: ignore[arg-type]
 async def pptx_get_info(presentation: str | None = None) -> str:
     """
     Get information about a presentation.

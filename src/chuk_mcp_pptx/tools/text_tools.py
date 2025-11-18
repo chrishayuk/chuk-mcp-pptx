@@ -5,7 +5,6 @@ Text Tools for PowerPoint MCP Server
 Provides async MCP tools for handling text in presentations.
 Supports text extraction, formatting, and component-based text creation.
 """
-import asyncio
 
 from ..utilities.text_utils import extract_presentation_text
 from ..models import ErrorResponse, SlideResponse
@@ -19,17 +18,13 @@ def register_text_tools(mcp, manager):
     comprehensive design system. This module provides text utilities and slides.
     """
 
-    from ..components.core import TextBox, BulletList
+    from ..components.core import TextBox
     from ..themes.theme_manager import ThemeManager
 
     theme_manager = ThemeManager()
 
     @mcp.tool
-    async def pptx_add_text_slide(
-        title: str,
-        text: str,
-        presentation: str | None = None
-    ) -> str:
+    async def pptx_add_text_slide(title: str, text: str, presentation: str | None = None) -> str:
         """
         Add a slide with title and text content.
 
@@ -119,6 +114,7 @@ def register_text_tools(mcp, manager):
             text_data = extract_presentation_text(prs)
             # Return as JSON string
             import json
+
             return json.dumps(text_data)
         except Exception as e:
             return ErrorResponse(error=str(e)).model_dump_json()
@@ -135,7 +131,7 @@ def register_text_tools(mcp, manager):
         bold: bool = False,
         color: str | None = None,
         alignment: str = "left",
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Add a formatted text box to a slide.
@@ -183,7 +179,7 @@ def register_text_tools(mcp, manager):
 
             # Get theme if using semantic colors
             theme_obj = None
-            if color and '.' in color:
+            if color and "." in color:
                 theme_manager = ThemeManager()
                 theme_obj = theme_manager.get_default_theme()
 
@@ -194,7 +190,7 @@ def register_text_tools(mcp, manager):
                 bold=bold,
                 color=color,
                 alignment=alignment,
-                theme=theme_obj.__dict__ if theme_obj else None
+                theme=theme_obj.__dict__ if theme_obj else None,
             )
 
             # Render to slide
@@ -209,6 +205,7 @@ def register_text_tools(mcp, manager):
             pres_name = presentation or manager.get_current_name() or "presentation"
 
             from ..models import ComponentResponse
+
             return ComponentResponse(
                 presentation=pres_name,
                 slide_index=slide_index,
@@ -216,6 +213,7 @@ def register_text_tools(mcp, manager):
                 message=SuccessMessages.COMPONENT_ADDED.format(
                     component="text box", index=slide_index
                 ),
+                variant=None,
             ).model_dump_json()
         except Exception as e:
             return ErrorResponse(error=str(e)).model_dump_json()
@@ -225,7 +223,7 @@ def register_text_tools(mcp, manager):
     # Return the tools for external access
     # Note: pptx_add_bullet_list is provided by component_tools.py
     return {
-        'pptx_add_text_slide': pptx_add_text_slide,
-        'pptx_extract_all_text': pptx_extract_all_text,
-        'pptx_add_text_box': pptx_add_text_box,
+        "pptx_add_text_slide": pptx_add_text_slide,
+        "pptx_extract_all_text": pptx_extract_all_text,
+        "pptx_add_text_box": pptx_add_text_box,
     }

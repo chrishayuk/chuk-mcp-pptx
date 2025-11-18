@@ -4,7 +4,7 @@ Tests for Table component.
 
 import pytest
 from pptx import Presentation
-from pptx.util import Inches, Pt
+from pptx.util import Pt
 
 from chuk_mcp_pptx.components.core import Table
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
@@ -38,8 +38,8 @@ def sample_data():
         "data": [
             ["Laptops", "$100K", "$120K", "$110K"],
             ["Phones", "$80K", "$90K", "$95K"],
-            ["Tablets", "$60K", "$65K", "$70K"]
-        ]
+            ["Tablets", "$60K", "$65K", "$70K"],
+        ],
     }
 
 
@@ -48,10 +48,7 @@ class TestTableInit:
 
     def test_init_basic(self, sample_data):
         """Test basic table initialization."""
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"]
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"])
         assert table.headers == sample_data["headers"]
         assert table.data == sample_data["data"]
         assert table.variant == "default"
@@ -59,29 +56,17 @@ class TestTableInit:
 
     def test_init_with_variant(self, sample_data):
         """Test initialization with variant."""
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            variant="bordered"
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"], variant="bordered")
         assert table.variant == "bordered"
 
     def test_init_with_size(self, sample_data):
         """Test initialization with size."""
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            size="lg"
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"], size="lg")
         assert table.size == "lg"
 
     def test_init_with_theme(self, sample_data, theme):
         """Test initialization with theme."""
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            theme=theme
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"], theme=theme)
         assert table.theme is not None
 
 
@@ -91,10 +76,7 @@ class TestTableVariants:
     def test_default_variant(self, slide, sample_data, theme):
         """Test default variant."""
         table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            variant="default",
-            theme=theme
+            headers=sample_data["headers"], data=sample_data["data"], variant="default", theme=theme
         )
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
         assert table_shape is not None
@@ -105,7 +87,7 @@ class TestTableVariants:
             headers=sample_data["headers"],
             data=sample_data["data"],
             variant="bordered",
-            theme=theme
+            theme=theme,
         )
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
         assert table_shape is not None
@@ -113,10 +95,7 @@ class TestTableVariants:
     def test_striped_variant(self, slide, sample_data, theme):
         """Test striped variant."""
         table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            variant="striped",
-            theme=theme
+            headers=sample_data["headers"], data=sample_data["data"], variant="striped", theme=theme
         )
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
         assert table_shape is not None
@@ -124,10 +103,7 @@ class TestTableVariants:
     def test_minimal_variant(self, slide, sample_data, theme):
         """Test minimal variant."""
         table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            variant="minimal",
-            theme=theme
+            headers=sample_data["headers"], data=sample_data["data"], variant="minimal", theme=theme
         )
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
         assert table_shape is not None
@@ -139,10 +115,7 @@ class TestTableSizes:
     def test_small_size(self, slide, sample_data, theme):
         """Test small size."""
         table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            size="sm",
-            theme=theme
+            headers=sample_data["headers"], data=sample_data["data"], size="sm", theme=theme
         )
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
         assert table_shape is not None
@@ -155,10 +128,7 @@ class TestTableSizes:
     def test_medium_size(self, slide, sample_data, theme):
         """Test medium size."""
         table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            size="md",
-            theme=theme
+            headers=sample_data["headers"], data=sample_data["data"], size="md", theme=theme
         )
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
         assert table_shape is not None
@@ -171,10 +141,7 @@ class TestTableSizes:
     def test_large_size(self, slide, sample_data, theme):
         """Test large size."""
         table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            size="lg",
-            theme=theme
+            headers=sample_data["headers"], data=sample_data["data"], size="lg", theme=theme
         )
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
         assert table_shape is not None
@@ -190,25 +157,17 @@ class TestTableRender:
 
     def test_render_creates_table(self, slide, sample_data, theme):
         """Test that render creates a table shape."""
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            theme=theme
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"], theme=theme)
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
 
         assert table_shape is not None
-        assert hasattr(table_shape, 'table')
+        assert hasattr(table_shape, "table")
         pptx_table = table_shape.table
         assert pptx_table is not None
 
     def test_render_correct_dimensions(self, slide, sample_data, theme):
         """Test that table has correct dimensions."""
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            theme=theme
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"], theme=theme)
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
 
         pptx_table = table_shape.table
@@ -219,11 +178,7 @@ class TestTableRender:
 
     def test_render_headers(self, slide, sample_data, theme):
         """Test that headers are rendered correctly."""
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            theme=theme
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"], theme=theme)
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
 
         pptx_table = table_shape.table
@@ -234,11 +189,7 @@ class TestTableRender:
 
     def test_render_data(self, slide, sample_data, theme):
         """Test that data is rendered correctly."""
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            theme=theme
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"], theme=theme)
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
 
         pptx_table = table_shape.table
@@ -250,11 +201,7 @@ class TestTableRender:
 
     def test_render_header_bold(self, slide, sample_data, theme):
         """Test that headers are bold."""
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            theme=theme
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"], theme=theme)
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
 
         pptx_table = table_shape.table
@@ -265,11 +212,7 @@ class TestTableRender:
     def test_render_position(self, slide, sample_data, theme):
         """Test that table is positioned correctly."""
         left, top, width, height = 1, 2, 6, 3
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            theme=theme
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"], theme=theme)
         table_shape = table.render(slide, left=left, top=top, width=width, height=height)
 
         # Check position (within tolerance for rounding)
@@ -284,10 +227,7 @@ class TestTableWithoutTheme:
 
     def test_table_without_theme(self, slide, sample_data):
         """Test that table works without explicit theme."""
-        table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"]
-        )
+        table = Table(headers=sample_data["headers"], data=sample_data["data"])
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
 
         assert table_shape is not None
@@ -301,11 +241,7 @@ class TestTableEdgeCases:
 
     def test_single_row(self, slide, theme):
         """Test table with single data row."""
-        table = Table(
-            headers=["Name", "Value"],
-            data=[["Item 1", "100"]],
-            theme=theme
-        )
+        table = Table(headers=["Name", "Value"], data=[["Item 1", "100"]], theme=theme)
         table_shape = table.render(slide, left=1, top=2, width=4, height=2)
 
         pptx_table = table_shape.table
@@ -316,11 +252,7 @@ class TestTableEdgeCases:
         headers = [f"Col{i}" for i in range(10)]
         data = [[f"Val{i}" for i in range(10)]]
 
-        table = Table(
-            headers=headers,
-            data=data,
-            theme=theme
-        )
+        table = Table(headers=headers, data=data, theme=theme)
         table_shape = table.render(slide, left=0.5, top=2, width=9, height=2)
 
         pptx_table = table_shape.table
@@ -331,11 +263,7 @@ class TestTableEdgeCases:
         headers = ["Name", "Value"]
         data = [[f"Item {i}", str(i * 100)] for i in range(20)]
 
-        table = Table(
-            headers=headers,
-            data=data,
-            theme=theme
-        )
+        table = Table(headers=headers, data=data, theme=theme)
         table_shape = table.render(slide, left=1, top=1, width=4, height=6)
 
         pptx_table = table_shape.table
@@ -343,11 +271,7 @@ class TestTableEdgeCases:
 
     def test_empty_cells(self, slide, theme):
         """Test table with empty cells."""
-        table = Table(
-            headers=["Name", "Value"],
-            data=[["Item 1", ""], ["", "200"]],
-            theme=theme
-        )
+        table = Table(headers=["Name", "Value"], data=[["Item 1", ""], ["", "200"]], theme=theme)
         table_shape = table.render(slide, left=1, top=2, width=4, height=2)
 
         pptx_table = table_shape.table
@@ -361,10 +285,7 @@ class TestTableStripedVariant:
     def test_striped_alternating_rows(self, slide, sample_data, theme):
         """Test that striped variant alternates row colors."""
         table = Table(
-            headers=sample_data["headers"],
-            data=sample_data["data"],
-            variant="striped",
-            theme=theme
+            headers=sample_data["headers"], data=sample_data["data"], variant="striped", theme=theme
         )
         table_shape = table.render(slide, left=1, top=2, width=6, height=3)
 

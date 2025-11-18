@@ -11,6 +11,9 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES
+from ...tokens.platform_colors import CHAT_COLORS
+from ...constants import Platform, ColorKey
 
 
 class TeamsMessage(Component):
@@ -47,14 +50,16 @@ class TeamsMessage(Component):
         msg.render(slide, left=1, top=3, width=7)
     """
 
-    def __init__(self,
-                 text: str,
-                 sender: str,
-                 timestamp: str,
-                 avatar_text: Optional[str] = None,
-                 reactions: Optional[List[str]] = None,
-                 reply_count: Optional[int] = None,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        sender: str,
+        timestamp: str,
+        avatar_text: Optional[str] = None,
+        reactions: Optional[List[str]] = None,
+        reply_count: Optional[int] = None,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize Teams message.
 
@@ -95,7 +100,14 @@ class TeamsMessage(Component):
         reply_height = 0.25 if self.reply_count else 0
 
         padding = 0.15
-        return header_height + timestamp_height + text_height + reactions_height + reply_height + padding
+        return (
+            header_height
+            + timestamp_height
+            + text_height
+            + reactions_height
+            + reply_height
+            + padding
+        )
 
     def render(self, slide, left: float, top: float, width: float = 7.0) -> list:
         """Render Teams message."""
@@ -112,10 +124,12 @@ class TeamsMessage(Component):
             Inches(avatar_left),
             Inches(top),
             Inches(avatar_size),
-            Inches(avatar_size)
+            Inches(avatar_size),
         )
         avatar.fill.solid()
-        avatar.fill.fore_color.rgb = RGBColor(98, 100, 167)  # Teams purple
+        avatar.fill.fore_color.rgb = RGBColor(
+            *self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.PURPLE])
+        )  # Teams purple
         avatar.line.fill.background()
 
         # Avatar text
@@ -124,19 +138,16 @@ class TeamsMessage(Component):
         av_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
         av_p = av_frame.paragraphs[0]
         av_p.alignment = PP_ALIGN.CENTER
-        av_p.font.size = Pt(12)
+        av_p.font.size = Pt(FONT_SIZES["sm"])
         av_p.font.bold = True
-        av_p.font.color.rgb = RGBColor(255, 255, 255)
+        av_p.font.color.rgb = self.get_color("primary.foreground")
         shapes.append(avatar)
 
         current_top = top
 
         # Sender name
         sender_box = slide.shapes.add_textbox(
-            Inches(content_left),
-            Inches(current_top),
-            Inches(content_width),
-            Inches(0.2)
+            Inches(content_left), Inches(current_top), Inches(content_width), Inches(0.2)
         )
         sender_frame = sender_box.text_frame
         sender_frame.text = self.sender
@@ -144,26 +155,27 @@ class TeamsMessage(Component):
         sender_frame.vertical_anchor = MSO_ANCHOR.TOP
         sender_p = sender_frame.paragraphs[0]
         sender_p.alignment = PP_ALIGN.LEFT
-        sender_p.font.size = Pt(13)
+        sender_p.font.size = Pt(FONT_SIZES["sm"])
         sender_p.font.bold = True
-        sender_p.font.color.rgb = RGBColor(37, 36, 35)  # Teams dark gray
+        sender_p.font.color.rgb = RGBColor(
+            *self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.TEXT])
+        )  # Teams dark gray
         shapes.append(sender_box)
         current_top += 0.18
 
         # Timestamp
         timestamp_box = slide.shapes.add_textbox(
-            Inches(content_left),
-            Inches(current_top),
-            Inches(content_width),
-            Inches(0.18)
+            Inches(content_left), Inches(current_top), Inches(content_width), Inches(0.18)
         )
         timestamp_frame = timestamp_box.text_frame
         timestamp_frame.text = self.timestamp
         timestamp_frame.word_wrap = False
         timestamp_p = timestamp_frame.paragraphs[0]
         timestamp_p.alignment = PP_ALIGN.LEFT
-        timestamp_p.font.size = Pt(10)
-        timestamp_p.font.color.rgb = RGBColor(96, 94, 92)  # Teams medium gray
+        timestamp_p.font.size = Pt(FONT_SIZES["xs"])
+        timestamp_p.font.color.rgb = RGBColor(
+            *self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.SECONDARY_TEXT])
+        )  # Teams medium gray
         shapes.append(timestamp_box)
         current_top += 0.18
 
@@ -172,7 +184,7 @@ class TeamsMessage(Component):
             Inches(content_left),
             Inches(current_top),
             Inches(content_width),
-            Inches(0.5)  # Will auto-expand
+            Inches(0.5),  # Will auto-expand
         )
         text_frame = text_box.text_frame
         text_frame.text = self.text
@@ -180,8 +192,10 @@ class TeamsMessage(Component):
         text_frame.vertical_anchor = MSO_ANCHOR.TOP
         text_p = text_frame.paragraphs[0]
         text_p.alignment = PP_ALIGN.LEFT
-        text_p.font.size = Pt(13)
-        text_p.font.color.rgb = RGBColor(37, 36, 35)
+        text_p.font.size = Pt(FONT_SIZES["sm"])
+        text_p.font.color.rgb = RGBColor(
+            *self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.TEXT])
+        )
         shapes.append(text_box)
 
         # Calculate actual text height
@@ -194,34 +208,34 @@ class TeamsMessage(Component):
         if self.reactions:
             reactions_text = "   ".join(self.reactions)
             reactions_box = slide.shapes.add_textbox(
-                Inches(content_left),
-                Inches(current_top),
-                Inches(content_width),
-                Inches(0.22)
+                Inches(content_left), Inches(current_top), Inches(content_width), Inches(0.22)
             )
             reactions_frame = reactions_box.text_frame
             reactions_frame.text = reactions_text
             reactions_p = reactions_frame.paragraphs[0]
             reactions_p.alignment = PP_ALIGN.LEFT
-            reactions_p.font.size = Pt(11)
-            reactions_p.font.color.rgb = RGBColor(96, 94, 92)
+            reactions_p.font.size = Pt(FONT_SIZES["sm"])
+            reactions_p.font.color.rgb = RGBColor(
+                *self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.SECONDARY_TEXT])
+            )
             shapes.append(reactions_box)
             current_top += 0.22
 
         # Reply indicator
         if self.reply_count:
             reply_box = slide.shapes.add_textbox(
-                Inches(content_left),
-                Inches(current_top),
-                Inches(content_width),
-                Inches(0.2)
+                Inches(content_left), Inches(current_top), Inches(content_width), Inches(0.2)
             )
             reply_frame = reply_box.text_frame
-            reply_frame.text = f"↩ {self.reply_count} {'reply' if self.reply_count == 1 else 'replies'}"
+            reply_frame.text = (
+                f"↩ {self.reply_count} {'reply' if self.reply_count == 1 else 'replies'}"
+            )
             reply_p = reply_frame.paragraphs[0]
             reply_p.alignment = PP_ALIGN.LEFT
-            reply_p.font.size = Pt(11)
-            reply_p.font.color.rgb = RGBColor(98, 100, 167)  # Teams purple
+            reply_p.font.size = Pt(FONT_SIZES["sm"])
+            reply_p.font.color.rgb = RGBColor(
+                *self.hex_to_rgb(CHAT_COLORS[Platform.TEAMS][ColorKey.PURPLE])
+            )  # Teams purple
             shapes.append(reply_box)
 
         return shapes
@@ -253,10 +267,12 @@ class TeamsConversation(Component):
         conversation.render(slide, left=1, top=2, width=8)
     """
 
-    def __init__(self,
-                 messages: List[Dict[str, Any]],
-                 spacing: float = 0.2,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        messages: List[Dict[str, Any]],
+        spacing: float = 0.2,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize Teams conversation.
 
@@ -282,7 +298,7 @@ class TeamsConversation(Component):
                 avatar_text=msg_data.get("avatar_text"),
                 reactions=msg_data.get("reactions"),
                 reply_count=msg_data.get("reply_count"),
-                theme=self.theme
+                theme=self.theme,
             )
 
             msg_shapes = message.render(slide, left, current_top, width)

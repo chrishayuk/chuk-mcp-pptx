@@ -24,11 +24,7 @@ MARGIN_RIGHT = 0.5  # inches
 
 
 def validate_boundaries(
-    left: float,
-    top: float,
-    width: float,
-    height: float,
-    aspect_ratio: str = "16:9"
+    left: float, top: float, width: float, height: float, aspect_ratio: str = "16:9"
 ) -> Tuple[bool, Optional[str]]:
     """
     Validate element boundaries against slide dimensions.
@@ -67,11 +63,7 @@ def validate_boundaries(
 
 
 def adjust_to_boundaries(
-    left: float,
-    top: float,
-    width: float,
-    height: float,
-    aspect_ratio: str = "16:9"
+    left: float, top: float, width: float, height: float, aspect_ratio: str = "16:9"
 ) -> Tuple[float, float, float, float]:
     """
     Adjust element dimensions to fit within slide boundaries.
@@ -117,8 +109,14 @@ def adjust_to_boundaries(
 
 
 def check_overlap(
-    left1: float, top1: float, width1: float, height1: float,
-    left2: float, top2: float, width2: float, height2: float
+    left1: float,
+    top1: float,
+    width1: float,
+    height1: float,
+    left2: float,
+    top2: float,
+    width2: float,
+    height2: float,
 ) -> bool:
     """
     Check if two elements overlap.
@@ -142,17 +140,12 @@ def check_overlap(
     bottom2 = top2 + height2
 
     # Check for no overlap (easier to reason about)
-    no_overlap = (right1 < left2 or right2 < left1 or
-                  bottom1 < top2 or bottom2 < top1)
+    no_overlap = right1 < left2 or right2 < left1 or bottom1 < top2 or bottom2 < top1
 
     return not no_overlap
 
 
-def get_available_space(
-    left: float,
-    top: float,
-    aspect_ratio: str = "16:9"
-) -> Tuple[float, float]:
+def get_available_space(left: float, top: float, aspect_ratio: str = "16:9") -> Tuple[float, float]:
     """
     Get available width and height from a given position to slide edge.
 

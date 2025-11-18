@@ -66,12 +66,14 @@ class Timeline(Component):
         timeline.render(slide, left=1, top=3, width=8)
     """
 
-    def __init__(self,
-                 events: List[Dict[str, Any]],
-                 variant: str = "default",
-                 style: str = "line",
-                 show_descriptions: bool = False,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        events: List[Dict[str, Any]],
+        variant: str = "default",
+        style: str = "line",
+        show_descriptions: bool = False,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize timeline.
 
@@ -141,40 +143,23 @@ class Timeline(Component):
             is_highlighted = event.get("highlight", False)
 
             # Render marker
-            marker_shape = self._render_marker(
-                slide,
-                event_left,
-                line_top,
-                is_highlighted
-            )
+            marker_shape = self._render_marker(slide, event_left, line_top, is_highlighted)
             shapes.append(marker_shape)
 
             # Render date
-            date_shape = self._render_date(
-                slide,
-                event_left,
-                top,
-                event.get("date", "")
-            )
+            date_shape = self._render_date(slide, event_left, top, event.get("date", ""))
             shapes.append(date_shape)
 
             # Render title
             title_shape = self._render_title(
-                slide,
-                event_left,
-                line_top + 0.25,
-                event.get("title", ""),
-                is_highlighted
+                slide, event_left, line_top + 0.25, event.get("title", ""), is_highlighted
             )
             shapes.append(title_shape)
 
             # Render description if enabled
             if self.show_descriptions and "description" in event:
                 desc_shape = self._render_description(
-                    slide,
-                    event_left,
-                    line_top + 0.55,
-                    event["description"]
+                    slide, event_left, line_top + 0.55, event["description"]
                 )
                 shapes.append(desc_shape)
 
@@ -191,7 +176,7 @@ class Timeline(Component):
                 Inches(left),
                 Inches(top),
                 Inches(left + width),
-                Inches(top)
+                Inches(top),
             )
             line.line.color.rgb = self._get_line_color()
             line.line.width = Pt(2)
@@ -205,7 +190,7 @@ class Timeline(Component):
                 Inches(left),
                 Inches(top),
                 Inches(left + width),
-                Inches(top)
+                Inches(top),
             )
             line.line.color.rgb = self._get_line_color()
             line.line.width = Pt(2)
@@ -222,7 +207,7 @@ class Timeline(Component):
             Inches(left - marker_size / 2),
             Inches(top - marker_size / 2),
             Inches(marker_size),
-            Inches(marker_size)
+            Inches(marker_size),
         )
 
         marker.fill.solid()
@@ -237,10 +222,7 @@ class Timeline(Component):
     def _render_date(self, slide, left: float, top: float, date_text: str) -> Any:
         """Render event date."""
         date_box = slide.shapes.add_textbox(
-            Inches(left - 0.75),
-            Inches(top),
-            Inches(1.5),
-            Inches(0.3)
+            Inches(left - 0.75), Inches(top), Inches(1.5), Inches(0.3)
         )
 
         text_frame = date_box.text_frame
@@ -257,14 +239,12 @@ class Timeline(Component):
 
         return date_box
 
-    def _render_title(self, slide, left: float, top: float,
-                     title_text: str, is_highlighted: bool) -> Any:
+    def _render_title(
+        self, slide, left: float, top: float, title_text: str, is_highlighted: bool
+    ) -> Any:
         """Render event title."""
         title_box = slide.shapes.add_textbox(
-            Inches(left - 1.0),
-            Inches(top),
-            Inches(2.0),
-            Inches(0.3)
+            Inches(left - 1.0), Inches(top), Inches(2.0), Inches(0.3)
         )
 
         text_frame = title_box.text_frame
@@ -285,14 +265,10 @@ class Timeline(Component):
 
         return title_box
 
-    def _render_description(self, slide, left: float, top: float,
-                           description_text: str) -> Any:
+    def _render_description(self, slide, left: float, top: float, description_text: str) -> Any:
         """Render event description."""
         desc_box = slide.shapes.add_textbox(
-            Inches(left - 1.0),
-            Inches(top),
-            Inches(2.0),
-            Inches(0.5)
+            Inches(left - 1.0), Inches(top), Inches(2.0), Inches(0.5)
         )
 
         text_frame = desc_box.text_frame
@@ -302,7 +278,7 @@ class Timeline(Component):
 
         p = text_frame.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
-        style = get_text_style("small")
+        get_text_style("small")
         p.font.size = Pt(FONT_SIZES["xs"])  # Smaller for descriptions
         p.font.color.rgb = self.get_color("muted.foreground")
 

@@ -4,6 +4,7 @@ Image Tools for PowerPoint MCP Server
 Provides async MCP tools for handling images in presentations.
 Supports file paths, base64 data URLs, and various image formats.
 """
+
 import base64
 import io
 from pathlib import Path
@@ -11,26 +12,30 @@ from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from ..layout.helpers import (
-    validate_position, calculate_grid_layout, get_logo_position,
-    get_safe_content_area, CONTENT_LEFT, CONTENT_TOP, SLIDE_HEIGHT
+    validate_position,
+    calculate_grid_layout,
+    get_logo_position,
+    get_safe_content_area,
+    SLIDE_HEIGHT,
 )
-from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
 from ..constants import (
     SlideLayoutIndex,
     ErrorMessages,
-    SuccessMessages,
-    ShapeType,
-    Spacing,
-    Defaults,
 )
 
 # Import design system typography tokens
 from ..tokens.typography import FONT_SIZES
 
 
-def add_image(slide, image_source: str, left: float, top: float,
-             width: float = None, height: float = None,
-             maintain_ratio: bool = True):
+def add_image(
+    slide,
+    image_source: str,
+    left: float,
+    top: float,
+    width: float | None = None,
+    height: float | None = None,
+    maintain_ratio: bool = True,
+):
     """
     Add an image to a slide.
 
@@ -56,60 +61,53 @@ def add_image(slide, image_source: str, left: float, top: float,
 
         if width and height:
             pic = slide.shapes.add_picture(
-                image_stream,
-                Inches(left), Inches(top),
-                width=Inches(width), height=Inches(height)
+                image_stream, Inches(left), Inches(top), width=Inches(width), height=Inches(height)
             )
         elif width:
             pic = slide.shapes.add_picture(
-                image_stream,
-                Inches(left), Inches(top),
-                width=Inches(width)
+                image_stream, Inches(left), Inches(top), width=Inches(width)
             )
         elif height:
             pic = slide.shapes.add_picture(
-                image_stream,
-                Inches(left), Inches(top),
-                height=Inches(height)
+                image_stream, Inches(left), Inches(top), height=Inches(height)
             )
         else:
-            pic = slide.shapes.add_picture(
-                image_stream,
-                Inches(left), Inches(top)
-            )
+            pic = slide.shapes.add_picture(image_stream, Inches(left), Inches(top))
     # Handle file path
     elif Path(image_source).exists():
         if width and height:
             pic = slide.shapes.add_picture(
                 str(image_source),
-                Inches(left), Inches(top),
-                width=Inches(width), height=Inches(height)
+                Inches(left),
+                Inches(top),
+                width=Inches(width),
+                height=Inches(height),
             )
         elif width:
             pic = slide.shapes.add_picture(
-                str(image_source),
-                Inches(left), Inches(top),
-                width=Inches(width)
+                str(image_source), Inches(left), Inches(top), width=Inches(width)
             )
         elif height:
             pic = slide.shapes.add_picture(
-                str(image_source),
-                Inches(left), Inches(top),
-                height=Inches(height)
+                str(image_source), Inches(left), Inches(top), height=Inches(height)
             )
         else:
-            pic = slide.shapes.add_picture(
-                str(image_source),
-                Inches(left), Inches(top)
-            )
+            pic = slide.shapes.add_picture(str(image_source), Inches(left), Inches(top))
     else:
         raise FileNotFoundError(f"Image file not found: {image_source}")
 
     return pic
 
 
-def add_text_box_with_style(slide, left: float, top: float, width: float, height: float,
-                            text: str, style_preset: str = "body"):
+def add_text_box_with_style(
+    slide,
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    text: str,
+    style_preset: str = "body",
+):
     """
     Add a text box with a style preset.
 
@@ -127,13 +125,9 @@ def add_text_box_with_style(slide, left: float, top: float, width: float, height
     Returns:
         The created text box shape
     """
-    from pptx.util import Pt
     from pptx.enum.text import PP_ALIGN
 
-    textbox = slide.shapes.add_textbox(
-        Inches(left), Inches(top),
-        Inches(width), Inches(height)
-    )
+    textbox = slide.shapes.add_textbox(Inches(left), Inches(top), Inches(width), Inches(height))
 
     text_frame = textbox.text_frame
     text_frame.text = text
@@ -158,42 +152,39 @@ def add_text_box_with_style(slide, left: float, top: float, width: float, height
 def register_image_tools(mcp, manager):
     """Register all image tools with the MCP server."""
 
-    from ..components.core import Image
-    
     @mcp.tool
     async def pptx_add_image_slide(
-        title: str,
-        image_path: str,
-        presentation: str | None = None
+        title: str, image_path: str, presentation: str | None = None
     ) -> str:
         """
         Add a slide with title and image.
-        
+
         Creates a slide with a title and an image. The image can be provided
         as a file path or as base64-encoded data URL.
-        
+
         Args:
             title: Title text for the slide
-            image_path: Either a file path to an image or a data URL 
+            image_path: Either a file path to an image or a data URL
                        (e.g., "data:image/png;base64,...")
             presentation: Name of presentation to add slide to (uses current if not specified)
-            
+
         Returns:
             Success message confirming slide addition, or error message if image cannot be loaded
-            
+
         Example:
             # Using file path
             await pptx_add_image_slide(
                 title="Product Screenshot",
                 image_path="/path/to/screenshot.png"
             )
-            
+
             # Using base64 data URL
             await pptx_add_image_slide(
                 title="Generated Chart",
                 image_path="data:image/png;base64,iVBORw0KGgoAAAANS..."
             )
         """
+
         async def _add_image_slide():
             result = await manager.get(presentation)
             if not result:
@@ -209,6 +200,7 @@ def register_image_tools(mcp, manager):
             # Apply presentation theme to the slide first (even if image loading fails)
             if metadata and metadata.theme:
                 from ..themes.theme_manager import ThemeManager
+
                 theme_manager = ThemeManager()
                 theme_obj = theme_manager.get_theme(metadata.theme)
                 if theme_obj:
@@ -271,14 +263,14 @@ def register_image_tools(mcp, manager):
         width: float | None = None,
         height: float | None = None,
         maintain_ratio: bool = True,
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Add an image to an existing slide.
-        
+
         Adds an image to a specific slide with precise positioning and sizing control.
         Supports both file paths and base64 data URLs.
-        
+
         Args:
             slide_index: Index of the slide to add image to (0-based)
             image_path: Path to image file or base64 data URL
@@ -288,10 +280,10 @@ def register_image_tools(mcp, manager):
             height: Height in inches (optional, maintains ratio if not specified)
             maintain_ratio: Whether to maintain aspect ratio
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message confirming image addition
-            
+
         Example:
             await pptx_add_image(
                 slide_index=1,
@@ -302,6 +294,7 @@ def register_image_tools(mcp, manager):
                 height=1.0
             )
         """
+
         async def _add_image():
             result = await manager.get(presentation)
             if not result:
@@ -316,36 +309,51 @@ def register_image_tools(mcp, manager):
 
             try:
                 # Validate and adjust position to ensure it fits within slide
-                validated_left, validated_top, validated_width, validated_height = validate_position(
-                    left, top,
-                    width or 3.0,  # Default width if not specified
-                    height or 2.25  # Default height if not specified
+                validated_left, validated_top, validated_width, validated_height = (
+                    validate_position(
+                        left,
+                        top,
+                        width or 3.0,  # Default width if not specified
+                        height or 2.25,  # Default height if not specified
+                    )
                 )
 
                 # Remove any overlapping placeholders (except title)
                 placeholders_to_remove = []
                 for shape in slide.shapes:
-                    if hasattr(shape, 'shape_type'):
+                    if hasattr(shape, "shape_type"):
                         # Check if it's a placeholder (but not a title)
                         if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
                             # Skip title placeholders
-                            if hasattr(shape, 'placeholder_format'):
+                            if hasattr(shape, "placeholder_format"):
                                 from pptx.enum.shapes import PP_PLACEHOLDER
-                                if shape.placeholder_format.type in [PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE]:
+
+                                if shape.placeholder_format.type in [
+                                    PP_PLACEHOLDER.TITLE,
+                                    PP_PLACEHOLDER.CENTER_TITLE,
+                                ]:
                                     continue
 
                             # Check if placeholder overlaps with image area
-                            shape_left = shape.left.inches if hasattr(shape.left, 'inches') else 0
-                            shape_top = shape.top.inches if hasattr(shape.top, 'inches') else 0
-                            shape_right = shape_left + (shape.width.inches if hasattr(shape.width, 'inches') else 0)
-                            shape_bottom = shape_top + (shape.height.inches if hasattr(shape.height, 'inches') else 0)
+                            shape_left = shape.left.inches if hasattr(shape.left, "inches") else 0
+                            shape_top = shape.top.inches if hasattr(shape.top, "inches") else 0
+                            shape_right = shape_left + (
+                                shape.width.inches if hasattr(shape.width, "inches") else 0
+                            )
+                            shape_bottom = shape_top + (
+                                shape.height.inches if hasattr(shape.height, "inches") else 0
+                            )
 
                             img_right = validated_left + validated_width
                             img_bottom = validated_top + validated_height
 
                             # Check for overlap
-                            if not (shape_right < validated_left or shape_left > img_right or
-                                   shape_bottom < validated_top or shape_top > img_bottom):
+                            if not (
+                                shape_right < validated_left
+                                or shape_left > img_right
+                                or shape_bottom < validated_top
+                                or shape_top > img_bottom
+                            ):
                                 placeholders_to_remove.append(shape)
 
                 # Remove overlapping placeholders
@@ -353,12 +361,14 @@ def register_image_tools(mcp, manager):
                     slide.shapes._spTree.remove(placeholder.element)
 
                 # Use validated dimensions
-                pic_shape = add_image(
-                    slide, image_path,
-                    validated_left, validated_top,
+                add_image(
+                    slide,
+                    image_path,
+                    validated_left,
+                    validated_top,
                     validated_width if width else None,
                     validated_height if height else None,
-                    maintain_ratio
+                    maintain_ratio,
                 )
 
                 # Update in VFS if enabled
@@ -366,8 +376,16 @@ def register_image_tools(mcp, manager):
 
                 # Report if position was adjusted
                 position_note = ""
-                if width and height and (validated_left != left or validated_top != top or
-                    validated_width != width or validated_height != height):
+                if (
+                    width
+                    and height
+                    and (
+                        validated_left != left
+                        or validated_top != top
+                        or validated_width != width
+                        or validated_height != height
+                    )
+                ):
                     position_note = f" (position adjusted to fit: {validated_left:.1f}, {validated_top:.1f}, {validated_width:.1f}x{validated_height:.1f})"
 
                 return f"Added image to slide {slide_index}{position_note}"
@@ -378,29 +396,28 @@ def register_image_tools(mcp, manager):
 
     @mcp.tool
     async def pptx_add_background_image(
-        slide_index: int,
-        image_path: str,
-        presentation: str | None = None
+        slide_index: int, image_path: str, presentation: str | None = None
     ) -> str:
         """
         Set a background image for a slide.
-        
+
         Sets an image as the background of a specific slide, covering the entire slide area.
-        
+
         Args:
             slide_index: Index of the slide to set background for (0-based)
             image_path: Path to image file or base64 data URL
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message confirming background addition
-            
+
         Example:
             await pptx_add_background_image(
                 slide_index=0,
                 image_path="/path/to/background.jpg"
             )
         """
+
         async def _add_background():
             result = await manager.get(presentation)
             if not result:
@@ -415,13 +432,13 @@ def register_image_tools(mcp, manager):
 
             try:
                 # Add image covering entire slide (10x7.5 inches is standard slide size)
-                pic_shape = add_image(
-                    slide, image_path, 0, 0, 10, 7.5, maintain_ratio=False
-                )
+                pic_shape = add_image(slide, image_path, 0, 0, 10, 7.5, maintain_ratio=False)
 
                 # Send image to back so it acts as background
                 pic_shape.element.getparent().remove(pic_shape.element)
-                slide.shapes._spTree.insert(2, pic_shape.element)  # Insert after slide layout elements
+                slide.shapes._spTree.insert(
+                    2, pic_shape.element
+                )  # Insert after slide layout elements
 
                 # Update in VFS if enabled
                 await manager.update(presentation)
@@ -442,13 +459,13 @@ def register_image_tools(mcp, manager):
         start_top: float = 2.0,
         image_width: float = 3.0,
         image_height: float = 2.25,
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Add multiple images in a grid layout to a slide.
-        
+
         Creates a photo gallery or image grid on a slide with automatic positioning.
-        
+
         Args:
             slide_index: Index of the slide to add images to (0-based)
             image_paths: List of image paths or base64 data URLs
@@ -459,10 +476,10 @@ def register_image_tools(mcp, manager):
             image_width: Width of each image in inches
             image_height: Height of each image in inches
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message with count of images added
-            
+
         Example:
             await pptx_add_image_gallery(
                 slide_index=2,
@@ -476,6 +493,7 @@ def register_image_tools(mcp, manager):
                 spacing=0.3
             )
         """
+
         async def _add_gallery():
             result = await manager.get(presentation)
             if not result:
@@ -494,12 +512,16 @@ def register_image_tools(mcp, manager):
                 # Remove content placeholders that might interfere with gallery
                 placeholders_to_remove = []
                 for shape in slide.shapes:
-                    if hasattr(shape, 'shape_type'):
+                    if hasattr(shape, "shape_type"):
                         if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
                             # Skip title placeholders
-                            if hasattr(shape, 'placeholder_format'):
+                            if hasattr(shape, "placeholder_format"):
                                 from pptx.enum.shapes import PP_PLACEHOLDER
-                                if shape.placeholder_format.type in [PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE]:
+
+                                if shape.placeholder_format.type in [
+                                    PP_PLACEHOLDER.TITLE,
+                                    PP_PLACEHOLDER.CENTER_TITLE,
+                                ]:
                                     continue
                             # Remove content placeholders
                             placeholders_to_remove.append(shape)
@@ -515,18 +537,20 @@ def register_image_tools(mcp, manager):
                     spacing=spacing,
                     container_left=start_left,
                     container_top=start_top,
-                    container_width=safe_area['width'],
-                    container_height=safe_area['height'] - (start_top - safe_area['top'])
+                    container_width=safe_area["width"],
+                    container_height=safe_area["height"] - (start_top - safe_area["top"]),
                 )
 
                 for i, (image_path, pos) in enumerate(zip(image_paths, positions)):
-
                     try:
                         add_image(
-                            slide, image_path,
-                            pos['left'], pos['top'],
-                            pos['width'], pos['height'],
-                            maintain_ratio=False
+                            slide,
+                            image_path,
+                            pos["left"],
+                            pos["top"],
+                            pos["width"],
+                            pos["height"],
+                            maintain_ratio=False,
                         )
                         added_count += 1
                     except Exception as img_error:
@@ -552,13 +576,13 @@ def register_image_tools(mcp, manager):
         image_width: float = 6.0,
         image_height: float = 4.0,
         caption_height: float = 0.8,
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Add an image with a caption text box below it.
-        
+
         Creates an image with an accompanying caption text box positioned below the image.
-        
+
         Args:
             slide_index: Index of the slide to add image to (0-based)
             image_path: Path to image file or base64 data URL
@@ -569,10 +593,10 @@ def register_image_tools(mcp, manager):
             image_height: Height of the image in inches
             caption_height: Height of the caption text box in inches
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message confirming image and caption addition
-            
+
         Example:
             await pptx_add_image_with_caption(
                 slide_index=3,
@@ -584,6 +608,7 @@ def register_image_tools(mcp, manager):
                 image_height=4.0
             )
         """
+
         async def _add_image_caption():
             result = await manager.get(presentation)
             if not result:
@@ -598,8 +623,8 @@ def register_image_tools(mcp, manager):
 
             try:
                 # Validate position for image and caption
-                validated_left, validated_top, validated_width, validated_height = validate_position(
-                    left, top, image_width, image_height + caption_height + 0.1
+                validated_left, validated_top, validated_width, validated_height = (
+                    validate_position(left, top, image_width, image_height + caption_height + 0.1)
                 )
 
                 # Adjust image height if needed to fit caption
@@ -608,38 +633,63 @@ def register_image_tools(mcp, manager):
                 # Remove any overlapping placeholders (except title)
                 placeholders_to_remove = []
                 for shape in slide.shapes:
-                    if hasattr(shape, 'shape_type'):
+                    if hasattr(shape, "shape_type"):
                         if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
                             # Skip title placeholders
-                            if hasattr(shape, 'placeholder_format'):
+                            if hasattr(shape, "placeholder_format"):
                                 from pptx.enum.shapes import PP_PLACEHOLDER
-                                if shape.placeholder_format.type in [PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE]:
+
+                                if shape.placeholder_format.type in [
+                                    PP_PLACEHOLDER.TITLE,
+                                    PP_PLACEHOLDER.CENTER_TITLE,
+                                ]:
                                     continue
 
-                            shape_left = shape.left.inches if hasattr(shape.left, 'inches') else 0
-                            shape_top = shape.top.inches if hasattr(shape.top, 'inches') else 0
-                            shape_right = shape_left + (shape.width.inches if hasattr(shape.width, 'inches') else 0)
-                            shape_bottom = shape_top + (shape.height.inches if hasattr(shape.height, 'inches') else 0)
+                            shape_left = shape.left.inches if hasattr(shape.left, "inches") else 0
+                            shape_top = shape.top.inches if hasattr(shape.top, "inches") else 0
+                            shape_right = shape_left + (
+                                shape.width.inches if hasattr(shape.width, "inches") else 0
+                            )
+                            shape_bottom = shape_top + (
+                                shape.height.inches if hasattr(shape.height, "inches") else 0
+                            )
 
                             # Check overlap with combined image+caption area
-                            if not (shape_right < validated_left or shape_left > validated_left + validated_width or
-                                   shape_bottom < validated_top or shape_top > validated_top + validated_height):
+                            if not (
+                                shape_right < validated_left
+                                or shape_left > validated_left + validated_width
+                                or shape_bottom < validated_top
+                                or shape_top > validated_top + validated_height
+                            ):
                                 placeholders_to_remove.append(shape)
 
                 for placeholder in placeholders_to_remove:
                     slide.shapes._spTree.remove(placeholder.element)
 
                 # Add the image
-                pic_shape = add_image(
-                    slide, image_path, validated_left, validated_top, validated_width, img_height, maintain_ratio=False
+                add_image(
+                    slide,
+                    image_path,
+                    validated_left,
+                    validated_top,
+                    validated_width,
+                    img_height,
+                    maintain_ratio=False,
                 )
 
                 # Add caption text box below the image
-                caption_top = validated_top + img_height + 0.1  # Small gap between image and caption
+                caption_top = (
+                    validated_top + img_height + 0.1
+                )  # Small gap between image and caption
 
-                text_box = add_text_box_with_style(
-                    slide, validated_left, caption_top, validated_width, caption_height,
-                    caption, style_preset="caption"
+                add_text_box_with_style(
+                    slide,
+                    validated_left,
+                    caption_top,
+                    validated_width,
+                    caption_height,
+                    caption,
+                    style_preset="caption",
                 )
 
                 # Update in VFS if enabled
@@ -648,8 +698,12 @@ def register_image_tools(mcp, manager):
                 # Report if position was adjusted
                 position_note = ""
                 total_height = image_height + caption_height + 0.1
-                if (validated_left != left or validated_top != top or
-                    validated_width != image_width or validated_height != total_height):
+                if (
+                    validated_left != left
+                    or validated_top != top
+                    or validated_width != image_width
+                    or validated_height != total_height
+                ):
                     position_note = f" (position adjusted to fit: {validated_left:.1f}, {validated_top:.1f}, {validated_width:.1f}x{validated_height:.1f})"
 
                 return f"Added image with caption to slide {slide_index}{position_note}"
@@ -665,26 +719,26 @@ def register_image_tools(mcp, manager):
         position: str = "top-right",
         size: float = 1.0,
         margin: float = 0.3,
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Add a logo to a slide in a standard position.
-        
+
         Adds a company logo or brand image to a slide in common positions
         like corners or along edges.
-        
+
         Args:
             slide_index: Index of the slide to add logo to (0-based)
             logo_path: Path to logo image file or base64 data URL
-            position: Logo position - "top-left", "top-right", "bottom-left", 
+            position: Logo position - "top-left", "top-right", "bottom-left",
                      "bottom-right", "center", "top-center", "bottom-center"
             size: Size of the logo in inches (width, height maintains ratio)
             margin: Margin from slide edges in inches
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message confirming logo addition
-            
+
         Example:
             await pptx_add_logo(
                 slide_index=0,
@@ -694,6 +748,7 @@ def register_image_tools(mcp, manager):
                 margin=0.4
             )
         """
+
         async def _add_logo():
             result = await manager.get(presentation)
             if not result:
@@ -711,13 +766,11 @@ def register_image_tools(mcp, manager):
                 # Note: get_logo_position defaults to top-right for invalid positions
                 logo_pos = get_logo_position(position, size, margin)
 
-                left = logo_pos['left']
-                top = logo_pos['top']
+                left = logo_pos["left"]
+                top = logo_pos["top"]
 
                 # Add logo with maintained aspect ratio
-                pic_shape = add_image(
-                    slide, logo_path, left, top, size, None, maintain_ratio=True
-                )
+                add_image(slide, logo_path, left, top, size, None, maintain_ratio=True)
 
                 # Update in VFS if enabled
                 await manager.update(presentation)
@@ -735,13 +788,13 @@ def register_image_tools(mcp, manager):
         new_image_path: str,
         maintain_position: bool = True,
         maintain_size: bool = True,
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Replace an existing image on a slide with a new image.
-        
+
         Replaces an image while optionally maintaining its position and size.
-        
+
         Args:
             slide_index: Index of the slide containing the image (0-based)
             old_image_index: Index of the image to replace (0-based, order they appear on slide)
@@ -749,10 +802,10 @@ def register_image_tools(mcp, manager):
             maintain_position: Whether to keep the same position
             maintain_size: Whether to keep the same size
             presentation: Name of presentation (uses current if not specified)
-            
+
         Returns:
             Success message confirming image replacement
-            
+
         Example:
             await pptx_replace_image(
                 slide_index=1,
@@ -762,6 +815,7 @@ def register_image_tools(mcp, manager):
                 maintain_size=True
             )
         """
+
         async def _replace_image():
             result = await manager.get(presentation)
             if not result:
@@ -778,7 +832,7 @@ def register_image_tools(mcp, manager):
                 # Find image shapes on the slide
                 image_shapes = []
                 for shape in slide.shapes:
-                    if hasattr(shape, 'image'):
+                    if hasattr(shape, "image"):
                         image_shapes.append(shape)
 
                 if old_image_index >= len(image_shapes):
@@ -793,7 +847,7 @@ def register_image_tools(mcp, manager):
                 else:
                     # Use safe content area for default position
                     safe_area = get_safe_content_area(has_title=True)
-                    left, top = safe_area['left'], safe_area['top']
+                    left, top = safe_area["left"], safe_area["top"]
 
                 if maintain_size:
                     width = old_image.width.inches
@@ -806,16 +860,29 @@ def register_image_tools(mcp, manager):
 
                 # Validate position if specified
                 if width and height:
-                    validated_left, validated_top, validated_width, validated_height = validate_position(left, top, width, height)
+                    validated_left, validated_top, validated_width, validated_height = (
+                        validate_position(left, top, width, height)
+                    )
                 else:
-                    validated_left, validated_top, validated_width, validated_height = left, top, width, height
+                    validated_left, validated_top, validated_width, validated_height = (
+                        left,
+                        top,
+                        width,
+                        height,
+                    )
 
                 # Remove old image
                 slide.shapes._spTree.remove(old_image.element)
 
                 # Add new image
-                new_pic = add_image(
-                    slide, new_image_path, validated_left, validated_top, validated_width, validated_height, maintain_ratio=not maintain_size
+                add_image(
+                    slide,
+                    new_image_path,
+                    validated_left,
+                    validated_top,
+                    validated_width,
+                    validated_height,
+                    maintain_ratio=not maintain_size,
                 )
 
                 # Update in VFS if enabled
@@ -823,8 +890,16 @@ def register_image_tools(mcp, manager):
 
                 # Report if position was adjusted
                 position_note = ""
-                if width and height and (validated_left != orig_left or validated_top != orig_top or
-                    validated_width != orig_width or validated_height != orig_height):
+                if (
+                    width
+                    and height
+                    and (
+                        validated_left != orig_left
+                        or validated_top != orig_top
+                        or validated_width != orig_width
+                        or validated_height != orig_height
+                    )
+                ):
                     position_note = f" (position adjusted to fit: {validated_left:.1f}, {validated_top:.1f}, {validated_width:.1f}x{validated_height:.1f})"
 
                 return f"Replaced image {old_image_index} on slide {slide_index}{position_note}"
@@ -843,7 +918,7 @@ def register_image_tools(mcp, manager):
         label: str = "Image Placeholder",
         background_color: str = "#E0E0E0",
         text_color: str = "#666666",
-        presentation: str | None = None
+        presentation: str | None = None,
     ) -> str:
         """
         Add an image placeholder for mockups and prototyping.
@@ -876,6 +951,7 @@ def register_image_tools(mcp, manager):
                 background_color="#F5F5F5"
             )
         """
+
         async def _add_placeholder():
             result = await manager.get(presentation)
             if not result:
@@ -895,15 +971,17 @@ def register_image_tools(mcp, manager):
                 from pptx.enum.text import PP_ALIGN
 
                 # Validate position
-                validated_left, validated_top, validated_width, validated_height = validate_position(
-                    left, top, width, height
+                validated_left, validated_top, validated_width, validated_height = (
+                    validate_position(left, top, width, height)
                 )
 
                 # Create rectangle shape
                 shape = slide.shapes.add_shape(
                     MSO_SHAPE.RECTANGLE,
-                    Inches(validated_left), Inches(validated_top),
-                    Inches(validated_width), Inches(validated_height)
+                    Inches(validated_left),
+                    Inches(validated_top),
+                    Inches(validated_width),
+                    Inches(validated_height),
                 )
 
                 # Parse and apply background color
@@ -916,7 +994,7 @@ def register_image_tools(mcp, manager):
                     r, g, b = int(bg_hex[0:2], 16), int(bg_hex[2:4], 16), int(bg_hex[4:6], 16)
                     shape.fill.solid()
                     shape.fill.fore_color.rgb = RGBColor(r, g, b)
-                except:
+                except (ValueError, IndexError):
                     # Fallback to light gray if color parsing fails
                     shape.fill.solid()
                     shape.fill.fore_color.rgb = RGBColor(224, 224, 224)
@@ -942,7 +1020,7 @@ def register_image_tools(mcp, manager):
                 try:
                     r, g, b = int(txt_hex[0:2], 16), int(txt_hex[2:4], 16), int(txt_hex[4:6], 16)
                     p.font.color.rgb = RGBColor(r, g, b)
-                except:
+                except (ValueError, IndexError):
                     # Fallback to dark gray if color parsing fails
                     p.font.color.rgb = RGBColor(102, 102, 102)
 
@@ -957,8 +1035,12 @@ def register_image_tools(mcp, manager):
 
                 # Report if position was adjusted
                 position_note = ""
-                if (validated_left != left or validated_top != top or
-                    validated_width != width or validated_height != height):
+                if (
+                    validated_left != left
+                    or validated_top != top
+                    or validated_width != width
+                    or validated_height != height
+                ):
                     position_note = f" (position adjusted to fit: {validated_left:.1f}, {validated_top:.1f}, {validated_width:.1f}x{validated_height:.1f})"
 
                 return f"Added image placeholder '{label}' to slide {slide_index}{position_note}"
@@ -969,12 +1051,12 @@ def register_image_tools(mcp, manager):
 
     # Return the tools for external access
     return {
-        'pptx_add_image_slide': pptx_add_image_slide,
-        'pptx_add_image': pptx_add_image,
-        'pptx_add_background_image': pptx_add_background_image,
-        'pptx_add_image_gallery': pptx_add_image_gallery,
-        'pptx_add_image_with_caption': pptx_add_image_with_caption,
-        'pptx_add_logo': pptx_add_logo,
-        'pptx_replace_image': pptx_replace_image,
-        'pptx_add_image_placeholder': pptx_add_image_placeholder,
+        "pptx_add_image_slide": pptx_add_image_slide,
+        "pptx_add_image": pptx_add_image,
+        "pptx_add_background_image": pptx_add_background_image,
+        "pptx_add_image_gallery": pptx_add_image_gallery,
+        "pptx_add_image_with_caption": pptx_add_image_with_caption,
+        "pptx_add_logo": pptx_add_logo,
+        "pptx_replace_image": pptx_replace_image,
+        "pptx_add_image_placeholder": pptx_add_image_placeholder,
     }

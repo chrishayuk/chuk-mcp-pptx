@@ -1,6 +1,7 @@
 """
 Tests for GaugeChart component.
 """
+
 import pytest
 from pptx import Presentation
 from pptx.enum.chart import XL_CHART_TYPE
@@ -25,12 +26,7 @@ class TestGaugeChart:
 
     def test_initialization(self):
         """Test gauge chart initialization."""
-        chart = GaugeChart(
-            value=75,
-            min_value=0,
-            max_value=100,
-            title="Progress"
-        )
+        chart = GaugeChart(value=75, min_value=0, max_value=100, title="Progress")
         assert chart.value == 75
         assert chart.min_value == 0
         assert chart.max_value == 100
@@ -100,10 +96,7 @@ class TestGaugeChart:
     def test_render_with_thresholds(self, slide):
         """Test rendering with thresholds."""
         chart = GaugeChart(
-            value=75,
-            min_value=0,
-            max_value=100,
-            thresholds={"warning": 60, "danger": 80}
+            value=75, min_value=0, max_value=100, thresholds={"warning": 60, "danger": 80}
         )
         result = chart.render(slide)
         assert result is not None
@@ -127,17 +120,12 @@ class TestGaugeChart:
     def test_render_custom_position(self, slide):
         """Test rendering at custom position."""
         chart = GaugeChart(value=80)
-        result = chart.render(slide, left=2.0, top=3.0)
+        chart.render(slide, left=2.0, top=3.0)
         assert len(slide.shapes) > 0
 
     def test_render_with_title(self, slide):
         """Test gauge with integrated title label."""
-        chart = GaugeChart(
-            value=87,
-            min_value=0,
-            max_value=100,
-            title="Customer Satisfaction"
-        )
+        chart = GaugeChart(value=87, min_value=0, max_value=100, title="Customer Satisfaction")
         result = chart.render(slide, left=1, top=2.5, width=2.5, height=2.5)
         assert result is not None
         # Should have added textboxes for title, value, and percentage
@@ -146,13 +134,13 @@ class TestGaugeChart:
     def test_render_adds_value_label(self, slide):
         """Test that gauge adds value label automatically."""
         chart = GaugeChart(value=75, min_value=0, max_value=100)
-        result = chart.render(slide)
+        chart.render(slide)
         # Should have chart + value label + percentage label
         assert len(slide.shapes) >= 3
 
     def test_render_adds_percentage_label(self, slide):
         """Test that gauge adds percentage label automatically."""
         chart = GaugeChart(value=60, min_value=0, max_value=100)
-        result = chart.render(slide)
+        chart.render(slide)
         # Verify multiple shapes (chart + labels)
         assert len(slide.shapes) > 1

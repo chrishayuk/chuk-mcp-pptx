@@ -8,6 +8,7 @@ This helps isolate issues with the server itself vs mcp-cli integration.
 Run from project root:
     uv run python examples/test_mcp_server.py
 """
+
 import asyncio
 import sys
 import json
@@ -38,9 +39,7 @@ async def main():
     # Test 2: Add title slide
     print("2. Testing pptx_add_title_slide...")
     result = await async_server.pptx_add_title_slide(
-        title="Test Presentation",
-        subtitle="Created by MCP Server",
-        presentation="test_deck"
+        title="Test Presentation", subtitle="Created by MCP Server", presentation="test_deck"
     )
     response = json.loads(result)
     print(f"   Result: {response}")
@@ -54,9 +53,7 @@ async def main():
     # Test 3: Add content slide
     print("3. Testing pptx_add_slide...")
     result = await async_server.pptx_add_slide(
-        title="Key Points",
-        content=["Point 1", "Point 2", "Point 3"],
-        presentation="test_deck"
+        title="Key Points", content=["Point 1", "Point 2", "Point 3"], presentation="test_deck"
     )
     response = json.loads(result)
     print(f"   Result: {response}")
@@ -65,7 +62,7 @@ async def main():
         print(f"   ❌ Error: {response['error']}")
         return
     else:
-        print(f"   ✓ Slide added\n")
+        print("   ✓ Slide added\n")
 
     # Test 4: List presentations
     print("4. Testing pptx_list...")
@@ -76,7 +73,7 @@ async def main():
     if "error" in response:
         print(f"   ❌ Error: {response['error']}")
     else:
-        count = len(response.get('presentations', []))
+        count = len(response.get("presentations", []))
         print(f"   ✓ Found {count} presentation(s)\n")
 
     # Test 5: Get info
@@ -93,8 +90,7 @@ async def main():
     # Test 6: Save to file
     print("6. Testing pptx_save...")
     result = await async_server.pptx_save(
-        path="examples/output_mcp_test.pptx",
-        presentation="test_deck"
+        path="examples/output_mcp_test.pptx", presentation="test_deck"
     )
     response = json.loads(result)
     print(f"   Result: {response}")
@@ -115,5 +111,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

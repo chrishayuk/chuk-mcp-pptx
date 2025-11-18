@@ -9,45 +9,31 @@ This module exposes the complete suite of shadcn-inspired components:
 - Data Components: Charts (via separate chart_tools.py)
 """
 
-from typing import Any, Optional
-from pptx.util import Inches
-
 # Import ALL core components
 from ..components.core import (
     # UI Components
     Alert,
-    Avatar, AvatarWithLabel, AvatarGroup,
-    Badge, DotBadge, CountBadge,
-    Button, IconButton, ButtonGroup,
-    Card, MetricCard,
-    Icon, IconList,
+    Avatar,
+    AvatarGroup,
+    Badge,
+    Button,
+    Card,
+    MetricCard,
+    Icon,
     ProgressBar,
-    Tile, IconTile, ValueTile,
-
-    # Layout Components
+    Tile,
     Shape,
     Connector,
-    ProcessFlow, CycleDiagram, HierarchyDiagram,
+    ProcessFlow,
     Timeline,
-
     # Content Components
-    TextBox, BulletList,
+    TextBox,
+    BulletList,
     Table,
     Image,
 )
 
 from ..themes.theme_manager import ThemeManager
-
-from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
-from ..constants import (
-    SlideLayoutIndex,
-    ErrorMessages,
-    SuccessMessages,
-    ShapeType,
-    Spacing,
-    Defaults,
-)
-
 
 
 def register_component_tools(mcp, manager):
@@ -69,7 +55,7 @@ def register_component_tools(mcp, manager):
         theme_obj = theme_manager.get_theme(theme_name) if theme_name else None
         if not theme_obj:
             theme_obj = theme_manager.get_theme("dark")
-        return theme_obj.__dict__ if hasattr(theme_obj, '__dict__') else theme_obj
+        return theme_obj.__dict__ if hasattr(theme_obj, "__dict__") else theme_obj
 
     # ============================================================================
     # ALERT COMPONENTS
@@ -85,7 +71,7 @@ def register_component_tools(mcp, manager):
         title: str | None = None,
         width: float = 4.0,
         height: float = 1.0,
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add an alert/notification component to a slide.
@@ -117,6 +103,7 @@ def register_component_tools(mcp, manager):
                 title="Maintenance Alert"
             )
         """
+
         async def _add_alert():
             result = await manager.get()
             if not result:
@@ -127,7 +114,9 @@ def register_component_tools(mcp, manager):
                 raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
-            alert = Alert(description=message, variant=variant, title=title, theme=get_theme_dict(theme))
+            alert = Alert(
+                description=message, variant=variant, title=title, theme=get_theme_dict(theme)
+            )
             alert.render(slide, left, top, width, height)
 
             # Apply presentation theme to the slide
@@ -155,7 +144,7 @@ def register_component_tools(mcp, manager):
         top: float,
         size: float = 0.5,
         variant: str = "circle",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add an avatar component to a slide.
@@ -183,6 +172,7 @@ def register_component_tools(mcp, manager):
                 variant="circle"
             )
         """
+
         async def _add_avatar():
             result = await manager.get()
             if not result:
@@ -217,7 +207,7 @@ def register_component_tools(mcp, manager):
         top: float,
         size: float = 0.5,
         max_visible: int = 3,
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a group of overlapping avatars.
@@ -245,6 +235,7 @@ def register_component_tools(mcp, manager):
                 max_visible=3
             )
         """
+
         async def _add_avatar_group():
             result = await manager.get()
             if not result:
@@ -257,7 +248,9 @@ def register_component_tools(mcp, manager):
             slide = prs.slides[slide_index]
             # Convert initials list to members format
             members = [{"text": initials} for initials in initials_list]
-            group = AvatarGroup(members=members, size=size, max_display=max_visible, theme=get_theme_dict(theme))
+            group = AvatarGroup(
+                members=members, size=size, max_display=max_visible, theme=get_theme_dict(theme)
+            )
             group.render(slide, left, top)
 
             # Apply presentation theme to the slide
@@ -284,7 +277,7 @@ def register_component_tools(mcp, manager):
         left: float,
         top: float,
         variant: str = "default",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a badge component to a slide.
@@ -311,6 +304,7 @@ def register_component_tools(mcp, manager):
                 variant="success"
             )
         """
+
         async def _add_badge():
             result = await manager.get()
             if not result:
@@ -351,7 +345,7 @@ def register_component_tools(mcp, manager):
         size: str = "md",
         width: float | None = None,
         height: float | None = None,
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a button component to a slide.
@@ -382,6 +376,7 @@ def register_component_tools(mcp, manager):
                 size="lg"
             )
         """
+
         async def _add_button():
             result = await manager.get()
             if not result:
@@ -422,7 +417,7 @@ def register_component_tools(mcp, manager):
         title: str | None = None,
         description: str | None = None,
         variant: str = "default",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a card container component to a slide.
@@ -453,6 +448,7 @@ def register_component_tools(mcp, manager):
                 variant="elevated"
             )
         """
+
         async def _add_card():
             result = await manager.get()
             if not result:
@@ -494,7 +490,7 @@ def register_component_tools(mcp, manager):
         trend: str | None = None,
         width: float = 2.0,
         height: float = 1.5,
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a metric/KPI card component to a slide.
@@ -527,6 +523,7 @@ def register_component_tools(mcp, manager):
                 trend="up"
             )
         """
+
         async def _add_metric():
             result = await manager.get()
             if not result:
@@ -537,7 +534,9 @@ def register_component_tools(mcp, manager):
                 raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
-            metric = MetricCard(label=label, value=value, change=change, trend=trend, theme=get_theme_dict(theme))
+            metric = MetricCard(
+                label=label, value=value, change=change, trend=trend, theme=get_theme_dict(theme)
+            )
             metric.render(slide, left, top, width, height)
 
             # Apply presentation theme to the slide
@@ -565,7 +564,7 @@ def register_component_tools(mcp, manager):
         top: float,
         size: float = 0.5,
         variant: str = "default",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add an icon component to a slide.
@@ -594,6 +593,7 @@ def register_component_tools(mcp, manager):
                 variant="filled"
             )
         """
+
         async def _add_icon():
             result = await manager.get()
             if not result:
@@ -634,7 +634,7 @@ def register_component_tools(mcp, manager):
         height: float = 0.3,
         variant: str = "default",
         show_label: bool = True,
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a progress bar component to a slide.
@@ -664,6 +664,7 @@ def register_component_tools(mcp, manager):
                 variant="success"
             )
         """
+
         async def _add_progress():
             result = await manager.get()
             if not result:
@@ -674,7 +675,12 @@ def register_component_tools(mcp, manager):
                 raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
-            progress = ProgressBar(value=value, variant=variant, show_percentage=show_label, theme=get_theme_dict(theme))
+            progress = ProgressBar(
+                value=value,
+                variant=variant,
+                show_percentage=show_label,
+                theme=get_theme_dict(theme),
+            )
             progress.render(slide, left, top, width)
 
             # Apply presentation theme to the slide
@@ -704,7 +710,7 @@ def register_component_tools(mcp, manager):
         width: float = 2.0,
         height: float = 1.5,
         variant: str = "default",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a data tile component to a slide.
@@ -735,6 +741,7 @@ def register_component_tools(mcp, manager):
                 variant="primary"
             )
         """
+
         async def _add_tile():
             result = await manager.get()
             if not result:
@@ -775,7 +782,7 @@ def register_component_tools(mcp, manager):
         height: float = 2.0,
         fill_color: str | None = None,
         text: str | None = None,
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a shape component to a slide.
@@ -807,6 +814,7 @@ def register_component_tools(mcp, manager):
                 text="Click here"
             )
         """
+
         async def _add_shape():
             result = await manager.get()
             if not result:
@@ -817,7 +825,9 @@ def register_component_tools(mcp, manager):
                 raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
-            shape = Shape(shape_type=shape_type, fill_color=fill_color, text=text, theme=get_theme_dict(theme))
+            shape = Shape(
+                shape_type=shape_type, fill_color=fill_color, text=text, theme=get_theme_dict(theme)
+            )
             shape.render(slide, left, top, width, height)
 
             # Apply presentation theme to the slide
@@ -845,7 +855,7 @@ def register_component_tools(mcp, manager):
         end_x: float,
         end_y: float,
         connector_type: str = "straight",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a connector line/arrow between two points.
@@ -874,6 +884,7 @@ def register_component_tools(mcp, manager):
                 connector_type="arrow"
             )
         """
+
         async def _add_connector():
             result = await manager.get()
             if not result:
@@ -884,8 +895,14 @@ def register_component_tools(mcp, manager):
                 raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
-            connector = Connector(start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y,
-                                connector_type=connector_type, theme=get_theme_dict(theme))
+            connector = Connector(
+                start_x=start_x,
+                start_y=start_y,
+                end_x=end_x,
+                end_y=end_y,
+                connector_type=connector_type,
+                theme=get_theme_dict(theme),
+            )
             connector.render(slide)
 
             # Apply presentation theme to the slide
@@ -914,7 +931,7 @@ def register_component_tools(mcp, manager):
         width: float = 8.0,
         height: float = 2.0,
         orientation: str = "horizontal",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a process flow diagram to a slide.
@@ -943,6 +960,7 @@ def register_component_tools(mcp, manager):
                 orientation="horizontal"
             )
         """
+
         async def _add_flow():
             result = await manager.get()
             if not result:
@@ -982,7 +1000,7 @@ def register_component_tools(mcp, manager):
         width: float = 8.0,
         height: float = 2.0,
         orientation: str = "horizontal",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a timeline component to a slide.
@@ -1014,6 +1032,7 @@ def register_component_tools(mcp, manager):
                 top=2.0
             )
         """
+
         async def _add_timeline():
             result = await manager.get()
             if not result:
@@ -1054,7 +1073,7 @@ def register_component_tools(mcp, manager):
         height: float = 1.0,
         font_size: int = 14,
         alignment: str = "left",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a text box component to a slide.
@@ -1085,6 +1104,7 @@ def register_component_tools(mcp, manager):
                 alignment="center"
             )
         """
+
         async def _add_textbox():
             result = await manager.get()
             if not result:
@@ -1095,7 +1115,9 @@ def register_component_tools(mcp, manager):
                 raise ValueError(f"Slide index {slide_index} out of range")
 
             slide = prs.slides[slide_index]
-            textbox = TextBox(text=text, font_size=font_size, alignment=alignment, theme=get_theme_dict(theme))
+            textbox = TextBox(
+                text=text, font_size=font_size, alignment=alignment, theme=get_theme_dict(theme)
+            )
             textbox.render(slide, left, top, width, height)
 
             # Apply presentation theme to the slide
@@ -1119,7 +1141,7 @@ def register_component_tools(mcp, manager):
         top: float,
         width: float = 5.0,
         height: float = 3.0,
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a bullet list component to a slide.
@@ -1146,6 +1168,7 @@ def register_component_tools(mcp, manager):
                 top=2.0
             )
         """
+
         async def _add_bullets():
             result = await manager.get()
             if not result:
@@ -1186,7 +1209,7 @@ def register_component_tools(mcp, manager):
         width: float = 6.0,
         height: float = 3.0,
         variant: str = "default",
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add a table component to a slide.
@@ -1219,6 +1242,7 @@ def register_component_tools(mcp, manager):
                 top=2.0
             )
         """
+
         async def _add_table():
             result = await manager.get()
             if not result:
@@ -1258,7 +1282,7 @@ def register_component_tools(mcp, manager):
         width: float | None = None,
         height: float | None = None,
         maintain_aspect: bool = True,
-        theme: str | None = None
+        theme: str | None = None,
     ) -> str:
         """
         Add an image component to a slide.
@@ -1287,6 +1311,7 @@ def register_component_tools(mcp, manager):
                 width=4.0
             )
         """
+
         async def _add_image():
             result = await manager.get()
             if not result:
@@ -1299,7 +1324,7 @@ def register_component_tools(mcp, manager):
             slide = prs.slides[slide_index]
             try:
                 image = Image(image_source=image_path, theme=get_theme_dict(theme))
-                image.render(slide, left, top, width, height)
+                await image.render(slide, left, top, width, height)
 
                 # Apply presentation theme to the slide
                 if metadata and metadata.theme:
@@ -1324,54 +1349,42 @@ def register_component_tools(mcp, manager):
     #      pptx_apply_component_theme, pptx_list_component_themes
 
     # Store all tools for return
-    tools.update({
-        # Alert
-        'pptx_add_alert': pptx_add_alert,
-
-        # Avatar
-        'pptx_add_avatar': pptx_add_avatar,
-        'pptx_add_avatar_group': pptx_add_avatar_group,
-
-        # Badge
-        'pptx_add_badge': pptx_add_badge,
-
-        # Button
-        'pptx_add_button': pptx_add_button,
-
-        # Card
-        'pptx_add_card': pptx_add_card,
-        'pptx_add_metric_card': pptx_add_metric_card,
-
-        # Icon
-        'pptx_add_icon': pptx_add_icon,
-
-        # Progress
-        'pptx_add_progress_bar': pptx_add_progress_bar,
-
-        # Tile
-        'pptx_add_tile': pptx_add_tile,
-
-        # Shape
-        'pptx_add_shape': pptx_add_shape,
-
-        # Connector
-        'pptx_add_connector': pptx_add_connector,
-
-        # SmartArt
-        'pptx_add_process_flow': pptx_add_process_flow,
-
-        # Timeline
-        'pptx_add_timeline': pptx_add_timeline,
-
-        # Text
-        'pptx_add_textbox': pptx_add_textbox,
-        'pptx_add_bullet_list': pptx_add_bullet_list,
-
-        # Table
-        'pptx_add_table_component': pptx_add_table_component,
-
-        # Image
-        'pptx_add_image_component': pptx_add_image_component,
-    })
+    tools.update(
+        {
+            # Alert
+            "pptx_add_alert": pptx_add_alert,
+            # Avatar
+            "pptx_add_avatar": pptx_add_avatar,
+            "pptx_add_avatar_group": pptx_add_avatar_group,
+            # Badge
+            "pptx_add_badge": pptx_add_badge,
+            # Button
+            "pptx_add_button": pptx_add_button,
+            # Card
+            "pptx_add_card": pptx_add_card,
+            "pptx_add_metric_card": pptx_add_metric_card,
+            # Icon
+            "pptx_add_icon": pptx_add_icon,
+            # Progress
+            "pptx_add_progress_bar": pptx_add_progress_bar,
+            # Tile
+            "pptx_add_tile": pptx_add_tile,
+            # Shape
+            "pptx_add_shape": pptx_add_shape,
+            # Connector
+            "pptx_add_connector": pptx_add_connector,
+            # SmartArt
+            "pptx_add_process_flow": pptx_add_process_flow,
+            # Timeline
+            "pptx_add_timeline": pptx_add_timeline,
+            # Text
+            "pptx_add_textbox": pptx_add_textbox,
+            "pptx_add_bullet_list": pptx_add_bullet_list,
+            # Table
+            "pptx_add_table_component": pptx_add_table_component,
+            # Image
+            "pptx_add_image_component": pptx_add_image_component,
+        }
+    )
 
     return tools

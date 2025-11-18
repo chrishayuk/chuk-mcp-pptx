@@ -8,10 +8,10 @@ Recreates the classic mid-2000s Microsoft messaging experience.
 from typing import Optional, Dict, Any, List
 from pptx.util import Pt, Inches
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
-from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
+from ...tokens.typography import FONT_SIZES, FONT_FAMILIES
 
 
 class MSNBubble(Component):
@@ -49,13 +49,15 @@ class MSNBubble(Component):
         msg.render(slide, left=1, top=3, width=7)
     """
 
-    def __init__(self,
-                 text: str,
-                 display_name: str,
-                 variant: str = "received",
-                 timestamp: Optional[str] = None,
-                 emoticon: Optional[str] = None,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        text: str,
+        display_name: str,
+        variant: str = "received",
+        timestamp: Optional[str] = None,
+        emoticon: Optional[str] = None,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize MSN bubble.
 
@@ -78,15 +80,15 @@ class MSNBubble(Component):
         """Get display name color."""
         if self.variant == "sent":
             # MSN green for sent
-            return RGBColor(0, 153, 0)
+            return self.get_color("success.DEFAULT")
         else:
             # MSN orange for received
-            return RGBColor(255, 102, 0)
+            return self.get_color("warning.DEFAULT")
 
     def _get_text_color(self) -> RGBColor:
         """Get message text color."""
         # Black text
-        return RGBColor(0, 0, 0)
+        return self.get_color("foreground.DEFAULT")
 
     def _calculate_message_height(self, width: float) -> float:
         """Estimate message height."""
@@ -113,7 +115,7 @@ class MSNBubble(Component):
             Inches(left),
             Inches(current_top),
             Inches(width),
-            Inches(0.22)  # Increased from 0.17
+            Inches(0.22),  # Increased from 0.17
         )
         header_frame = header_box.text_frame
         header_frame.word_wrap = False
@@ -126,19 +128,16 @@ class MSNBubble(Component):
         else:
             header_frame.text = f"{self.display_name} says:"
 
-        header_p.font.size = Pt(12)  # Larger
+        header_p.font.size = Pt(FONT_SIZES["sm"])  # Larger
         header_p.font.bold = True
-        header_p.font.name = "Tahoma"  # Classic MSN font
+        header_p.font.name = FONT_FAMILIES["sans"][0]  # Classic MSN used Tahoma
         header_p.font.color.rgb = self._get_display_name_color()
         shapes.append(header_box)
         current_top += 0.20  # More spacing
 
         # Message text
         text_box = slide.shapes.add_textbox(
-            Inches(left),
-            Inches(current_top),
-            Inches(width),
-            Inches(0.5)
+            Inches(left), Inches(current_top), Inches(width), Inches(0.5)
         )
         text_frame = text_box.text_frame
         text_frame.word_wrap = True
@@ -152,8 +151,8 @@ class MSNBubble(Component):
 
         text_p = text_frame.paragraphs[0]
         text_p.alignment = PP_ALIGN.LEFT
-        text_p.font.size = Pt(12)  # Larger
-        text_p.font.name = "Tahoma"
+        text_p.font.size = Pt(FONT_SIZES["sm"])  # Larger
+        text_p.font.name = FONT_FAMILIES["sans"][0]
         text_p.font.color.rgb = self._get_text_color()
         text_p.line_spacing = 1.3  # Better line spacing
         shapes.append(text_box)
@@ -188,10 +187,12 @@ class MSNConversation(Component):
         conversation.render(slide, left=1, top=2, width=7)
     """
 
-    def __init__(self,
-                 messages: List[Dict[str, Any]],
-                 spacing: float = 0.12,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        messages: List[Dict[str, Any]],
+        spacing: float = 0.12,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize MSN conversation.
 
@@ -216,7 +217,7 @@ class MSNConversation(Component):
                 variant=msg_data.get("variant", "received"),
                 timestamp=msg_data.get("timestamp"),
                 emoticon=msg_data.get("emoticon"),
-                theme=self.theme
+                theme=self.theme,
             )
 
             msg_shapes = message.render(slide, left, current_top, width)

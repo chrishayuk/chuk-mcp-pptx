@@ -5,11 +5,14 @@ Tests Grid, Container, Stack, Spacer, and Divider.
 
 import pytest
 from pptx import Presentation
-from pptx.util import Inches
 
 from chuk_mcp_pptx.layout import (
-    Grid, Container, Stack, Spacer, Divider,
-    SLIDE_WIDTH, SLIDE_HEIGHT, CONTENT_WIDTH, CONTENT_HEIGHT
+    Grid,
+    Container,
+    Stack,
+    Spacer,
+    Divider,
+    SLIDE_WIDTH,
 )
 from chuk_mcp_pptx.themes import ThemeManager
 
@@ -38,49 +41,30 @@ class TestGrid:
     def test_grid_cell_positions(self, mock_slide):
         """Test getting cell positions."""
         grid = Grid(columns=3, gap="md")
-        cells = grid.get_cell_positions(
-            mock_slide,
-            left=0.5,
-            top=2.0,
-            width=9.0,
-            height=3.0
-        )
+        cells = grid.get_cell_positions(mock_slide, left=0.5, top=2.0, width=9.0, height=3.0)
 
         assert len(cells) == 3
         for cell in cells:
-            assert 'left' in cell
-            assert 'top' in cell
-            assert 'width' in cell
-            assert 'height' in cell
+            assert "left" in cell
+            assert "top" in cell
+            assert "width" in cell
+            assert "height" in cell
 
     def test_grid_span_single_column(self):
         """Test spanning a single column."""
         grid = Grid(columns=12, gap="md")
-        pos = grid.get_span(
-            col_span=1,
-            col_start=0,
-            left=0.5,
-            top=2.0,
-            width=9.0
-        )
+        pos = grid.get_span(col_span=1, col_start=0, left=0.5, top=2.0, width=9.0)
 
-        assert pos['left'] == 0.5
-        assert pos['width'] < 1.0
+        assert pos["left"] == 0.5
+        assert pos["width"] < 1.0
 
     def test_grid_span_full_width(self):
         """Test spanning all columns."""
         grid = Grid(columns=12, gap="md")
-        pos = grid.get_span(
-            col_span=12,
-            col_start=0,
-            left=0.5,
-            top=2.0,
-            width=9.0,
-            height=2.0
-        )
+        pos = grid.get_span(col_span=12, col_start=0, left=0.5, top=2.0, width=9.0, height=2.0)
 
         # Should span nearly full width minus gaps
-        assert pos['width'] > 8.0
+        assert pos["width"] > 8.0
 
     def test_grid_span_half_width(self):
         """Test spanning half width."""
@@ -89,25 +73,19 @@ class TestGrid:
         pos2 = grid.get_span(col_span=6, col_start=6, left=0.5, width=9.0)
 
         # Both should have similar widths
-        assert abs(pos1['width'] - pos2['width']) < 0.1
+        assert abs(pos1["width"] - pos2["width"]) < 0.1
 
         # Second should start after first
-        assert pos2['left'] > pos1['left']
+        assert pos2["left"] > pos1["left"]
 
     def test_grid_multi_row(self):
         """Test grid with multiple rows."""
         grid = Grid(columns=3, rows=2, gap="sm")
-        cells = grid.get_cell_positions(
-            None,
-            left=0.5,
-            top=2.0,
-            width=9.0,
-            height=4.0
-        )
+        cells = grid.get_cell_positions(None, left=0.5, top=2.0, width=9.0, height=4.0)
 
         assert len(cells) == 6  # 3 cols × 2 rows
-        assert cells[0]['row'] == 0
-        assert cells[3]['row'] == 1
+        assert cells[0]["row"] == 0
+        assert cells[3]["row"] == 1
 
 
 class TestContainer:
@@ -130,19 +108,19 @@ class TestContainer:
         container = Container(size="lg", padding="md", center=True)
         bounds = container.render(mock_slide, top=2.0, height=3.0)
 
-        assert 'left' in bounds
-        assert 'top' in bounds
-        assert 'width' in bounds
-        assert 'height' in bounds
+        assert "left" in bounds
+        assert "top" in bounds
+        assert "width" in bounds
+        assert "height" in bounds
 
     def test_container_centering(self, mock_slide):
         """Test container centering."""
         # Use no padding to see clear difference
         container_centered = Container(size="md", center=True, padding="none")
-        bounds_centered = container_centered.render(mock_slide, top=2.0)
+        container_centered.render(mock_slide, top=2.0)
 
         container_not_centered = Container(size="md", center=False, padding="none")
-        bounds_not_centered = container_not_centered.render(mock_slide, top=2.0)
+        container_not_centered.render(mock_slide, top=2.0)
 
         # Centered should have different left position
         # Centered: (10 - 9) / 2 = 0.5
@@ -156,7 +134,7 @@ class TestContainer:
         bounds_not_centered_sm = container_not_centered_sm.render(mock_slide, top=2.0)
 
         # Centered small should be more to the right than non-centered
-        assert bounds_centered_sm['left'] > bounds_not_centered_sm['left']
+        assert bounds_centered_sm["left"] > bounds_not_centered_sm["left"]
 
     def test_container_padding(self, mock_slide):
         """Test container padding."""
@@ -167,7 +145,7 @@ class TestContainer:
         bounds_with_pad = container_with_pad.render(mock_slide, top=2.0, height=3.0)
 
         # With padding should have smaller dimensions
-        assert bounds_with_pad['width'] < bounds_no_pad['width']
+        assert bounds_with_pad["width"] < bounds_no_pad["width"]
 
     def test_container_small_size(self, mock_slide):
         """Test small container."""
@@ -175,7 +153,7 @@ class TestContainer:
         bounds = container.render(mock_slide, top=2.0)
 
         # Small container should be narrower than slide
-        assert bounds['width'] < SLIDE_WIDTH
+        assert bounds["width"] < SLIDE_WIDTH
 
     def test_container_full_size(self, mock_slide):
         """Test full width container."""
@@ -183,7 +161,7 @@ class TestContainer:
         bounds = container.render(mock_slide, top=2.0)
 
         # Full size should be close to slide width
-        assert bounds['width'] >= SLIDE_WIDTH - 1.0
+        assert bounds["width"] >= SLIDE_WIDTH - 1.0
 
 
 class TestStack:
@@ -205,33 +183,24 @@ class TestStack:
     def test_stack_vertical_distribution(self):
         """Test vertical stack distribution."""
         stack = Stack(direction="vertical", gap="md")
-        positions = stack.distribute(
-            num_items=3,
-            item_height=1.0,
-            top=2.0
-        )
+        positions = stack.distribute(num_items=3, item_height=1.0, top=2.0)
 
         assert len(positions) == 3
 
         # Items should be stacked vertically
-        assert positions[0]['top'] < positions[1]['top']
-        assert positions[1]['top'] < positions[2]['top']
+        assert positions[0]["top"] < positions[1]["top"]
+        assert positions[1]["top"] < positions[2]["top"]
 
     def test_stack_horizontal_distribution(self):
         """Test horizontal stack distribution."""
         stack = Stack(direction="horizontal", gap="lg")
-        positions = stack.distribute(
-            num_items=4,
-            item_width=2.0,
-            left=0.5,
-            top=3.0
-        )
+        positions = stack.distribute(num_items=4, item_width=2.0, left=0.5, top=3.0)
 
         assert len(positions) == 4
 
         # Items should be arranged horizontally
-        assert positions[0]['left'] < positions[1]['left']
-        assert positions[1]['left'] < positions[2]['left']
+        assert positions[0]["left"] < positions[1]["left"]
+        assert positions[1]["left"] < positions[2]["left"]
 
     def test_stack_alignment_start(self):
         """Test stack with start alignment."""
@@ -239,63 +208,46 @@ class TestStack:
         positions = stack.distribute(num_items=2, item_height=1.0, top=2.0)
 
         # Should align to left/top
-        assert positions[0]['left'] >= 0
+        assert positions[0]["left"] >= 0
 
     def test_stack_alignment_center(self):
         """Test stack with center alignment."""
         stack = Stack(direction="vertical", gap="sm", align="center")
-        positions = stack.distribute(
-            num_items=2,
-            item_width=4.0,
-            item_height=1.0,
-            top=2.0
-        )
+        positions = stack.distribute(num_items=2, item_width=4.0, item_height=1.0, top=2.0)
 
         # Should be centered
-        assert positions[0]['left'] > 2.0
+        assert positions[0]["left"] > 2.0
 
     def test_stack_alignment_end_vertical(self):
         """Test vertical stack with end alignment."""
         stack = Stack(direction="vertical", gap="sm", align="end")
         positions = stack.distribute(
-            num_items=2,
-            item_width=4.0,
-            item_height=1.0,
-            top=2.0,
-            left=1.0
+            num_items=2, item_width=4.0, item_height=1.0, top=2.0, left=1.0
         )
 
         # Should align to right edge (end)
         # Items should be near the right edge of slide
-        assert positions[0]['left'] > 5.0
+        assert positions[0]["left"] > 5.0
 
     def test_stack_alignment_end_horizontal(self):
         """Test horizontal stack with end alignment."""
         stack = Stack(direction="horizontal", gap="sm", align="end")
         positions = stack.distribute(
-            num_items=2,
-            item_width=2.0,
-            item_height=1.0,
-            top=2.0,
-            left=1.0
+            num_items=2, item_width=2.0, item_height=1.0, top=2.0, left=1.0
         )
 
         # Should align to bottom edge (end)
         # Items should be near the bottom edge of slide (SLIDE_HEIGHT - height - margin)
-        assert positions[0]['top'] > 4.0
+        assert positions[0]["top"] > 4.0
 
     def test_stack_gap_consistency(self):
         """Test gap consistency between items."""
         stack = Stack(direction="vertical", gap="lg")
-        positions = stack.distribute(
-            num_items=3,
-            item_height=1.0,
-            top=2.0
-        )
+        positions = stack.distribute(num_items=3, item_height=1.0, top=2.0)
 
         # Calculate gaps
-        gap1 = positions[1]['top'] - (positions[0]['top'] + positions[0]['height'])
-        gap2 = positions[2]['top'] - (positions[1]['top'] + positions[1]['height'])
+        gap1 = positions[1]["top"] - (positions[0]["top"] + positions[0]["height"])
+        gap2 = positions[2]["top"] - (positions[1]["top"] + positions[1]["height"])
 
         # Gaps should be equal
         assert abs(gap1 - gap2) < 0.01
@@ -309,6 +261,7 @@ class TestStack:
 
     def test_stack_render_children_vertical(self, mock_slide):
         """Test render_children with vertical stack."""
+
         # Create mock components with render method
         class MockComponent:
             def __init__(self, name):
@@ -325,12 +278,7 @@ class TestStack:
 
         stack = Stack(direction="vertical", gap="md")
         shapes = stack.render_children(
-            mock_slide,
-            components,
-            left=0.5,
-            top=2.0,
-            item_width=4.0,
-            item_height=1.0
+            mock_slide, components, left=0.5, top=2.0, item_width=4.0, item_height=1.0
         )
 
         # All components should be rendered
@@ -339,16 +287,17 @@ class TestStack:
             assert component.rendered
 
         # Verify vertical stacking (increasing top positions)
-        assert components[0].render_args['top'] < components[1].render_args['top']
-        assert components[1].render_args['top'] < components[2].render_args['top']
+        assert components[0].render_args["top"] < components[1].render_args["top"]
+        assert components[1].render_args["top"] < components[2].render_args["top"]
 
         # Verify consistent dimensions
         for component in components:
-            assert component.render_args['width'] == 4.0
-            assert component.render_args['height'] == 1.0
+            assert component.render_args["width"] == 4.0
+            assert component.render_args["height"] == 1.0
 
     def test_stack_render_children_horizontal(self, mock_slide):
         """Test render_children with horizontal stack."""
+
         class MockComponent:
             def __init__(self, name):
                 self.name = name
@@ -364,12 +313,7 @@ class TestStack:
 
         stack = Stack(direction="horizontal", gap="lg")
         shapes = stack.render_children(
-            mock_slide,
-            components,
-            left=0.5,
-            top=2.0,
-            item_width=2.0,
-            item_height=1.5
+            mock_slide, components, left=0.5, top=2.0, item_width=2.0, item_height=1.5
         )
 
         # All components should be rendered
@@ -378,14 +322,14 @@ class TestStack:
             assert component.rendered
 
         # Verify horizontal stacking (increasing left positions)
-        assert components[0].render_args['left'] < components[1].render_args['left']
-        assert components[1].render_args['left'] < components[2].render_args['left']
-        assert components[2].render_args['left'] < components[3].render_args['left']
+        assert components[0].render_args["left"] < components[1].render_args["left"]
+        assert components[1].render_args["left"] < components[2].render_args["left"]
+        assert components[2].render_args["left"] < components[3].render_args["left"]
 
         # Verify consistent dimensions
         for component in components:
-            assert component.render_args['width'] == 2.0
-            assert component.render_args['height'] == 1.5
+            assert component.render_args["width"] == 2.0
+            assert component.render_args["height"] == 1.5
 
     def test_stack_render_children_empty(self, mock_slide):
         """Test render_children with empty list."""
@@ -396,6 +340,7 @@ class TestStack:
 
     def test_stack_render_children_matches_distribute(self, mock_slide):
         """Test that render_children positioning matches distribute."""
+
         class MockComponent:
             def __init__(self):
                 self.render_args = None
@@ -410,32 +355,24 @@ class TestStack:
 
         # Get positions from distribute
         positions = stack.distribute(
-            num_items=3,
-            item_width=3.0,
-            item_height=1.0,
-            left=1.0,
-            top=2.5
+            num_items=3, item_width=3.0, item_height=1.0, left=1.0, top=2.5
         )
 
         # Render using render_children
         stack.render_children(
-            mock_slide,
-            components,
-            left=1.0,
-            top=2.5,
-            item_width=3.0,
-            item_height=1.0
+            mock_slide, components, left=1.0, top=2.5, item_width=3.0, item_height=1.0
         )
 
         # Verify positions match
         for i, (component, expected_pos) in enumerate(zip(components, positions)):
-            assert component.render_args['left'] == expected_pos['left']
-            assert component.render_args['top'] == expected_pos['top']
-            assert component.render_args['width'] == expected_pos['width']
-            assert component.render_args['height'] == expected_pos['height']
+            assert component.render_args["left"] == expected_pos["left"]
+            assert component.render_args["top"] == expected_pos["top"]
+            assert component.render_args["width"] == expected_pos["width"]
+            assert component.render_args["height"] == expected_pos["height"]
 
     def test_stack_render_children_without_render_method(self, mock_slide):
         """Test render_children skips objects without render method."""
+
         class MockComponent:
             def render(self, slide, **kwargs):
                 return "shape"
@@ -443,20 +380,11 @@ class TestStack:
         class InvalidComponent:
             pass  # No render method
 
-        components = [
-            MockComponent(),
-            InvalidComponent(),
-            MockComponent()
-        ]
+        components = [MockComponent(), InvalidComponent(), MockComponent()]
 
         stack = Stack(direction="vertical", gap="md")
         shapes = stack.render_children(
-            mock_slide,
-            components,
-            left=0.5,
-            top=2.0,
-            item_width=3.0,
-            item_height=1.0
+            mock_slide, components, left=0.5, top=2.0, item_width=3.0, item_height=1.0
         )
 
         # Should only render components with render method
@@ -504,25 +432,25 @@ class TestSpacer:
         spacer = Spacer(size="md", direction="vertical")
         result = spacer.render(mock_slide, left=0, top=0)
 
-        assert 'height' in result or 'width' in result
+        assert "height" in result or "width" in result
 
     def test_spacer_render_vertical(self, mock_slide):
         """Test vertical spacer returns height."""
         spacer = Spacer(size="lg", direction="vertical")
         result = spacer.render(mock_slide, left=0, top=0)
 
-        assert 'height' in result
-        assert result['height'] > 0
-        assert result['width'] == 0
+        assert "height" in result
+        assert result["height"] > 0
+        assert result["width"] == 0
 
     def test_spacer_render_horizontal(self, mock_slide):
         """Test horizontal spacer returns width."""
         spacer = Spacer(size="xl", direction="horizontal")
         result = spacer.render(mock_slide, left=0, top=0)
 
-        assert 'width' in result
-        assert result['width'] > 0
-        assert result['height'] == 0
+        assert "width" in result
+        assert result["width"] > 0
+        assert result["height"] == 0
 
 
 class TestDivider:
@@ -625,10 +553,10 @@ class TestLayoutIntegration:
         stack = Stack(direction="vertical", gap="sm")
         positions = stack.distribute(
             num_items=3,
-            item_width=bounds['width'],
+            item_width=bounds["width"],
             item_height=1.0,
-            left=bounds['left'],
-            top=bounds['top']
+            left=bounds["left"],
+            top=bounds["top"],
         )
 
         assert len(positions) == 3
@@ -645,16 +573,16 @@ class TestLayoutIntegration:
         sidebar = grid.get_span(col_span=4, col_start=8, left=0.5, top=2.0, width=9.0)
 
         # Main should be wider
-        assert main['width'] > sidebar['width']
+        assert main["width"] > sidebar["width"]
 
         # Sidebar stack
         stack = Stack(direction="vertical", gap="sm")
         items = stack.distribute(
             num_items=3,
-            item_width=sidebar['width'],
+            item_width=sidebar["width"],
             item_height=0.8,
-            left=sidebar['left'],
-            top=sidebar['top']
+            left=sidebar["left"],
+            top=sidebar["top"],
         )
 
         assert len(items) == 3
@@ -669,7 +597,7 @@ class TestLayoutEdgeCases:
         cells = grid.get_cell_positions(None, left=0.5, top=2.0, width=9.0, height=3.0)
 
         # Cells should be adjacent
-        assert abs(cells[0]['left'] + cells[0]['width'] - cells[1]['left']) < 0.01
+        assert abs(cells[0]["left"] + cells[0]["width"] - cells[1]["left"]) < 0.01
 
     def test_stack_single_item(self):
         """Test stack with single item."""
@@ -688,7 +616,7 @@ class TestLayoutEdgeCases:
         large = Container(size="full", padding="none")
         large_bounds = large.render(mock_slide, top=2.0)
 
-        assert small_bounds['width'] < large_bounds['width']
+        assert small_bounds["width"] < large_bounds["width"]
 
     def test_spacer_minimum_size(self):
         """Test smallest spacer."""
@@ -706,24 +634,24 @@ class TestLayoutEdgeCases:
             col_span=15,  # More than available
             col_start=0,
             left=0.5,
-            width=9.0
+            width=9.0,
         )
 
         assert pos is not None
 
     def test_grid_with_bounds(self):
         """Test grid initialized with bounds."""
-        bounds = {'left': 1.0, 'top': 2.0, 'width': 8.0, 'height': 5.0}
+        bounds = {"left": 1.0, "top": 2.0, "width": 8.0, "height": 5.0}
         grid = Grid(columns=12, rows=2, gap="md", bounds=bounds)
 
         # Get cell without specifying bounds
         pos = grid.get_cell(col_span=6, col_start=0, row_start=0)
 
         # Should use bounds from initialization
-        assert pos['left'] >= bounds['left']
-        assert pos['top'] >= bounds['top']
-        assert pos['width'] <= bounds['width']
-        assert 'height' not in pos  # auto_height=True by default
+        assert pos["left"] >= bounds["left"]
+        assert pos["top"] >= bounds["top"]
+        assert pos["width"] <= bounds["width"]
+        assert "height" not in pos  # auto_height=True by default
 
     def test_grid_get_cell_auto_height(self):
         """Test get_cell with auto_height=True."""
@@ -732,10 +660,10 @@ class TestLayoutEdgeCases:
         # Auto-height (default)
         pos = grid.get_cell(col_span=4, col_start=0, left=0.5, top=2.0, width=9.0, height=4.0)
 
-        assert 'left' in pos
-        assert 'top' in pos
-        assert 'width' in pos
-        assert 'height' not in pos  # Should be omitted
+        assert "left" in pos
+        assert "top" in pos
+        assert "width" in pos
+        assert "height" not in pos  # Should be omitted
 
     def test_grid_get_cell_fixed_height(self):
         """Test get_cell with auto_height=False."""
@@ -743,19 +671,17 @@ class TestLayoutEdgeCases:
 
         # Fixed height
         pos = grid.get_cell(
-            col_span=4, col_start=0,
-            left=0.5, top=2.0, width=9.0, height=4.0,
-            auto_height=False
+            col_span=4, col_start=0, left=0.5, top=2.0, width=9.0, height=4.0, auto_height=False
         )
 
-        assert 'left' in pos
-        assert 'top' in pos
-        assert 'width' in pos
-        assert 'height' in pos  # Should be included
+        assert "left" in pos
+        assert "top" in pos
+        assert "width" in pos
+        assert "height" in pos  # Should be included
 
     def test_grid_get_cell_multiple_rows(self):
         """Test get_cell with multiple rows."""
-        bounds = {'left': 0.5, 'top': 1.8, 'width': 9.0, 'height': 4.5}
+        bounds = {"left": 0.5, "top": 1.8, "width": 9.0, "height": 4.5}
         grid = Grid(columns=12, rows=2, gap="md", bounds=bounds)
 
         # Row 0
@@ -765,16 +691,16 @@ class TestLayoutEdgeCases:
         row1_pos = grid.get_cell(col_span=4, col_start=0, row_start=1)
 
         # Row 1 should be below Row 0
-        assert row1_pos['top'] > row0_pos['top']
+        assert row1_pos["top"] > row0_pos["top"]
 
     def test_grid_bounds_override(self):
         """Test that explicit parameters override bounds."""
-        bounds = {'left': 1.0, 'top': 2.0, 'width': 8.0, 'height': 5.0}
+        bounds = {"left": 1.0, "top": 2.0, "width": 8.0, "height": 5.0}
         grid = Grid(columns=12, gap="md", bounds=bounds)
 
         # Override with explicit left
         pos = grid.get_cell(col_span=6, col_start=0, left=0.5)
 
         # Should use overridden left, but bounds for others
-        assert pos['left'] == 0.5 or pos['left'] > 0.5  # Might be offset by column
-        assert pos['top'] >= bounds['top']
+        assert pos["left"] == 0.5 or pos["left"] > 0.5  # Might be offset by column
+        assert pos["top"] >= bounds["top"]

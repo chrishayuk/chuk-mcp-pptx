@@ -24,7 +24,6 @@ ICON_SYMBOLS = {
     "close": "✕",
     "plus": "+",
     "minus": "−",
-
     # Arrows & Direction
     "arrow-up": "↑",
     "arrow-down": "↓",
@@ -34,7 +33,6 @@ ICON_SYMBOLS = {
     "chevron-down": "⌄",
     "chevron-left": "‹",
     "chevron-right": "›",
-
     # Common Symbols
     "star": "★",
     "star-outline": "☆",
@@ -53,7 +51,6 @@ ICON_SYMBOLS = {
     "tag": "🏷",
     "bookmark": "🔖",
     "flag": "⚑",
-
     # Business & Office
     "document": "📄",
     "folder": "📁",
@@ -65,14 +62,12 @@ ICON_SYMBOLS = {
     "dollar": "$",
     "euro": "€",
     "pound": "£",
-
     # People & Social
     "user": "👤",
     "users": "👥",
     "team": "👥",
     "crown": "👑",
     "trophy": "🏆",
-
     # Tech & UI
     "gear": "⚙",
     "settings": "⚙",
@@ -86,7 +81,6 @@ ICON_SYMBOLS = {
     "download": "⬇",
     "upload": "⬆",
     "refresh": "⟳",
-
     # Misc
     "lightbulb": "💡",
     "rocket": "🚀",
@@ -145,11 +139,13 @@ class Icon(Component):
         "2xl": 32,
     }
 
-    def __init__(self,
-                 icon: str,
-                 variant: str = "default",
-                 size: str = "md",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        icon: str,
+        variant: str = "default",
+        size: str = "md",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize icon.
 
@@ -174,7 +170,7 @@ class Icon(Component):
             "success": "success.DEFAULT",
             "warning": "warning.DEFAULT",
             "error": "destructive.DEFAULT",
-            "muted": "muted.foreground"
+            "muted": "muted.foreground",
         }
         color_path = color_map.get(self.variant, "foreground.DEFAULT")
         return self.get_color(color_path)
@@ -204,10 +200,7 @@ class Icon(Component):
 
         # Create text box for icon
         icon_box = slide.shapes.add_textbox(
-            Inches(left),
-            Inches(top),
-            Inches(size_inches),
-            Inches(size_inches)
+            Inches(left), Inches(top), Inches(size_inches), Inches(size_inches)
         )
 
         text_frame = icon_box.text_frame
@@ -253,12 +246,14 @@ class IconList(Component):
         icon_list.render(slide, left=1, top=2, width=6)
     """
 
-    def __init__(self,
-                 items: list,
-                 variant: str = "default",
-                 icon_size: str = "md",
-                 spacing: float = 0.35,
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        items: list,
+        variant: str = "default",
+        icon_size: str = "md",
+        spacing: float = 0.35,
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         """
         Initialize icon list.
 
@@ -306,7 +301,7 @@ class IconList(Component):
                 Inches(left + icon_width),
                 Inches(current_top),
                 Inches(width - icon_width),
-                Inches(0.3)
+                Inches(0.3),
             )
             text_frame = text_box.text_frame
             text_frame.text = text

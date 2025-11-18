@@ -17,9 +17,13 @@ from ...registry import component, ComponentCategory, prop, example
     category=ComponentCategory.LAYOUT,
     description="Visual divider line for separating content",
     props=[
-        prop("orientation", "string", "Divider orientation",
-             options=["horizontal", "vertical"],
-             default="horizontal"),
+        prop(
+            "orientation",
+            "string",
+            "Divider orientation",
+            options=["horizontal", "vertical"],
+            default="horizontal",
+        ),
         prop("thickness", "number", "Line thickness in points", default=1),
         prop("color", "string", "Line color token", default="border.DEFAULT"),
     ],
@@ -30,10 +34,10 @@ from ...registry import component, ComponentCategory, prop, example
 divider = Divider(orientation="horizontal", thickness=1)
 divider.render(slide, left=0.5, top=3.0, width=9.0)
             """,
-            orientation="horizontal"
+            orientation="horizontal",
         )
     ],
-    tags=["layout", "divider", "separator"]
+    tags=["layout", "divider", "separator"],
 )
 class Divider(Component):
     """
@@ -49,21 +53,26 @@ class Divider(Component):
         divider.render(slide, left=5.0, top=1.5, height=4.0)
     """
 
-    def __init__(self,
-                 orientation: Literal["horizontal", "vertical"] = "horizontal",
-                 thickness: float = 1,
-                 color: str = "border.DEFAULT",
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        orientation: Literal["horizontal", "vertical"] = "horizontal",
+        thickness: float = 1,
+        color: str = "border.DEFAULT",
+        theme: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(theme)
         self.orientation = orientation
         self.thickness = thickness
         self.color = color
 
-    def render(self, slide,
-               left: float,
-               top: float,
-               width: Optional[float] = None,
-               height: Optional[float] = None):
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+    ):
         """Render divider line."""
         if self.orientation == "horizontal":
             # Horizontal line
@@ -71,11 +80,7 @@ class Divider(Component):
             line_height = Pt(self.thickness)
 
             line = slide.shapes.add_shape(
-                MSO_SHAPE.RECTANGLE,
-                Inches(left),
-                Inches(top),
-                Inches(line_width),
-                line_height
+                MSO_SHAPE.RECTANGLE, Inches(left), Inches(top), Inches(line_width), line_height
             )
         else:
             # Vertical line
@@ -83,11 +88,7 @@ class Divider(Component):
             line_height = height or CONTENT_HEIGHT
 
             line = slide.shapes.add_shape(
-                MSO_SHAPE.RECTANGLE,
-                Inches(left),
-                Inches(top),
-                line_width,
-                Inches(line_height)
+                MSO_SHAPE.RECTANGLE, Inches(left), Inches(top), line_width, Inches(line_height)
             )
 
         # Style line

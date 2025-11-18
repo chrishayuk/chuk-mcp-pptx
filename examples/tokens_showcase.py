@@ -6,7 +6,8 @@ Shows colors, typography, spacing, borders, shadows, and semantic color usage.
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pptx import Presentation
 from pptx.util import Inches
@@ -14,7 +15,7 @@ from pptx.util import Inches
 from chuk_mcp_pptx.components.core.card import Card, MetricCard
 from chuk_mcp_pptx.components.core.badge import Badge
 from chuk_mcp_pptx.components.core.button import Button
-from chuk_mcp_pptx.components.core import Container, Grid, Stack, Divider
+from chuk_mcp_pptx.components.core import Container, Grid, Stack
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 
 
@@ -46,7 +47,7 @@ def create_color_tokens_slide(prs, theme):
     for label, variant, col_start in semantic_colors:
         pos = grid.get_cell(col_span=3, col_start=col_start, row_start=0)
         Badge(text=label, variant=variant, theme=theme.__dict__).render(
-            slide, left=pos['left'] + 0.3, top=pos['top'] + 0.1
+            slide, left=pos["left"] + 0.3, top=pos["top"] + 0.1
         )
 
     # Additional semantic colors
@@ -59,7 +60,7 @@ def create_color_tokens_slide(prs, theme):
     for label, variant, col_start in more_colors:
         pos = grid.get_cell(col_span=3, col_start=col_start, row_start=1)
         Badge(text=label, variant=variant, theme=theme.__dict__).render(
-            slide, left=pos['left'] + 0.3, top=pos['top'] + 0.1
+            slide, left=pos["left"] + 0.3, top=pos["top"] + 0.1
         )
 
     # Color cards showing token usage
@@ -111,11 +112,12 @@ def create_typography_tokens_slide(prs, theme):
         cards.append(card)
 
     stack.render_children(
-        slide, cards,
-        left=bounds['left'],
-        top=bounds['top'],
-        item_width=bounds['width'],
-        item_height=1.1  # Give each card more height to prevent cutoff
+        slide,
+        cards,
+        left=bounds["left"],
+        top=bounds["top"],
+        item_width=bounds["width"],
+        item_height=1.1,  # Give each card more height to prevent cutoff
     )
 
 
@@ -133,11 +135,11 @@ def create_spacing_tokens_slide(prs, theme):
 
     # Spacing scale with visual examples
     spacing_scale = [
-        ("xs", "Extra Small (0.1\")", 2.2),
-        ("sm", "Small (0.2\")", 3.0),
-        ("md", "Medium (0.3\")", 3.8),
-        ("lg", "Large (0.5\")", 4.6),
-        ("xl", "Extra Large (0.8\")", 5.4),
+        ("xs", 'Extra Small (0.1")', 2.2),
+        ("sm", 'Small (0.2")', 3.0),
+        ("md", 'Medium (0.3")', 3.8),
+        ("lg", 'Large (0.5")', 4.6),
+        ("xl", 'Extra Large (0.8")', 5.4),
     ]
 
     for size, label, top in spacing_scale:
@@ -149,16 +151,12 @@ def create_spacing_tokens_slide(prs, theme):
         # Visual representation
         stack = Stack(direction="horizontal", gap=size, align="start")
         positions = stack.distribute(
-            num_items=4,
-            item_width=0.3,
-            item_height=0.3,
-            left=4.0,
-            top=top
+            num_items=4, item_width=0.3, item_height=0.3, left=4.0, top=top
         )
 
         for pos in positions:
             Badge(text="•", variant="default", theme=theme.__dict__).render(
-                slide, left=pos['left'], top=pos['top']
+                slide, left=pos["left"], top=pos["top"]
             )
 
 
@@ -189,18 +187,16 @@ def create_component_composition_slide(prs, theme):
     for label, value, change, trend, col_start in metrics:
         pos = grid.get_cell(col_span=4, col_start=col_start, row_start=0)
         MetricCard(
-            label=label,
-            value=value,
-            change=change,
-            trend=trend,
-            theme=theme.__dict__
+            label=label, value=value, change=change, trend=trend, theme=theme.__dict__
         ).render(slide, **pos)
 
     # Card showing composition
     main_pos = grid.get_cell(col_span=8, col_start=0, row_start=1)
     main_card = Card(variant="elevated", theme=theme.__dict__)
     main_card.add_child(Card.Title("Design Tokens"))
-    main_card.add_child(Card.Description("Colors, spacing, typography, and borders working together"))
+    main_card.add_child(
+        Card.Description("Colors, spacing, typography, and borders working together")
+    )
     main_card.render(slide, **main_pos)
 
     # Sidebar with actions
@@ -209,17 +205,17 @@ def create_component_composition_slide(prs, theme):
     buttons = [
         Button("Primary", variant="default", size="sm", theme=theme.__dict__),
         Button("Secondary", variant="secondary", size="sm", theme=theme.__dict__),
-        Button("Outline", variant="outline", size="sm", theme=theme.__dict__)
+        Button("Outline", variant="outline", size="sm", theme=theme.__dict__),
     ]
 
     stack = Stack(direction="vertical", gap="sm", align="start")
     stack.render_children(
         slide,
         buttons,
-        left=sidebar_pos['left'] + 0.1,
-        top=sidebar_pos['top'] + 0.1,
-        item_width=sidebar_pos['width'] - 0.2,
-        item_height=0.4
+        left=sidebar_pos["left"] + 0.1,
+        top=sidebar_pos["top"] + 0.1,
+        item_width=sidebar_pos["width"] - 0.2,
+        item_height=0.4,
     )
 
 
@@ -263,7 +259,7 @@ def create_variant_system_slide(prs, theme):
 
     for text, variant, left in button_positions:
         btn = Button(text=text, variant=variant, size="md", theme=theme.__dict__)
-        btn.render(slide, left=bounds['left'] + left, top=bounds['top'] + 3.0, width=2.0)
+        btn.render(slide, left=bounds["left"] + left, top=bounds["top"] + 3.0, width=2.0)
 
 
 def create_semantic_colors_slide(prs, theme):
@@ -302,7 +298,7 @@ def create_semantic_colors_slide(prs, theme):
 
         # Render badge next to card title
         Badge(text=variant.upper(), variant=variant, theme=theme.__dict__).render(
-            slide, left=pos['left'] + pos['width'] - 1.5, top=pos['top'] + 0.15
+            slide, left=pos["left"] + pos["width"] - 1.5, top=pos["top"] + 0.15
         )
 
 

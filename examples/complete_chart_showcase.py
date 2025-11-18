@@ -18,7 +18,8 @@ Output: complete_chart_showcase.pptx
 import asyncio
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -27,13 +28,26 @@ from pptx.enum.text import PP_ALIGN
 # Import all chart components
 from chuk_mcp_pptx.components.charts import (
     # Basic Charts
-    ColumnChart, BarChart, LineChart, AreaChart, PieChart, DoughnutChart,
+    ColumnChart,
+    BarChart,
+    LineChart,
+    AreaChart,
+    PieChart,
+    DoughnutChart,
     # Statistical Charts
-    ScatterChart, BubbleChart, Matrix3DChart, RadarChart,
+    ScatterChart,
+    BubbleChart,
+    Matrix3DChart,
+    RadarChart,
     # Specialized Charts
-    ComboChart, SparklineChart, WaterfallChart, GaugeChart,
+    ComboChart,
+    SparklineChart,
+    WaterfallChart,
+    GaugeChart,
     # Business Charts
-    FunnelChart, GanttChart, HeatmapChart
+    FunnelChart,
+    GanttChart,
+    HeatmapChart,
 )
 from chuk_mcp_pptx.themes import ThemeManager
 
@@ -96,6 +110,7 @@ async def create_title_slide(prs, theme):
 # BASIC CHARTS
 # ====================================================================================
 
+
 async def demo_column_chart(prs, theme):
     """Column Chart - Vertical bar comparisons."""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
@@ -107,11 +122,11 @@ async def demo_column_chart(prs, theme):
         series={
             "Product A": [120, 145, 132, 158],
             "Product B": [98, 112, 125, 119],
-            "Product C": [87, 95, 108, 121]
+            "Product C": [87, 95, 108, 121],
         },
         variant="clustered",
         title="Quarterly Product Sales (in thousands)",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=0.8, top=1.5, width=8.4, height=4.5)
 
@@ -122,12 +137,17 @@ async def demo_bar_chart(prs, theme):
     add_slide_header(slide, "Bar Chart", "Horizontal layout for easy label reading", theme)
 
     chart = BarChart(
-        categories=["Customer Satisfaction", "Product Quality", "Delivery Speed",
-                   "Value for Money", "Support"],
+        categories=[
+            "Customer Satisfaction",
+            "Product Quality",
+            "Delivery Speed",
+            "Value for Money",
+            "Support",
+        ],
         series={"Score": [87, 92, 78, 85, 90]},
         variant="clustered",
         title="Customer Satisfaction Metrics",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=0.8, top=1.5, width=8.4, height=4.5)
 
@@ -138,14 +158,27 @@ async def demo_line_chart(prs, theme):
     add_slide_header(slide, "Line Chart", "Visualizing trends and patterns over time", theme)
 
     chart = LineChart(
-        categories=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        categories=[
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ],
         series={
             "2023": [45, 52, 48, 61, 58, 72, 78, 75, 68, 71, 65, 80],
-            "2024": [52, 58, 63, 68, 75, 82, 88, 91, 85, 89, 93, 98]
+            "2024": [52, 58, 63, 68, 75, 82, 88, 91, 85, 89, 93, 98],
         },
         variant="line",
         title="Monthly Revenue Trend (in thousands)",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=0.8, top=1.5, width=8.4, height=4.5)
 
@@ -160,11 +193,11 @@ async def demo_area_chart(prs, theme):
         series={
             "Email": [1200, 1350, 1280, 1450, 1520, 1680],
             "Social": [850, 920, 1050, 1180, 1240, 1350],
-            "Direct": [420, 480, 510, 560, 590, 640]
+            "Direct": [420, 480, 510, 560, 590, 640],
         },
         variant="stacked",
         title="Traffic Sources (Weekly)",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=0.8, top=1.5, width=8.4, height=4.5)
 
@@ -178,7 +211,7 @@ async def demo_pie_chart(prs, theme):
         categories=["North America", "Europe", "Asia Pacific", "Latin America", "Middle East"],
         values=[42, 28, 18, 8, 4],
         title="Revenue by Region (%)",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=2, top=1.5, width=6, height=4.5)
 
@@ -193,7 +226,7 @@ async def demo_doughnut_chart(prs, theme):
         values=[35, 25, 15, 15, 10],
         hole_size=60,
         title="Budget Allocation (%)",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=2, top=1.5, width=6, height=4.5)
 
@@ -201,6 +234,7 @@ async def demo_doughnut_chart(prs, theme):
 # ====================================================================================
 # STATISTICAL CHARTS
 # ====================================================================================
+
 
 async def demo_scatter_chart(prs, theme):
     """Scatter Chart - Correlation analysis."""
@@ -212,17 +246,17 @@ async def demo_scatter_chart(prs, theme):
             {
                 "name": "Dataset A",
                 "x_values": [10, 20, 30, 40, 50, 60, 70],
-                "y_values": [25, 35, 45, 50, 65, 75, 80]
+                "y_values": [25, 35, 45, 50, 65, 75, 80],
             },
             {
                 "name": "Dataset B",
                 "x_values": [15, 25, 35, 45, 55, 65, 75],
-                "y_values": [30, 28, 40, 45, 55, 60, 70]
-            }
+                "y_values": [30, 28, 40, 45, 55, 60, 70],
+            },
         ],
         title="Marketing Spend vs. Revenue Correlation",
         show_trendline=True,
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=0.8, top=1.5, width=8.4, height=4.5)
 
@@ -234,17 +268,11 @@ async def demo_bubble_chart(prs, theme):
 
     chart = BubbleChart(
         series_data=[
-            {
-                "name": "Product A",
-                "points": [[30, 75, 50], [40, 80, 60], [50, 85, 70]]
-            },
-            {
-                "name": "Product B",
-                "points": [[35, 65, 45], [45, 70, 55], [55, 75, 65]]
-            }
+            {"name": "Product A", "points": [[30, 75, 50], [40, 80, 60], [50, 85, 70]]},
+            {"name": "Product B", "points": [[35, 65, 45], [45, 70, 55], [55, 75, 65]]},
         ],
         title="Customer Satisfaction vs. Market Share (Size = Revenue)",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=0.8, top=1.5, width=8.4, height=4.5)
 
@@ -260,7 +288,7 @@ async def demo_matrix3d_chart(prs, theme):
         {"price": 15, "quality": 65, "sales": 200, "category": "Standard"},
         {"price": 20, "quality": 70, "sales": 180, "category": "Standard"},
         {"price": 10, "quality": 50, "sales": 250, "category": "Budget"},
-        {"price": 12, "quality": 55, "sales": 230, "category": "Budget"}
+        {"price": 12, "quality": 55, "sales": 230, "category": "Budget"},
     ]
 
     chart = Matrix3DChart(
@@ -270,7 +298,7 @@ async def demo_matrix3d_chart(prs, theme):
         size_field="sales",
         color_field="category",
         title="Product Analysis: Price vs Quality (Size = Sales Volume)",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=0.8, top=1.5, width=8.4, height=4.5)
 
@@ -285,11 +313,11 @@ async def demo_radar_chart(prs, theme):
         series={
             "Our Product": [85, 90, 88, 92, 87, 75],
             "Competitor A": [90, 75, 82, 85, 80, 70],
-            "Competitor B": [75, 85, 90, 78, 85, 80]
+            "Competitor B": [75, 85, 90, 78, 85, 80],
         },
         variant="filled",
         title="Competitive Product Analysis",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=1.5, top=1.5, width=7, height=4.5)
 
@@ -297,6 +325,7 @@ async def demo_radar_chart(prs, theme):
 # ====================================================================================
 # SPECIALIZED CHARTS
 # ====================================================================================
+
 
 async def demo_combo_chart(prs, theme):
     """Combo Chart - Mixed column and line."""
@@ -309,7 +338,7 @@ async def demo_combo_chart(prs, theme):
         line_series={"Growth %": [12, 15, 8, 18]},
         secondary_axis=["Growth %"],
         title="Revenue & Growth Rate",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=0.8, top=1.5, width=8.4, height=4.5)
 
@@ -323,30 +352,27 @@ async def demo_sparkline_chart(prs, theme):
     metrics = [
         ("Daily Active Users", [1200, 1250, 1180, 1350, 1420, 1380, 1520, 1480, 1650]),
         ("Page Views", [5200, 5450, 5180, 5850, 6120, 5980, 6520, 6280, 6950]),
-        ("Conversion Rate", [2.5, 2.7, 2.4, 2.9, 3.1, 2.8, 3.3, 3.0, 3.5])
+        ("Conversion Rate", [2.5, 2.7, 2.4, 2.9, 3.1, 2.8, 3.3, 3.0, 3.5]),
     ]
 
     for i, (label, values) in enumerate(metrics):
         # Sparkline with integrated label and value
-        chart = SparklineChart(
-            values=values,
-            label=label,
-            show_value=True,
-            theme=theme
-        )
+        chart = SparklineChart(values=values, label=label, show_value=True, theme=theme)
         chart.render(slide, left=1, top=2 + i * 1.2, width=8, height=0.8)
 
 
 async def demo_waterfall_chart(prs, theme):
     """Waterfall Chart - Sequential value changes."""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
-    add_slide_header(slide, "Waterfall Chart", "Showing cumulative effect of sequential values", theme)
+    add_slide_header(
+        slide, "Waterfall Chart", "Showing cumulative effect of sequential values", theme
+    )
 
     chart = WaterfallChart(
         categories=["Starting", "Revenue", "Cost of Sales", "Operating", "Marketing", "Ending"],
         values=[100, 85, -45, -15, -8, 117],
         title="Financial Statement Analysis (in millions)",
-        theme=theme
+        theme=theme,
     )
     chart.render(slide, left=0.8, top=1.5, width=8.4, height=4.5)
 
@@ -360,17 +386,13 @@ async def demo_gauge_chart(prs, theme):
     kpis = [
         ("Customer Satisfaction", 87, 0, 100),
         ("Project Completion", 65, 0, 100),
-        ("Revenue Target", 78, 0, 100)
+        ("Revenue Target", 78, 0, 100),
     ]
 
     for i, (label, value, min_val, max_val) in enumerate(kpis):
         # Gauge with integrated title and value display
         chart = GaugeChart(
-            value=value,
-            min_value=min_val,
-            max_value=max_val,
-            title=label,
-            theme=theme
+            value=value, min_value=min_val, max_value=max_val, title=label, theme=theme
         )
         chart.render(slide, left=1 + i * 3, top=2.5, width=2.5, height=2.5)
 
@@ -378,6 +400,7 @@ async def demo_gauge_chart(prs, theme):
 # ====================================================================================
 # BUSINESS CHARTS
 # ====================================================================================
+
 
 async def demo_funnel_chart(prs, theme):
     """Funnel Chart - Conversion process visualization."""
@@ -391,7 +414,7 @@ async def demo_funnel_chart(prs, theme):
         show_percentages=True,
         show_values=True,
         title="E-commerce Conversion Funnel",
-        theme=theme
+        theme=theme,
     )
     await chart.render(slide, left=2, top=1.5, width=6, height=4.5)
 
@@ -406,7 +429,7 @@ async def demo_gantt_chart(prs, theme):
         {"name": "Design", "start": "2024-01-10", "end": "2024-02-05", "progress": 0.85},
         {"name": "Development", "start": "2024-01-25", "end": "2024-03-20", "progress": 0.60},
         {"name": "Testing", "start": "2024-03-01", "end": "2024-03-30", "progress": 0.30},
-        {"name": "Deployment", "start": "2024-03-25", "end": "2024-04-10", "progress": 0.0}
+        {"name": "Deployment", "start": "2024-03-25", "end": "2024-04-10", "progress": 0.0},
     ]
 
     chart = GanttChart(
@@ -414,7 +437,7 @@ async def demo_gantt_chart(prs, theme):
         start_date="2024-01-01",
         end_date="2024-04-30",
         title="Product Launch Timeline - Q1 2024",
-        theme=theme
+        theme=theme,
     )
     await chart.render(slide, left=0.8, top=1.5, width=8.4, height=4.5)
 
@@ -431,12 +454,12 @@ async def demo_heatmap_chart(prs, theme):
             [42, 58, 63, 71, 68, 45, 38],
             [48, 62, 68, 75, 72, 52, 41],
             [45, 59, 65, 73, 70, 48, 40],
-            [51, 65, 72, 78, 75, 55, 45]
+            [51, 65, 72, 78, 75, 55, 45],
         ],
         color_scale="heat",
         show_values=True,
         title="Website Traffic Heatmap (visits per hour)",
-        theme=theme
+        theme=theme,
     )
     await chart.render(slide, left=1.5, top=1.5, width=7, height=4.5)
 
@@ -444,6 +467,7 @@ async def demo_heatmap_chart(prs, theme):
 # ====================================================================================
 # MAIN EXECUTION
 # ====================================================================================
+
 
 async def main():
     """Create the complete chart showcase presentation."""
@@ -464,79 +488,79 @@ async def main():
 
     await create_title_slide(prs, theme)
     slides_created += 1
-    print(f"  ✓ Title slide")
+    print("  ✓ Title slide")
 
     # Basic Charts
     await demo_column_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Column Chart")
+    print("  ✓ Column Chart")
 
     await demo_bar_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Bar Chart")
+    print("  ✓ Bar Chart")
 
     await demo_line_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Line Chart")
+    print("  ✓ Line Chart")
 
     await demo_area_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Area Chart")
+    print("  ✓ Area Chart")
 
     await demo_pie_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Pie Chart")
+    print("  ✓ Pie Chart")
 
     await demo_doughnut_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Doughnut Chart")
+    print("  ✓ Doughnut Chart")
 
     # Statistical Charts
     await demo_scatter_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Scatter Chart")
+    print("  ✓ Scatter Chart")
 
     await demo_bubble_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Bubble Chart")
+    print("  ✓ Bubble Chart")
 
     await demo_matrix3d_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Matrix3D Chart")
+    print("  ✓ Matrix3D Chart")
 
     await demo_radar_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Radar Chart")
+    print("  ✓ Radar Chart")
 
     # Specialized Charts
     await demo_combo_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Combo Chart")
+    print("  ✓ Combo Chart")
 
     await demo_sparkline_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Sparkline Chart")
+    print("  ✓ Sparkline Chart")
 
     await demo_waterfall_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Waterfall Chart")
+    print("  ✓ Waterfall Chart")
 
     await demo_gauge_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Gauge Chart")
+    print("  ✓ Gauge Chart")
 
     # Business Charts
     await demo_funnel_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Funnel Chart")
+    print("  ✓ Funnel Chart")
 
     await demo_gantt_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Gantt Chart")
+    print("  ✓ Gantt Chart")
 
     await demo_heatmap_chart(prs, theme)
     slides_created += 1
-    print(f"  ✓ Heatmap Chart")
+    print("  ✓ Heatmap Chart")
 
     # Save
     output_dir = os.path.join(os.path.dirname(__file__), "..", "outputs")
@@ -546,8 +570,8 @@ async def main():
 
     print(f"\n✅ Complete! Created {slides_created} slides")
     print(f"📁 Saved to: {output_file}")
-    print(f"📊 Charts showcased: 18 types")
-    print(f"🎨 Theme: Ocean Light")
+    print("📊 Charts showcased: 18 types")
+    print("🎨 Theme: Ocean Light")
 
 
 if __name__ == "__main__":

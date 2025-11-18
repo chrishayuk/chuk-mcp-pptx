@@ -8,6 +8,7 @@ This helps debug issues that only occur when the server runs in stdio mode.
 Run from project root:
     uv run python examples/debug_stdio.py
 """
+
 import asyncio
 import sys
 import json
@@ -24,7 +25,7 @@ async def test_stdio_mode():
     # Import the server module
     from chuk_mcp_pptx import async_server
 
-    print(f"✓ Server module loaded", file=sys.stderr)
+    print("✓ Server module loaded", file=sys.stderr)
     print(f"✓ MCP server instance: {async_server.mcp}", file=sys.stderr)
     print(f"✓ Manager instance: {async_server.manager}", file=sys.stderr)
     print(f"✓ VFS provider: {async_server.vfs.provider}\n", file=sys.stderr)
@@ -37,6 +38,7 @@ async def test_stdio_mode():
     except Exception as e:
         print(f"✗ Error: {e}\n", file=sys.stderr)
         import traceback
+
         traceback.print_exc(file=sys.stderr)
         return
 
@@ -44,9 +46,9 @@ async def test_stdio_mode():
     print("Test 2: Checking registered tools...", file=sys.stderr)
     try:
         # Access the internal registry
-        if hasattr(async_server.mcp, '_registry'):
+        if hasattr(async_server.mcp, "_registry"):
             registry = async_server.mcp._registry
-            if hasattr(registry, 'tools'):
+            if hasattr(registry, "tools"):
                 tools = registry.tools
                 print(f"✓ Total tools registered: {len(tools)}", file=sys.stderr)
                 print(f"✓ First 10 tools: {list(tools.keys())[:10]}\n", file=sys.stderr)
@@ -65,20 +67,16 @@ async def test_stdio_mode():
             "method": "tools/call",
             "params": {
                 "name": "pptx_create",
-                "arguments": {
-                    "name": "french_cheeses",
-                    "theme": None
-                }
-            }
+                "arguments": {"name": "french_cheeses", "theme": None},
+            },
         }
         print(f"  Request: {json.dumps(request, indent=2)}\n", file=sys.stderr)
 
         # Try to call the tool through the MCP framework
         # Note: This is a simplified test - real MCP has more complex routing
-        if hasattr(async_server.mcp, 'call_tool'):
+        if hasattr(async_server.mcp, "call_tool"):
             result = await async_server.mcp.call_tool(
-                name="pptx_create",
-                arguments={"name": "french_cheeses", "theme": None}
+                name="pptx_create", arguments={"name": "french_cheeses", "theme": None}
             )
             print(f"✓ JSON-RPC result: {result}\n", file=sys.stderr)
         else:
@@ -87,6 +85,7 @@ async def test_stdio_mode():
     except Exception as e:
         print(f"✗ JSON-RPC error: {e}\n", file=sys.stderr)
         import traceback
+
         traceback.print_exc(file=sys.stderr)
 
     # Test 4: Check if server can start in stdio mode
@@ -108,5 +107,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Fatal error: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc(file=sys.stderr)
         sys.exit(1)

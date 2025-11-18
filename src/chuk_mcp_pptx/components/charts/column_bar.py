@@ -2,10 +2,11 @@
 Column and Bar chart components with variants and registry integration.
 """
 
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_DATA_LABEL_POSITION
 from pptx.util import Pt
+from pptx.dml.color import RGBColor
 
 from .base import ChartComponent
 from ...variants import COLUMN_CHART_VARIANTS
@@ -17,20 +18,45 @@ from ...registry import component, ComponentCategory, prop, example
     category=ComponentCategory.DATA,
     description="Column chart component for vertical bar comparisons with multiple variants",
     props=[
-        prop("categories", "array", "Category labels for x-axis", required=True,
-             example=["Q1", "Q2", "Q3", "Q4"]),
-        prop("series", "object", "Dictionary of series names to values", required=True,
-             example={"Revenue": [100, 120, 130, 150], "Costs": [80, 90, 85, 95]}),
-        prop("variant", "string", "Chart variant style",
-             options=["clustered", "stacked", "stacked100", "3d"],
-             default="clustered", example="clustered"),
-        prop("style", "string", "Visual style preset",
-             options=["default", "minimal", "detailed"],
-             default="default", example="default"),
+        prop(
+            "categories",
+            "array",
+            "Category labels for x-axis",
+            required=True,
+            example=["Q1", "Q2", "Q3", "Q4"],
+        ),
+        prop(
+            "series",
+            "object",
+            "Dictionary of series names to values",
+            required=True,
+            example={"Revenue": [100, 120, 130, 150], "Costs": [80, 90, 85, 95]},
+        ),
+        prop(
+            "variant",
+            "string",
+            "Chart variant style",
+            options=["clustered", "stacked", "stacked100", "3d"],
+            default="clustered",
+            example="clustered",
+        ),
+        prop(
+            "style",
+            "string",
+            "Visual style preset",
+            options=["default", "minimal", "detailed"],
+            default="default",
+            example="default",
+        ),
         prop("title", "string", "Chart title", example="Quarterly Revenue"),
-        prop("legend", "string", "Legend position",
-             options=["right", "bottom", "top", "none"],
-             default="right", example="right"),
+        prop(
+            "legend",
+            "string",
+            "Legend position",
+            options=["right", "bottom", "top", "none"],
+            default="right",
+            example="right",
+        ),
         prop("left", "number", "Left position in inches", example=1.0),
         prop("top", "number", "Top position in inches", example=2.0),
         prop("width", "number", "Width in inches", example=8.0),
@@ -39,7 +65,7 @@ from ...registry import component, ComponentCategory, prop, example
     variants={
         "variant": ["clustered", "stacked", "stacked100", "3d"],
         "style": ["default", "minimal", "detailed"],
-        "legend": ["right", "bottom", "top", "none"]
+        "legend": ["right", "bottom", "top", "none"],
     },
     examples=[
         example(
@@ -55,7 +81,7 @@ chart.render(slide, left=1, top=2)
             """,
             categories=["Q1", "Q2", "Q3", "Q4"],
             series={"Revenue": [100, 120, 130, 150]},
-            variant="clustered"
+            variant="clustered",
         ),
         example(
             "Stacked column chart",
@@ -72,10 +98,10 @@ chart.render(slide)
             categories=["Jan", "Feb", "Mar"],
             series={"Product A": [50, 60, 70], "Product B": [30, 40, 50]},
             variant="stacked",
-            style="detailed"
-        )
+            style="detailed",
+        ),
     ],
-    tags=["chart", "column", "bar", "data", "visualization"]
+    tags=["chart", "column", "bar", "data", "visualization"],
 )
 class ColumnChart(ChartComponent):
     """
@@ -99,12 +125,14 @@ class ColumnChart(ChartComponent):
     - detailed: Shows values on columns with full grid
     """
 
-    def __init__(self,
-                 categories: List[str],
-                 series: Dict[str, List[float]],
-                 variant: str = "clustered",
-                 style: str = "default",
-                 **kwargs):
+    def __init__(
+        self,
+        categories: List[str],
+        series: Dict[str, List[float]],
+        variant: str = "clustered",
+        style: str = "default",
+        **kwargs,
+    ):
         """
         Initialize column chart.
 
@@ -126,10 +154,7 @@ class ColumnChart(ChartComponent):
             raise ValueError(f"Invalid chart data: {error}")
 
         # Update variant props to include column-specific variants
-        self.variant_props = COLUMN_CHART_VARIANTS.build(
-            variant=variant,
-            style=style
-        )
+        self.variant_props = COLUMN_CHART_VARIANTS.build(variant=variant, style=style)
 
         # Set chart type based on variant
         variant_map = {
@@ -152,7 +177,10 @@ class ColumnChart(ChartComponent):
         expected_length = len(self.categories)
         for name, values in self.series.items():
             if len(values) != expected_length:
-                return False, f"Series '{name}' has {len(values)} values, expected {expected_length}"
+                return (
+                    False,
+                    f"Series '{name}' has {len(values)} values, expected {expected_length}",
+                )
 
         return True, None
 
@@ -186,11 +214,11 @@ class ColumnChart(ChartComponent):
             data_labels.font.color.rgb = self.get_color("muted.foreground")
 
         # Configure gap width
-        if hasattr(chart.plots[0], 'gap_width'):
+        if hasattr(chart.plots[0], "gap_width"):
             chart.plots[0].gap_width = self.variant_props.get("gap_width", 150)
 
         # Configure overlap for stacked charts
-        if "stacked" in self.variant and hasattr(chart.plots[0], 'overlap'):
+        if "stacked" in self.variant and hasattr(chart.plots[0], "overlap"):
             chart.plots[0].overlap = self.variant_props.get("overlap", 100)
 
         return chart
@@ -201,24 +229,49 @@ class ColumnChart(ChartComponent):
     category=ComponentCategory.DATA,
     description="Bar chart component for horizontal bar comparisons",
     props=[
-        prop("categories", "array", "Category labels for y-axis", required=True,
-             example=["Product A", "Product B", "Product C"]),
-        prop("series", "object", "Dictionary of series names to values", required=True,
-             example={"Sales": [100, 120, 90]}),
-        prop("variant", "string", "Chart variant style",
-             options=["clustered", "stacked", "stacked100", "3d"],
-             default="clustered", example="clustered"),
-        prop("style", "string", "Visual style preset",
-             options=["default", "minimal", "detailed"],
-             default="default", example="default"),
+        prop(
+            "categories",
+            "array",
+            "Category labels for y-axis",
+            required=True,
+            example=["Product A", "Product B", "Product C"],
+        ),
+        prop(
+            "series",
+            "object",
+            "Dictionary of series names to values",
+            required=True,
+            example={"Sales": [100, 120, 90]},
+        ),
+        prop(
+            "variant",
+            "string",
+            "Chart variant style",
+            options=["clustered", "stacked", "stacked100", "3d"],
+            default="clustered",
+            example="clustered",
+        ),
+        prop(
+            "style",
+            "string",
+            "Visual style preset",
+            options=["default", "minimal", "detailed"],
+            default="default",
+            example="default",
+        ),
         prop("title", "string", "Chart title", example="Product Sales"),
-        prop("legend", "string", "Legend position",
-             options=["right", "bottom", "top", "none"],
-             default="right", example="right"),
+        prop(
+            "legend",
+            "string",
+            "Legend position",
+            options=["right", "bottom", "top", "none"],
+            default="right",
+            example="right",
+        ),
     ],
     variants={
         "variant": ["clustered", "stacked", "stacked100", "3d"],
-        "style": ["default", "minimal", "detailed"]
+        "style": ["default", "minimal", "detailed"],
     },
     examples=[
         example(
@@ -234,10 +287,10 @@ chart.render(slide, left=1, top=2)
             """,
             categories=["Product A", "Product B", "Product C"],
             series={"Q1": [100, 120, 90]},
-            variant="clustered"
+            variant="clustered",
         )
     ],
-    tags=["chart", "bar", "horizontal", "data", "visualization"]
+    tags=["chart", "bar", "horizontal", "data", "visualization"],
 )
 class BarChart(ColumnChart):
     """
@@ -272,10 +325,20 @@ class BarChart(ColumnChart):
     category=ComponentCategory.DATA,
     description="Waterfall chart for showing incremental changes and cumulative effects",
     props=[
-        prop("categories", "array", "Category labels", required=True,
-             example=["Start", "Q1", "Q2", "Q3", "Q4", "End"]),
-        prop("values", "array", "Values showing changes (positive/negative)", required=True,
-             example=[100, 20, -10, 15, -5, 120]),
+        prop(
+            "categories",
+            "array",
+            "Category labels",
+            required=True,
+            example=["Start", "Q1", "Q2", "Q3", "Q4", "End"],
+        ),
+        prop(
+            "values",
+            "array",
+            "Values showing changes (positive/negative)",
+            required=True,
+            example=[100, 20, -10, 15, -5, 120],
+        ),
         prop("title", "string", "Chart title", example="Waterfall Analysis"),
         prop("show_connectors", "boolean", "Show connector lines", default=False),
     ],
@@ -291,10 +354,10 @@ chart = WaterfallChart(
 chart.render(slide)
             """,
             categories=["Start", "Q1", "Q2", "End"],
-            values=[100, 50, 30, 180]
+            values=[100, 50, 30, 180],
         )
     ],
-    tags=["chart", "waterfall", "cumulative", "data", "visualization"]
+    tags=["chart", "waterfall", "cumulative", "data", "visualization"],
 )
 class WaterfallChart(ChartComponent):
     """
@@ -309,11 +372,9 @@ class WaterfallChart(ChartComponent):
     - Displays data labels for each segment
     """
 
-    def __init__(self,
-                 categories: List[str],
-                 values: List[float],
-                 show_connectors: bool = False,
-                 **kwargs):
+    def __init__(
+        self, categories: List[str], values: List[float], show_connectors: bool = False, **kwargs
+    ):
         """
         Initialize waterfall chart.
 
@@ -343,7 +404,10 @@ class WaterfallChart(ChartComponent):
             return False, "No values provided"
 
         if len(self.categories) != len(self.values):
-            return False, f"Categories ({len(self.categories)}) and values ({len(self.values)}) must have same length"
+            return (
+                False,
+                f"Categories ({len(self.categories)}) and values ({len(self.values)}) must have same length",
+            )
 
         return True, None
 
@@ -415,7 +479,7 @@ class WaterfallChart(ChartComponent):
                             fill.fore_color.rgb = RGBColor(239, 68, 68)
 
             # Set gap width to 0 for connected appearance
-            if hasattr(chart.plots[0], 'gap_width'):
+            if hasattr(chart.plots[0], "gap_width"):
                 chart.plots[0].gap_width = 0
 
         except Exception:

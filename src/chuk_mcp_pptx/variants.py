@@ -2,22 +2,51 @@
 Variant system inspired by class-variance-authority (cva).
 Provides composable variants for PowerPoint components.
 """
+
 from __future__ import annotations
 
 
-from typing import Dict, Any, Optional, List, Callable, TypeVar, Generic
-from dataclasses import dataclass
+from typing import Any, TypeVar, Optional
 from copy import deepcopy
+from pydantic import BaseModel, field_validator
+import re
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
-@dataclass
-class VariantConfig:
+class VariantConfig(BaseModel):
     """Configuration for a single variant option."""
+
     props: dict[str, Any]
     description: str | None = None
+
+    class Config:
+        frozen = False
+        arbitrary_types_allowed = True
+
+    @field_validator("props")
+    @classmethod
+    def validate_props(cls, v: dict[str, Any]) -> dict[str, Any]:
+        """Validate prop values, especially color hex codes."""
+        hex_pattern = re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
+
+        for key, value in v.items():
+            # Validate color hex codes
+            if isinstance(value, str) and value.startswith("#"):
+                if not hex_pattern.match(value):
+                    raise ValueError(f"Invalid hex color: {value}")
+
+            # Validate numeric ranges for common props
+            if key in ("font_size", "padding", "margin") and isinstance(value, (int, float)):
+                if value < 0:
+                    raise ValueError(f"{key} must be non-negative, got {value}")
+
+            if key == "border_radius" and isinstance(value, (int, float)):
+                if value < 0:
+                    raise ValueError(f"border_radius must be non-negative, got {value}")
+
+        return v
 
 
 class VariantDefinition:
@@ -34,7 +63,7 @@ class VariantDefinition:
     def __init__(self, options: dict[str, VariantConfig]):
         self.options = options
 
-    def get(self, key: str, default: str = "default") -> VariantConfig:
+    def get(self, key: str, default: str = "default") -> Optional[VariantConfig]:
         """Get variant configuration by key."""
         return self.options.get(key, self.options.get(default))
 
@@ -68,7 +97,7 @@ class VariantBuilder:
     Inspired by shadcn/ui's cva pattern.
     """
 
-    def __init__(self, base_props: dict[str, Any | None] = None):
+    def __init__(self, base_props: Optional[dict[str, Any | None]] = None):
         """
         Initialize variant builder.
 
@@ -80,7 +109,7 @@ class VariantBuilder:
         self.default_variants: dict[str, str] = {}
         self.compound_variants: list[CompoundVariant] = []
 
-    def add_variant(self, name: str, options: dict[str, dict[str, Any]]) -> 'VariantBuilder':
+    def add_variant(self, name: str, options: dict[str, dict[str, Any]]) -> "VariantBuilder":
         """
         Add a variant type.
 
@@ -98,7 +127,7 @@ class VariantBuilder:
         self.variants[name] = VariantDefinition(variant_options)
         return self
 
-    def set_defaults(self, **defaults) -> 'VariantBuilder':
+    def set_defaults(self, **defaults) -> "VariantBuilder":
         """
         Set default variants.
 
@@ -108,7 +137,7 @@ class VariantBuilder:
         self.default_variants.update(defaults)
         return self
 
-    def add_compound(self, conditions: dict[str, str], props: dict[str, Any]) -> 'VariantBuilder':
+    def add_compound(self, conditions: dict[str, str], props: dict[str, Any]) -> "VariantBuilder":
         """
         Add compound variant.
 
@@ -163,25 +192,21 @@ class VariantBuilder:
             "variants": {
                 name: {
                     "options": list(variant.options.keys()),
-                    "default": self.default_variants.get(name)
+                    "default": self.default_variants.get(name),
                 }
                 for name, variant in self.variants.items()
             },
             "compound_variants": [
-                {
-                    "conditions": cv.conditions,
-                    "props": cv.props
-                }
-                for cv in self.compound_variants
-            ]
+                {"conditions": cv.conditions, "props": cv.props} for cv in self.compound_variants
+            ],
         }
 
 
 def create_variants(
-    base: dict[str, Any | None] = None,
-    variants: dict[str, dict[str, dict[str, Any | None]]] = None,
-    default_variants: dict[str, str | None] = None,
-    compound_variants: list[dict[str, Any | None]] = None
+    base: Optional[dict[str, Any | None]] = None,
+    variants: Optional[dict[str, dict[str, dict[str, Any | None]]]] = None,
+    default_variants: Optional[dict[str, str | None]] = None,
+    compound_variants: Optional[list[dict[str, Any | None]]] = None,
 ) -> VariantBuilder:
     """
     Factory function for creating variant builders.
@@ -228,7 +253,7 @@ def create_variants(
 
     if compound_variants:
         for cv in compound_variants:
-            builder.add_compound(cv["conditions"], cv["props"])
+            builder.add_compound(cv["conditions"], cv["props"])  # type: ignore[arg-type]
 
     return builder
 
@@ -243,20 +268,28 @@ BUTTON_VARIANTS = create_variants(
         "variant": {
             "default": {"bg_color": "primary.DEFAULT", "fg_color": "primary.foreground"},
             "secondary": {"bg_color": "secondary.DEFAULT", "fg_color": "secondary.foreground"},
-            "outline": {"bg_color": "transparent", "fg_color": "primary.DEFAULT", "border_width": 1},
-            "ghost": {"bg_color": "transparent", "fg_color": "foreground.DEFAULT", "border_width": 0},
-            "destructive": {"bg_color": "destructive.DEFAULT", "fg_color": "destructive.foreground"},
+            "outline": {
+                "bg_color": "transparent",
+                "fg_color": "primary.DEFAULT",
+                "border_width": 1,
+            },
+            "ghost": {
+                "bg_color": "transparent",
+                "fg_color": "foreground.DEFAULT",
+                "border_width": 0,
+            },
+            "destructive": {
+                "bg_color": "destructive.DEFAULT",
+                "fg_color": "destructive.foreground",
+            },
         },
         "size": {
             "sm": {"padding": 0.2, "font_size": 12, "height": 0.6},
             "md": {"padding": 0.3, "font_size": 14, "height": 0.8},
             "lg": {"padding": 0.4, "font_size": 16, "height": 1.0},
-        }
+        },
     },
-    default_variants={
-        "variant": "default",
-        "size": "md"
-    }
+    default_variants={"variant": "default", "size": "md"},
 )
 
 CARD_VARIANTS = create_variants(
@@ -265,10 +298,23 @@ CARD_VARIANTS = create_variants(
     },
     variants={
         "variant": {
-            "default": {"bg_color": "card.DEFAULT", "fg_color": "card.foreground", "border_width": 0},
-            "outlined": {"bg_color": "card.DEFAULT", "fg_color": "card.foreground", "border_width": 1, "border_color": "border.DEFAULT"},
+            "default": {
+                "bg_color": "card.DEFAULT",
+                "fg_color": "card.foreground",
+                "border_width": 0,
+            },
+            "outlined": {
+                "bg_color": "card.DEFAULT",
+                "fg_color": "card.foreground",
+                "border_width": 1,
+                "border_color": "border.DEFAULT",
+            },
             "elevated": {"bg_color": "card.DEFAULT", "fg_color": "card.foreground", "shadow": True},
-            "ghost": {"bg_color": "transparent", "fg_color": "foreground.DEFAULT", "border_width": 0},
+            "ghost": {
+                "bg_color": "transparent",
+                "fg_color": "foreground.DEFAULT",
+                "border_width": 0,
+            },
         },
         "padding": {
             "none": {"padding": 0},
@@ -276,12 +322,9 @@ CARD_VARIANTS = create_variants(
             "md": {"padding": 0.5},
             "lg": {"padding": 0.75},
             "xl": {"padding": 1.0},
-        }
+        },
     },
-    default_variants={
-        "variant": "default",
-        "padding": "md"
-    }
+    default_variants={"variant": "default", "padding": "md"},
 )
 
 BADGE_VARIANTS = create_variants(
@@ -297,13 +340,18 @@ BADGE_VARIANTS = create_variants(
             "secondary": {"bg_color": "secondary.DEFAULT", "fg_color": "secondary.foreground"},
             "success": {"bg_color": "success.DEFAULT", "fg_color": "success.foreground"},
             "warning": {"bg_color": "warning.DEFAULT", "fg_color": "warning.foreground"},
-            "destructive": {"bg_color": "destructive.DEFAULT", "fg_color": "destructive.foreground"},
-            "outline": {"bg_color": "transparent", "fg_color": "foreground.DEFAULT", "border_width": 1},
+            "destructive": {
+                "bg_color": "destructive.DEFAULT",
+                "fg_color": "destructive.foreground",
+            },
+            "outline": {
+                "bg_color": "transparent",
+                "fg_color": "foreground.DEFAULT",
+                "border_width": 1,
+            },
         }
     },
-    default_variants={
-        "variant": "default"
-    }
+    default_variants={"variant": "default"},
 )
 
 # Chart variants
@@ -326,12 +374,9 @@ CHART_VARIANTS = create_variants(
             "bottom": {"legend_position": "bottom", "show_legend": True},
             "top": {"legend_position": "top", "show_legend": True},
             "none": {"show_legend": False},
-        }
+        },
     },
-    default_variants={
-        "style": "default",
-        "legend": "right"
-    }
+    default_variants={"style": "default", "legend": "right"},
 )
 
 COLUMN_CHART_VARIANTS = create_variants(
@@ -351,12 +396,9 @@ COLUMN_CHART_VARIANTS = create_variants(
             "default": {"show_values": False},
             "minimal": {"show_values": False, "show_grid": False},
             "detailed": {"show_values": True},
-        }
+        },
     },
-    default_variants={
-        "variant": "clustered",
-        "style": "default"
-    }
+    default_variants={"variant": "clustered", "style": "default"},
 )
 
 PIE_CHART_VARIANTS = create_variants(
@@ -374,12 +416,9 @@ PIE_CHART_VARIANTS = create_variants(
             "default": {"show_percentages": True, "show_values": False},
             "detailed": {"show_percentages": True, "show_values": True},
             "minimal": {"show_percentages": False, "show_values": False},
-        }
+        },
     },
-    default_variants={
-        "variant": "pie",
-        "style": "default"
-    }
+    default_variants={"variant": "pie", "style": "default"},
 )
 
 LINE_CHART_VARIANTS = create_variants(
@@ -400,10 +439,7 @@ LINE_CHART_VARIANTS = create_variants(
             "default": {"show_values": False, "show_grid": True},
             "minimal": {"show_values": False, "show_grid": False, "show_markers": False},
             "detailed": {"show_values": True, "show_grid": True},
-        }
+        },
     },
-    default_variants={
-        "variant": "line",
-        "style": "default"
-    }
+    default_variants={"variant": "line", "style": "default"},
 )

@@ -3,10 +3,9 @@
 Table component with variants and theme support.
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Any, List
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
-from pptx.dml.color import RGBColor
 
 from ...composition import ComposableComponent
 from ...variants import create_variants
@@ -76,7 +75,7 @@ TABLE_VARIANTS = create_variants(
             },
         },
     },
-    default_variants={"variant": "default", "size": "md"}
+    default_variants={"variant": "default", "size": "md"},
 )
 
 
@@ -86,22 +85,30 @@ TABLE_VARIANTS = create_variants(
     description="Data table with headers and rows, supporting multiple variants and theme-aware styling",
     props=[
         prop("headers", "list", "Column header labels", required=True, example=["Name", "Value"]),
-        prop("data", "list", "Table data as list of rows", required=True, example=[["Item 1", "100"], ["Item 2", "200"]]),
-        prop("variant", "string", "Visual variant",
-             options=["default", "bordered", "striped", "minimal"],
-             default="default", example="default"),
-        prop("size", "string", "Table size",
-             options=["sm", "md", "lg"],
-             default="md", example="md"),
+        prop(
+            "data",
+            "list",
+            "Table data as list of rows",
+            required=True,
+            example=[["Item 1", "100"], ["Item 2", "200"]],
+        ),
+        prop(
+            "variant",
+            "string",
+            "Visual variant",
+            options=["default", "bordered", "striped", "minimal"],
+            default="default",
+            example="default",
+        ),
+        prop(
+            "size", "string", "Table size", options=["sm", "md", "lg"], default="md", example="md"
+        ),
         prop("left", "number", "Left position in inches", required=True, example=1.0),
         prop("top", "number", "Top position in inches", required=True, example=2.0),
         prop("width", "number", "Width in inches", required=True, example=8.0),
         prop("height", "number", "Height in inches", required=True, example=4.0),
     ],
-    variants={
-        "variant": ["default", "bordered", "striped", "minimal"],
-        "size": ["sm", "md", "lg"]
-    },
+    variants={"variant": ["default", "bordered", "striped", "minimal"], "size": ["sm", "md", "lg"]},
     examples=[
         example(
             "Basic data table",
@@ -120,7 +127,7 @@ table.render(slide, left=1, top=2, width=8, height=3)
             headers=["Product", "Q1", "Q2", "Q3"],
             data=[["Laptops", "$100K", "$120K", "$110K"], ["Phones", "$80K", "$90K", "$95K"]],
             variant="default",
-            size="md"
+            size="md",
         ),
         example(
             "Striped comparison table",
@@ -140,10 +147,10 @@ table.render(slide, left=1, top=2, width=8, height=4)
             headers=["Feature", "Basic", "Pro", "Enterprise"],
             data=[["Storage", "10GB", "100GB", "Unlimited"]],
             variant="striped",
-            size="lg"
-        )
+            size="lg",
+        ),
     ],
-    tags=["table", "data", "grid", "display"]
+    tags=["table", "data", "grid", "display"],
 )
 class Table(ComposableComponent):
     """
@@ -177,12 +184,14 @@ class Table(ComposableComponent):
         table.render(slide, left=1, top=1, width=8, height=4)
     """
 
-    def __init__(self,
-                 headers: List[str],
-                 data: List[List[str]],
-                 variant: str = "default",
-                 size: str = "md",
-                 theme: Optional[Any] = None):
+    def __init__(
+        self,
+        headers: List[str],
+        data: List[List[str]],
+        variant: str = "default",
+        size: str = "md",
+        theme: Optional[Any] = None,
+    ):
         """
         Initialize table component.
 
@@ -200,13 +209,9 @@ class Table(ComposableComponent):
         self.size = size
 
         # Get variant props
-        self.variant_props = TABLE_VARIANTS.build(
-            variant=variant,
-            size=size
-        )
+        self.variant_props = TABLE_VARIANTS.build(variant=variant, size=size)
 
-    def render(self, slide, left: float, top: float,
-               width: float, height: float) -> Any:
+    def render(self, slide, left: float, top: float, width: float, height: float) -> Any:
         """
         Render table to slide.
 
@@ -225,9 +230,7 @@ class Table(ComposableComponent):
 
         # Create table
         table_shape = slide.shapes.add_table(
-            rows, cols,
-            Inches(left), Inches(top),
-            Inches(width), Inches(height)
+            rows, cols, Inches(left), Inches(top), Inches(width), Inches(height)
         )
 
         table = table_shape.table

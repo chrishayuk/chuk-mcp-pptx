@@ -5,11 +5,13 @@ Test JSON-RPC Communication
 Sends actual JSON-RPC messages to the server via stdin/stdout
 to test if the MCP protocol is working correctly.
 """
+
 import subprocess
 import json
 import sys
 import time
 from pathlib import Path
+
 
 def send_jsonrpc_request(proc, method, params=None, id=1):
     """Send a JSON-RPC request to the server."""
@@ -33,6 +35,7 @@ def send_jsonrpc_request(proc, method, params=None, id=1):
         return json.loads(response_line)
     return None
 
+
 def main():
     print("🧪 Testing JSON-RPC Communication with MCP Server\n", file=sys.stderr)
 
@@ -47,7 +50,7 @@ def main():
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        bufsize=1
+        bufsize=1,
     )
 
     # Give server time to start
@@ -56,16 +59,20 @@ def main():
     try:
         # Test 1: Initialize
         print("Test 1: Sending initialize request...", file=sys.stderr)
-        response = send_jsonrpc_request(proc, "initialize", {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "test-client", "version": "1.0.0"}
-        })
+        response = send_jsonrpc_request(
+            proc,
+            "initialize",
+            {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "test-client", "version": "1.0.0"},
+            },
+        )
 
         if response:
-            print(f"✓ Initialize response received\n", file=sys.stderr)
+            print("✓ Initialize response received\n", file=sys.stderr)
         else:
-            print(f"✗ No response to initialize\n", file=sys.stderr)
+            print("✗ No response to initialize\n", file=sys.stderr)
             return
 
         # Test 2: List tools
@@ -76,29 +83,33 @@ def main():
             tools = response["result"].get("tools", [])
             print(f"✓ Found {len(tools)} tools\n", file=sys.stderr)
         else:
-            print(f"✗ No tools list received\n", file=sys.stderr)
+            print("✗ No tools list received\n", file=sys.stderr)
 
         # Test 3: Call a tool
         print("Test 3: Calling pptx_create...", file=sys.stderr)
-        response = send_jsonrpc_request(proc, "tools/call", {
-            "name": "pptx_create",
-            "arguments": {"name": "test_presentation", "theme": None}
-        }, id=3)
+        response = send_jsonrpc_request(
+            proc,
+            "tools/call",
+            {"name": "pptx_create", "arguments": {"name": "test_presentation", "theme": None}},
+            id=3,
+        )
 
         if response:
             print(f"✓ Tool call response: {json.dumps(response, indent=2)}\n", file=sys.stderr)
         else:
-            print(f"✗ No response from tool call\n", file=sys.stderr)
+            print("✗ No response from tool call\n", file=sys.stderr)
 
         print("✅ JSON-RPC test complete!", file=sys.stderr)
 
     except Exception as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc(file=sys.stderr)
     finally:
         proc.terminate()
         proc.wait(timeout=5)
+
 
 if __name__ == "__main__":
     main()

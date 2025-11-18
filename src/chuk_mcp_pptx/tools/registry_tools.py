@@ -6,20 +6,8 @@ Enables LLMs to discover and understand available components.
 
 import asyncio
 import json
-from typing import List
 
 from ..registry import registry
-
-from ..models import ErrorResponse, SuccessResponse, ComponentResponse, SlideResponse
-from ..constants import (
-    SlideLayoutIndex,
-    ErrorMessages,
-    SuccessMessages,
-    ShapeType,
-    Spacing,
-    Defaults,
-)
-
 
 
 def register_registry_tools(mcp, manager):
@@ -57,6 +45,7 @@ def register_registry_tools(mcp, manager):
             # List only UI components
             ui_components = await pptx_list_components(category="ui")
         """
+
         def _list_components():
             from ..registry import ComponentCategory
 
@@ -65,10 +54,12 @@ def register_registry_tools(mcp, manager):
                     cat = ComponentCategory(category.lower())
                     component_names = registry.list_by_category(cat)
                 except ValueError:
-                    return json.dumps({
-                        "error": f"Invalid category '{category}'",
-                        "valid_categories": [c.value for c in ComponentCategory]
-                    })
+                    return json.dumps(
+                        {
+                            "error": f"Invalid category '{category}'",
+                            "valid_categories": [c.value for c in ComponentCategory],
+                        }
+                    )
             else:
                 component_names = registry.list_components()
 
@@ -76,18 +67,19 @@ def register_registry_tools(mcp, manager):
             for name in component_names:
                 metadata = registry.get(name)
                 if metadata:
-                    components.append({
-                        "name": name,
-                        "category": metadata.category.value,
-                        "description": metadata.description,
-                        "tags": metadata.tags
-                    })
+                    components.append(
+                        {
+                            "name": name,
+                            "category": metadata.category.value,
+                            "description": metadata.description,
+                            "tags": metadata.tags,
+                        }
+                    )
 
-            return json.dumps({
-                "components": components,
-                "count": len(components),
-                "category_filter": category
-            }, indent=2)
+            return json.dumps(
+                {"components": components, "count": len(components), "category_filter": category},
+                indent=2,
+            )
 
         return await asyncio.get_event_loop().run_in_executor(None, _list_components)
 
@@ -109,13 +101,16 @@ def register_registry_tools(mcp, manager):
             schema = await pptx_get_component_schema(name="Button")
             # Returns complete schema with props, variants, examples
         """
+
         def _get_schema():
             schema = registry.get_schema(name)
             if not schema:
-                return json.dumps({
-                    "error": f"Component '{name}' not found",
-                    "hint": "Use pptx_list_components() to see available components"
-                })
+                return json.dumps(
+                    {
+                        "error": f"Component '{name}' not found",
+                        "hint": "Use pptx_list_components() to see available components",
+                    }
+                )
 
             return json.dumps(schema, indent=2)
 
@@ -139,23 +134,24 @@ def register_registry_tools(mcp, manager):
             results = await pptx_search_components(query="metric")
             # Finds MetricCard, ValueTile, etc.
         """
+
         def _search():
             results = registry.search(query)
 
             components = []
             for metadata in results:
-                components.append({
-                    "name": metadata.name,
-                    "category": metadata.category.value,
-                    "description": metadata.description,
-                    "tags": metadata.tags
-                })
+                components.append(
+                    {
+                        "name": metadata.name,
+                        "category": metadata.category.value,
+                        "description": metadata.description,
+                        "tags": metadata.tags,
+                    }
+                )
 
-            return json.dumps({
-                "query": query,
-                "results": components,
-                "count": len(components)
-            }, indent=2)
+            return json.dumps(
+                {"query": query, "results": components, "count": len(components)}, indent=2
+            )
 
         return await asyncio.get_event_loop().run_in_executor(None, _search)
 
@@ -177,17 +173,13 @@ def register_registry_tools(mcp, manager):
             variants = await pptx_get_component_variants(name="Button")
             # Returns: {"variant": ["default", "secondary", ...], "size": ["sm", "md", "lg"]}
         """
+
         def _get_variants():
             variants = registry.list_variants(name)
             if variants is None:
-                return json.dumps({
-                    "error": f"Component '{name}' not found"
-                })
+                return json.dumps({"error": f"Component '{name}' not found"})
 
-            return json.dumps({
-                "component": name,
-                "variants": variants
-            }, indent=2)
+            return json.dumps({"component": name, "variants": variants}, indent=2)
 
         return await asyncio.get_event_loop().run_in_executor(None, _get_variants)
 
@@ -209,23 +201,16 @@ def register_registry_tools(mcp, manager):
             examples = await pptx_get_component_examples(name="Card")
             # Returns code examples and descriptions
         """
+
         def _get_examples():
             examples = registry.get_examples(name)
             if not examples:
                 metadata = registry.get(name)
                 if not metadata:
-                    return json.dumps({
-                        "error": f"Component '{name}' not found"
-                    })
-                return json.dumps({
-                    "component": name,
-                    "examples": []
-                })
+                    return json.dumps({"error": f"Component '{name}' not found"})
+                return json.dumps({"component": name, "examples": []})
 
-            return json.dumps({
-                "component": name,
-                "examples": examples
-            }, indent=2)
+            return json.dumps({"component": name, "examples": examples}, indent=2)
 
         return await asyncio.get_event_loop().run_in_executor(None, _get_examples)
 
@@ -244,17 +229,18 @@ def register_registry_tools(mcp, manager):
             docs = await pptx_export_registry_docs()
             # Returns complete documentation for all components
         """
+
         def _export():
             return registry.export_for_llm()
 
         return await asyncio.get_event_loop().run_in_executor(None, _export)
 
     # Store tools for return
-    tools['pptx_list_components'] = pptx_list_components
-    tools['pptx_get_component_schema'] = pptx_get_component_schema
-    tools['pptx_search_components'] = pptx_search_components
-    tools['pptx_get_component_variants'] = pptx_get_component_variants
-    tools['pptx_get_component_examples'] = pptx_get_component_examples
-    tools['pptx_export_registry_docs'] = pptx_export_registry_docs
+    tools["pptx_list_components"] = pptx_list_components
+    tools["pptx_get_component_schema"] = pptx_get_component_schema
+    tools["pptx_search_components"] = pptx_search_components
+    tools["pptx_get_component_variants"] = pptx_get_component_variants
+    tools["pptx_get_component_examples"] = pptx_get_component_examples
+    tools["pptx_export_registry_docs"] = pptx_export_registry_docs
 
     return tools

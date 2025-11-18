@@ -7,8 +7,8 @@ provide consistent chart styling across all chart types.
 Also contains legacy API functions for MCP tool compatibility.
 """
 
-from typing import List, Optional, Dict, Any, Tuple
-from pptx.chart.data import CategoryChartData, XyChartData, BubbleChartData
+from typing import List, Optional, Dict, Any
+from pptx.chart.data import CategoryChartData, XyChartData
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
@@ -21,8 +21,8 @@ def configure_legend(
     chart,
     position: str = "right",
     show: bool = True,
-    font_family: str = None,
-    font_size: int = None
+    font_family: Optional[str] = None,
+    font_size: Optional[int] = None,
 ):
     """
     Configure chart legend with consistent styling using design tokens.
@@ -55,7 +55,7 @@ def configure_legend(
         chart.legend.include_in_layout = False
 
         # Apply font styling
-        if hasattr(chart.legend, 'font'):
+        if hasattr(chart.legend, "font"):
             chart.legend.font.name = font_family
             chart.legend.font.size = Pt(font_size)
 
@@ -64,9 +64,9 @@ def configure_axes(
     chart,
     show_gridlines: bool = True,
     gridline_color: Optional[RGBColor] = None,
-    label_font_family: str = None,
-    label_font_size: int = None,
-    label_color: Optional[RGBColor] = None
+    label_font_family: Optional[str] = None,
+    label_font_size: Optional[int] = None,
+    label_color: Optional[RGBColor] = None,
 ):
     """
     Configure chart axes with consistent styling using design tokens.
@@ -87,7 +87,7 @@ def configure_axes(
 
     try:
         # Configure value axis
-        if hasattr(chart, 'value_axis'):
+        if hasattr(chart, "value_axis"):
             value_axis = chart.value_axis
             value_axis.has_major_gridlines = show_gridlines
 
@@ -96,16 +96,16 @@ def configure_axes(
                 value_axis.major_gridlines.format.line.width = Pt(0.5)
 
             # Format axis labels
-            if hasattr(value_axis, 'tick_labels'):
+            if hasattr(value_axis, "tick_labels"):
                 value_axis.tick_labels.font.name = label_font_family
                 value_axis.tick_labels.font.size = Pt(label_font_size)
                 if label_color:
                     value_axis.tick_labels.font.color.rgb = label_color
 
         # Configure category axis
-        if hasattr(chart, 'category_axis'):
+        if hasattr(chart, "category_axis"):
             cat_axis = chart.category_axis
-            if hasattr(cat_axis, 'tick_labels'):
+            if hasattr(cat_axis, "tick_labels"):
                 cat_axis.tick_labels.font.name = label_font_family
                 cat_axis.tick_labels.font.size = Pt(label_font_size)
                 if label_color:
@@ -118,10 +118,10 @@ def configure_axes(
 def set_chart_title(
     chart,
     title: str,
-    font_family: str = None,
-    font_size: int = None,
+    font_family: Optional[str] = None,
+    font_size: Optional[int] = None,
     font_color: Optional[RGBColor] = None,
-    bold: bool = True
+    bold: bool = True,
 ):
     """
     Set and style chart title consistently using design tokens.
@@ -165,10 +165,7 @@ def set_chart_title(
         chart_title.text_frame.word_wrap = False
 
 
-def apply_chart_colors(
-    chart,
-    colors: List[RGBColor]
-):
+def apply_chart_colors(chart, colors: List[RGBColor]):
     """
     Apply color palette to chart series.
 
@@ -200,15 +197,23 @@ CHART_TYPES = {
     "area": XL_CHART_TYPE.AREA,
     "area_stacked": XL_CHART_TYPE.AREA_STACKED,
     "scatter": XL_CHART_TYPE.XY_SCATTER,
-    "bubble": XL_CHART_TYPE.BUBBLE
+    "bubble": XL_CHART_TYPE.BUBBLE,
 }
 
 
-def add_chart(slide, chart_type: str, left: float, top: float,
-             width: float, height: float,
-             categories: List[str], series_data: Dict[str, List[float]],
-             title: str = None, has_legend: bool = True,
-             legend_position: str = "right") -> Any:
+def add_chart(
+    slide,
+    chart_type: str,
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    categories: List[str],
+    series_data: Dict[str, List[float]],
+    title: Optional[str] = None,
+    has_legend: bool = True,
+    legend_position: str = "right",
+) -> Any:
     """
     Add a chart to a slide (legacy API).
 
@@ -237,10 +242,7 @@ def add_chart(slide, chart_type: str, left: float, top: float,
         chart_data.add_series(series_name, values)
 
     chart_shape = slide.shapes.add_chart(
-        xl_chart_type,
-        Inches(left), Inches(top),
-        Inches(width), Inches(height),
-        chart_data
+        xl_chart_type, Inches(left), Inches(top), Inches(width), Inches(height), chart_data
     )
 
     chart = chart_shape.chart
@@ -252,17 +254,23 @@ def add_chart(slide, chart_type: str, left: float, top: float,
     configure_legend(
         chart,
         position=legend_position,
-        show=has_legend
+        show=has_legend,
         # Uses design token defaults: Inter font, 10pt
     )
 
     return chart_shape
 
 
-def add_scatter_chart(slide, left: float, top: float,
-                     width: float, height: float,
-                     series_data: List[Dict[str, Any]],
-                     title: str = None, has_legend: bool = True) -> Any:
+def add_scatter_chart(
+    slide,
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    series_data: List[Dict[str, Any]],
+    title: Optional[str] = None,
+    has_legend: bool = True,
+) -> Any:
     """
     Add a scatter plot to a slide (legacy API).
 
@@ -282,19 +290,21 @@ def add_scatter_chart(slide, left: float, top: float,
     chart_data = XyChartData()
 
     for series in series_data:
-        series_obj = chart_data.add_series(series.get('name', 'Series'))
+        series_obj = chart_data.add_series(series.get("name", "Series"))
 
-        x_values = series.get('x_values', [])
-        y_values = series.get('y_values', [])
+        x_values = series.get("x_values", [])
+        y_values = series.get("y_values", [])
 
         for x, y in zip(x_values, y_values):
             series_obj.add_data_point(x, y)
 
     chart_shape = slide.shapes.add_chart(
         XL_CHART_TYPE.XY_SCATTER,
-        Inches(left), Inches(top),
-        Inches(width), Inches(height),
-        chart_data
+        Inches(left),
+        Inches(top),
+        Inches(width),
+        Inches(height),
+        chart_data,
     )
 
     chart = chart_shape.chart
@@ -309,11 +319,18 @@ def add_scatter_chart(slide, left: float, top: float,
     return chart_shape
 
 
-def add_pie_chart(slide, left: float, top: float,
-                 width: float, height: float,
-                 categories: List[str], values: List[float],
-                 title: str = None, show_percentages: bool = True,
-                 explode_slice: int = None) -> Any:
+def add_pie_chart(
+    slide,
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    categories: List[str],
+    values: List[float],
+    title: Optional[str] = None,
+    show_percentages: bool = True,
+    explode_slice: Optional[int] = None,
+) -> Any:
     """
     Add a pie chart to a slide (legacy API).
 
@@ -334,13 +351,10 @@ def add_pie_chart(slide, left: float, top: float,
     """
     chart_data = CategoryChartData()
     chart_data.categories = categories
-    chart_data.add_series('', values)
+    chart_data.add_series("", values)
 
     chart_shape = slide.shapes.add_chart(
-        XL_CHART_TYPE.PIE,
-        Inches(left), Inches(top),
-        Inches(width), Inches(height),
-        chart_data
+        XL_CHART_TYPE.PIE, Inches(left), Inches(top), Inches(width), Inches(height), chart_data
     )
 
     chart = chart_shape.chart
@@ -363,10 +377,16 @@ def add_pie_chart(slide, left: float, top: float,
     return chart_shape
 
 
-def add_data_table(slide, left: float, top: float,
-                  width: float, height: float,
-                  headers: List[str], data: List[List[Any]],
-                  style: str = "medium") -> Any:
+def add_data_table(
+    slide,
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    headers: List[str],
+    data: List[List[Any]],
+    style: str = "medium",
+) -> Any:
     """
     Add a formatted data table to a slide (legacy API).
 
@@ -387,9 +407,7 @@ def add_data_table(slide, left: float, top: float,
     cols = len(headers)
 
     table_shape = slide.shapes.add_table(
-        rows, cols,
-        Inches(left), Inches(top),
-        Inches(width), Inches(height)
+        rows, cols, Inches(left), Inches(top), Inches(width), Inches(height)
     ).table
 
     # Set headers

@@ -5,16 +5,20 @@ Layout Helpers for PowerPoint MCP Server
 Provides utilities for ensuring proper positioning and sizing of elements
 within standard PowerPoint slide dimensions.
 """
-from typing import Tuple, Optional, List, Dict
-from pptx.util import Inches
+
+from typing import Tuple, List, Dict, Optional
 
 
 # Import boundary constants and utilities
 from .boundaries import (
-    SLIDE_WIDTH, SLIDE_HEIGHT,
-    SLIDE_WIDTH_4_3, SLIDE_HEIGHT_4_3,
-    MARGIN_TOP, MARGIN_BOTTOM, MARGIN_LEFT, MARGIN_RIGHT,
-    validate_boundaries, adjust_to_boundaries
+    SLIDE_WIDTH,
+    SLIDE_HEIGHT,
+    SLIDE_HEIGHT_4_3,
+    MARGIN_TOP,
+    MARGIN_BOTTOM,
+    MARGIN_LEFT,
+    MARGIN_RIGHT,
+    validate_boundaries,
 )
 
 # Content area (safe zone)
@@ -30,7 +34,7 @@ def validate_position(
     width: float,
     height: float,
     aspect_ratio: str = "16:9",
-    auto_adjust: bool = True
+    auto_adjust: bool = True,
 ) -> Tuple[float, float, float, float]:
     """
     Validate and optionally adjust position to ensure element fits within slide.
@@ -95,16 +99,16 @@ def validate_position(
 
 def calculate_grid_layout(
     num_items: int,
-    columns: int = None,
+    columns: Optional[int] = None,
     spacing: float = 0.2,
     container_left: float = CONTENT_LEFT,
     container_top: float = CONTENT_TOP,
     container_width: float = CONTENT_WIDTH,
-    container_height: float = CONTENT_HEIGHT
+    container_height: float = CONTENT_HEIGHT,
 ) -> List[Dict[str, float]]:
     """
     Calculate optimal grid layout for multiple items.
-    
+
     Args:
         num_items: Number of items to arrange
         columns: Number of columns (auto-calculated if None)
@@ -113,13 +117,13 @@ def calculate_grid_layout(
         container_top: Top position of container area
         container_width: Width of container area
         container_height: Height of container area
-        
+
     Returns:
         List of position dictionaries with 'left', 'top', 'width', 'height'
     """
     if num_items == 0:
         return []
-        
+
     # Auto-calculate columns if not specified
     if columns is None:
         if num_items <= 2:
@@ -130,63 +134,55 @@ def calculate_grid_layout(
             columns = 3
         else:
             columns = 4
-            
+
     # Calculate rows
     rows = (num_items + columns - 1) // columns
-    
+
     # Calculate item dimensions
     total_h_spacing = spacing * (columns - 1)
     total_v_spacing = spacing * (rows - 1)
-    
+
     item_width = (container_width - total_h_spacing) / columns
     item_height = (container_height - total_v_spacing) / rows
-    
+
     # Ensure minimum item size
     item_width = max(1.0, item_width)
     item_height = max(0.75, item_height)
-    
+
     positions = []
     for i in range(num_items):
         row = i // columns
         col = i % columns
-        
+
         left = container_left + col * (item_width + spacing)
         top = container_top + row * (item_height + spacing)
-        
+
         # Validate each position
         left, top, width, height = validate_position(left, top, item_width, item_height)
-        
-        positions.append({
-            'left': left,
-            'top': top, 
-            'width': width,
-            'height': height
-        })
-        
+
+        positions.append({"left": left, "top": top, "width": width, "height": height})
+
     return positions
 
 
 def get_logo_position(
-    position: str,
-    size: float = 1.0,
-    margin: float = 0.5,
-    aspect_ratio: str = "16:9"
+    position: str, size: float = 1.0, margin: float = 0.5, aspect_ratio: str = "16:9"
 ) -> Dict[str, float]:
     """
     Get standard logo position coordinates.
-    
+
     Args:
         position: Position name (e.g., "top-left", "bottom-right")
         size: Logo size in inches
         margin: Margin from edges in inches
         aspect_ratio: Slide aspect ratio
-        
+
     Returns:
         Dictionary with 'left', 'top', 'width', 'height'
     """
     slide_width = SLIDE_WIDTH
     slide_height = SLIDE_HEIGHT if aspect_ratio == "16:9" else SLIDE_HEIGHT_4_3
-    
+
     positions = {
         "top-left": (margin, margin),
         "top-center": ((slide_width - size) / 2, margin),
@@ -196,7 +192,7 @@ def get_logo_position(
         "center-right": (slide_width - size - margin, (slide_height - size) / 2),
         "bottom-left": (margin, slide_height - size - margin),
         "bottom-center": ((slide_width - size) / 2, slide_height - size - margin),
-        "bottom-right": (slide_width - size - margin, slide_height - size - margin)
+        "bottom-right": (slide_width - size - margin, slide_height - size - margin),
     }
 
     # Default to top-right for invalid positions
@@ -205,37 +201,26 @@ def get_logo_position(
     # Validate position
     left, top, width, height = validate_position(left, top, size, size, aspect_ratio)
 
-    return {
-        'left': left,
-        'top': top,
-        'width': width,
-        'height': height
-    }
+    return {"left": left, "top": top, "width": width, "height": height}
 
 
-def get_safe_content_area(
-    has_title: bool = True,
-    aspect_ratio: str = "16:9"
-) -> Dict[str, float]:
+def get_safe_content_area(has_title: bool = True, aspect_ratio: str = "16:9") -> Dict[str, float]:
     """
     Get the safe content area for placing elements.
-    
+
     Args:
         has_title: Whether the slide has a title
         aspect_ratio: Slide aspect ratio
-        
+
     Returns:
         Dictionary with 'left', 'top', 'width', 'height'
     """
     top_margin = MARGIN_TOP if has_title else 0.5
     slide_height = SLIDE_HEIGHT if aspect_ratio == "16:9" else SLIDE_HEIGHT_4_3
-    
+
     return {
-        'left': CONTENT_LEFT,
-        'top': top_margin,
-        'width': CONTENT_WIDTH,
-        'height': slide_height - top_margin - MARGIN_BOTTOM
+        "left": CONTENT_LEFT,
+        "top": top_margin,
+        "width": CONTENT_WIDTH,
+        "height": slide_height - top_margin - MARGIN_BOTTOM,
     }
-
-
-

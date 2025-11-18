@@ -2,13 +2,12 @@
 Tests for boundary validation and adjustment utilities.
 """
 
-import pytest
-from chuk_mcp_pptx.layout.helpers import (
+from chuk_mcp_pptx.layout import (
     validate_boundaries,
     adjust_to_boundaries,
     validate_position,
     SLIDE_WIDTH,
-    SLIDE_HEIGHT
+    SLIDE_HEIGHT,
 )
 
 
@@ -187,9 +186,7 @@ class TestEdgeCases:
         """Test floating point edge cases."""
         # Exactly at boundary with floating point
         is_valid, error = validate_boundaries(
-            0.0, 0.0,
-            SLIDE_WIDTH - 0.0000001,
-            SLIDE_HEIGHT - 0.0000001
+            0.0, 0.0, SLIDE_WIDTH - 0.0000001, SLIDE_HEIGHT - 0.0000001
         )
         assert is_valid is True
 
@@ -218,8 +215,14 @@ class TestOverlapDetection:
 
         # Elements side by side
         overlap = check_overlap(
-            left1=1.0, top1=2.0, width1=2.0, height1=1.0,
-            left2=3.5, top2=2.0, width2=2.0, height2=1.0
+            left1=1.0,
+            top1=2.0,
+            width1=2.0,
+            height1=1.0,
+            left2=3.5,
+            top2=2.0,
+            width2=2.0,
+            height2=1.0,
         )
         assert overlap is False
 
@@ -229,8 +232,14 @@ class TestOverlapDetection:
 
         # Elements overlap
         overlap = check_overlap(
-            left1=1.0, top1=2.0, width1=3.0, height1=2.0,
-            left2=2.0, top2=2.5, width2=2.0, height2=1.5
+            left1=1.0,
+            top1=2.0,
+            width1=3.0,
+            height1=2.0,
+            left2=2.0,
+            top2=2.5,
+            width2=2.0,
+            height2=1.5,
         )
         assert overlap is True
 
@@ -240,8 +249,14 @@ class TestOverlapDetection:
 
         # Elements exactly touching (edge to edge)
         overlap = check_overlap(
-            left1=1.0, top1=2.0, width1=2.0, height1=1.0,
-            left2=3.0, top2=2.0, width2=2.0, height2=1.0
+            left1=1.0,
+            top1=2.0,
+            width1=2.0,
+            height1=1.0,
+            left2=3.0,
+            top2=2.0,
+            width2=2.0,
+            height2=1.0,
         )
         # Note: Edge-to-edge touching is considered overlap (>=, not >)
         assert overlap is True
@@ -252,8 +267,14 @@ class TestOverlapDetection:
 
         # Small element inside larger one
         overlap = check_overlap(
-            left1=1.0, top1=1.0, width1=5.0, height1=4.0,  # Large
-            left2=2.0, top2=2.0, width2=1.0, height2=1.0   # Small inside
+            left1=1.0,
+            top1=1.0,
+            width1=5.0,
+            height1=4.0,  # Large
+            left2=2.0,
+            top2=2.0,
+            width2=1.0,
+            height2=1.0,  # Small inside
         )
         assert overlap is True
 
@@ -264,7 +285,11 @@ class TestAvailableSpace:
     def test_available_space_from_origin(self):
         """Test available space from top-left (accounts for margins)."""
         from chuk_mcp_pptx.layout.boundaries import (
-            get_available_space, SLIDE_WIDTH, SLIDE_HEIGHT, MARGIN_RIGHT, MARGIN_BOTTOM
+            get_available_space,
+            SLIDE_WIDTH,
+            SLIDE_HEIGHT,
+            MARGIN_RIGHT,
+            MARGIN_BOTTOM,
         )
 
         width_avail, height_avail = get_available_space(left=0, top=0)
@@ -276,7 +301,11 @@ class TestAvailableSpace:
     def test_available_space_from_position(self):
         """Test available space from a specific position."""
         from chuk_mcp_pptx.layout.boundaries import (
-            get_available_space, SLIDE_WIDTH, SLIDE_HEIGHT, MARGIN_RIGHT, MARGIN_BOTTOM
+            get_available_space,
+            SLIDE_WIDTH,
+            SLIDE_HEIGHT,
+            MARGIN_RIGHT,
+            MARGIN_BOTTOM,
         )
 
         left = 2.0
@@ -302,7 +331,11 @@ class TestAvailableSpace:
     def test_available_space_4_3_aspect_ratio(self):
         """Test available space with 4:3 aspect ratio."""
         from chuk_mcp_pptx.layout.boundaries import (
-            get_available_space, SLIDE_WIDTH_4_3, SLIDE_HEIGHT_4_3, MARGIN_RIGHT, MARGIN_BOTTOM
+            get_available_space,
+            SLIDE_WIDTH_4_3,
+            SLIDE_HEIGHT_4_3,
+            MARGIN_RIGHT,
+            MARGIN_BOTTOM,
         )
 
         width_avail, height_avail = get_available_space(left=0, top=0, aspect_ratio="4:3")

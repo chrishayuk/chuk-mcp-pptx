@@ -6,7 +6,8 @@ Shows all available themes with components, charts, and styling.
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pptx import Presentation
 from pptx.util import Inches
@@ -14,8 +15,8 @@ from pptx.util import Inches
 from chuk_mcp_pptx.components.core.card import Card, MetricCard
 from chuk_mcp_pptx.components.core.badge import Badge
 from chuk_mcp_pptx.components.core.button import Button
-from chuk_mcp_pptx.components.charts import ColumnChart, LineChart, PieChart
-from chuk_mcp_pptx.components.core import Container, Grid, Stack, Divider
+from chuk_mcp_pptx.components.charts import ColumnChart, PieChart
+from chuk_mcp_pptx.components.core import Container, Grid, Stack
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 
 
@@ -33,7 +34,9 @@ def create_theme_overview_slide(prs, theme, is_first=False):
         title_shape = slide.shapes.title
         if title_shape:
             title_shape.text = f"{theme.name.title()} Theme"
-            title_shape.text_frame.paragraphs[0].font.color.rgb = theme.get_color("foreground.DEFAULT")
+            title_shape.text_frame.paragraphs[0].font.color.rgb = theme.get_color(
+                "foreground.DEFAULT"
+            )
 
     # Theme info card
     container = Container(size="md", padding="md", center=True)
@@ -41,8 +44,12 @@ def create_theme_overview_slide(prs, theme, is_first=False):
 
     card = Card(variant="elevated", theme=theme.__dict__)
     card.add_child(Card.Title(f"{theme.name.title()}"))
-    card.add_child(Card.Description(f"Mode: {theme.mode} | Primary: {theme.primary_hue} | Font: {theme.font_family}"))
-    card.render(slide, left=bounds['left'], top=bounds['top'], width=bounds['width'])
+    card.add_child(
+        Card.Description(
+            f"Mode: {theme.mode} | Primary: {theme.primary_hue} | Font: {theme.font_family}"
+        )
+    )
+    card.render(slide, left=bounds["left"], top=bounds["top"], width=bounds["width"])
 
 
 def create_theme_components_slide(prs, theme):
@@ -73,7 +80,7 @@ def create_theme_components_slide(prs, theme):
     for text, variant, col_start in badges:
         pos = grid.get_cell(col_span=2, col_start=col_start, row_start=0)
         Badge(text=text, variant=variant, theme=theme.__dict__).render(
-            slide, left=pos['left'] + 0.1, top=pos['top'] + 0.1
+            slide, left=pos["left"] + 0.1, top=pos["top"] + 0.1
         )
 
     # Buttons
@@ -86,11 +93,12 @@ def create_theme_components_slide(prs, theme):
 
     stack = Stack(direction="horizontal", gap="md", align="start")
     stack.render_children(
-        slide, buttons,
-        left=bounds['left'],
-        top=bounds['top'] + 1.0,
+        slide,
+        buttons,
+        left=bounds["left"],
+        top=bounds["top"] + 1.0,
         item_width=2.0,
-        item_height=0.4
+        item_height=0.4,
     )
 
     # Cards
@@ -134,11 +142,7 @@ def create_theme_dashboard_slide(prs, theme):
     for label, value, change, trend, col_start in metrics:
         pos = grid.get_cell(col_span=4, col_start=col_start, row_start=0)
         MetricCard(
-            label=label,
-            value=value,
-            change=change,
-            trend=trend,
-            theme=theme.__dict__
+            label=label, value=value, change=change, trend=trend, theme=theme.__dict__
         ).render(slide, **pos)
 
     # Main content card
@@ -170,12 +174,9 @@ async def create_theme_charts_slide(prs, theme):
     # Column Chart
     column_chart = ColumnChart(
         categories=["Q1", "Q2", "Q3", "Q4"],
-        series={
-            "Sales": [100, 120, 140, 160],
-            "Profit": [20, 25, 30, 35]
-        },
+        series={"Sales": [100, 120, 140, 160], "Profit": [20, 25, 30, 35]},
         title="Quarterly Performance",
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     await column_chart.render(slide, left=0.5, top=2.0, width=4.5, height=3.5)
 
@@ -184,7 +185,7 @@ async def create_theme_charts_slide(prs, theme):
         categories=["Product A", "Product B", "Product C"],
         values=[45, 30, 25],
         title="Market Share",
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     await pie_chart.render(slide, left=5.2, top=2.0, width=4.0, height=3.5)
 
@@ -195,8 +196,13 @@ def create_theme_comparison_slide(prs, theme_manager):
 
     # Get all themes
     all_themes = [
-        "dark", "dark-blue", "dark-violet", "dark-green",
-        "light", "corporate", "light-warm"
+        "dark",
+        "dark-blue",
+        "dark-violet",
+        "dark-green",
+        "light",
+        "corporate",
+        "light-warm",
     ]
 
     slide = prs.slides.add_slide(prs.slide_layouts[5])
@@ -207,7 +213,9 @@ def create_theme_comparison_slide(prs, theme_manager):
     title_shape = slide.shapes.title
     if title_shape:
         title_shape.text = "All Available Themes"
-        title_shape.text_frame.paragraphs[0].font.color.rgb = main_theme.get_color("foreground.DEFAULT")
+        title_shape.text_frame.paragraphs[0].font.color.rgb = main_theme.get_color(
+            "foreground.DEFAULT"
+        )
 
     # Grid layout for theme cards
     container = Container(size="lg", padding="sm", center=True)
@@ -240,10 +248,10 @@ async def main():
     # Featured themes to showcase in detail (diverse visual variety)
     featured_themes = [
         "dark-violet",  # Modern, vibrant purple
-        "dark-blue",    # Professional blue
-        "dark-green",   # Nature, calming green
-        "light",        # Clean, minimal light
-        "corporate",    # Business, professional light
+        "dark-blue",  # Professional blue
+        "dark-green",  # Nature, calming green
+        "light",  # Clean, minimal light
+        "corporate",  # Business, professional light
     ]
 
     for theme_name in featured_themes:
@@ -256,7 +264,7 @@ async def main():
         theme = theme_manager.get_theme(theme_name)
 
         # Create slides for this theme
-        is_first = (theme_name == featured_themes[0])
+        is_first = theme_name == featured_themes[0]
         create_theme_overview_slide(prs, theme, is_first=is_first)
         create_theme_components_slide(prs, theme)
         create_theme_dashboard_slide(prs, theme)
@@ -272,7 +280,7 @@ async def main():
         print(f"      Slides: {len(prs.slides)} | Theme: {theme.name}")
 
     # Create comprehensive comparison presentation
-    print(f"\n📊 Creating comprehensive themes comparison...")
+    print("\n📊 Creating comprehensive themes comparison...")
     prs = Presentation()
     prs.slide_width = Inches(10)
     prs.slide_height = Inches(7.5)
@@ -280,7 +288,15 @@ async def main():
     create_theme_comparison_slide(prs, theme_manager)
 
     # Add detailed slides for each theme
-    all_themes = ["dark", "dark-blue", "dark-violet", "dark-green", "light", "corporate", "light-warm"]
+    all_themes = [
+        "dark",
+        "dark-blue",
+        "dark-violet",
+        "dark-green",
+        "light",
+        "corporate",
+        "light-warm",
+    ]
 
     for theme_name in all_themes:
         theme = theme_manager.get_theme(theme_name)
@@ -305,4 +321,5 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())

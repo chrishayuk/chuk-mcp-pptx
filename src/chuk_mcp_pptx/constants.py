@@ -4,8 +4,12 @@ Constants and Enums for PowerPoint MCP Server
 All magic strings, numbers, and configuration values are defined here.
 Uses Literal types and Enums for type safety.
 """
-from enum import Enum, IntEnum
+
+from enum import IntEnum
 from typing import Literal
+
+from .tokens.spacing import LINE_WIDTHS, SHADOWS
+from .tokens.colors import PALETTE, UTILITY_COLORS
 
 
 # Slide Layout Indices (python-pptx defaults)
@@ -102,6 +106,193 @@ ComponentType = Literal[
 ]
 
 
+# Chat Message Variants
+MessageVariant = Literal["sent", "received", "user", "assistant", "system"]
+
+
+# Chat Platform Types
+ChatPlatform = Literal[
+    "android",
+    "ios",
+    "chatgpt",
+    "slack",
+    "teams",
+    "whatsapp",
+    "facebook",
+    "msn",
+    "aol",
+    "generic",
+]
+
+
+# Browser Types
+BrowserType = Literal["chrome", "safari", "firefox"]
+
+
+# Container Platform Types
+ContainerPlatform = Literal["iphone", "samsung", "windows", "macos", "generic"]
+
+
+# Device Variants
+DeviceVariant = Literal["pro", "pro-max", "standard"]
+
+
+# Code Language Types
+CodeLanguage = Literal[
+    "python",
+    "javascript",
+    "typescript",
+    "java",
+    "csharp",
+    "cpp",
+    "go",
+    "rust",
+    "ruby",
+    "php",
+    "swift",
+    "kotlin",
+    "sql",
+    "html",
+    "css",
+    "shell",
+    "yaml",
+    "json",
+    "text",
+]
+
+
+# Text Alignment Types
+TextAlignment = Literal["left", "center", "right", "justify"]
+
+
+# Theme Mode
+ThemeMode = Literal["light", "dark"]
+
+
+# Theme Mode Constants
+class Theme:
+    """Theme mode constants to avoid hardcoded strings."""
+
+    LIGHT = "light"
+    DARK = "dark"
+
+
+# Platform Name Constants
+class Platform:
+    """Platform name constants to avoid hardcoded strings."""
+
+    # Chat Platforms
+    IOS = "ios"
+    ANDROID = "android"
+    WHATSAPP = "whatsapp"
+    CHATGPT = "chatgpt"
+    SLACK = "slack"
+    TEAMS = "teams"
+    FACEBOOK = "facebook"
+    MSN = "msn"
+    AOL = "aol"
+    GENERIC = "generic"
+
+    # OS Platforms
+    MACOS = "macos"
+    WINDOWS = "windows"
+
+    # Browser Platforms
+    CHROME = "chrome"
+    SAFARI = "safari"
+    FIREFOX = "firefox"
+
+    # Device Platforms
+    IPHONE = "iphone"
+    SAMSUNG = "samsung"
+
+
+# Color/Element Key Constants
+class ColorKey:
+    """Dictionary key constants for platform colors to avoid hardcoded strings."""
+
+    # Message variants
+    SENT = "sent"
+    RECEIVED = "received"
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+
+    # Text colors
+    TEXT = "text"
+    TEXT_SENT = "text_sent"
+    TEXT_RECEIVED = "text_received"
+    SECONDARY_TEXT = "secondary_text"
+
+    # Links and interactive elements
+    LINK = "link"
+
+    # UI elements
+    AVATAR = "avatar"
+    TIMESTAMP = "timestamp"
+    BORDER = "border"
+
+    # Brand/theme specific colors
+    PURPLE = "purple"
+    TITLEBAR = "titlebar"
+    TOOLBAR = "toolbar"
+    CONTENT_BG = "content_bg"
+    MENUBAR = "menubar"
+    ADDRESSBAR = "addressbar"
+    PLACEHOLDER = "placeholder"
+    HEADER_BG = "header_bg"
+    HEADER_TEXT = "header_text"
+    TITLEBAR_BG = "titlebar_bg"
+
+
+# Component Sizing Constants
+# NOTE: These now reference the design token system
+# For new code, import directly from tokens.spacing instead
+
+
+class ComponentSizing:
+    """Component sizing constants for width/height calculations - using design tokens."""
+
+    # Character width estimations (in inches) for text sizing
+    CHAR_WIDTH_SM = 0.06
+    CHAR_WIDTH_MD = 0.07
+    CHAR_WIDTH_LG = 0.08
+
+    # Base widths for button components
+    BUTTON_BASE_WIDTH_SM = 1.5
+    BUTTON_BASE_WIDTH_MD = 2.0
+    BUTTON_BASE_WIDTH_LG = 2.5
+
+    # Badge component sizing
+    BADGE_CHAR_WIDTH = 0.08
+    BADGE_PADDING = 0.5
+
+    # Card component line heights
+    LINE_HEIGHT_INCHES = 0.35
+    PARAGRAPH_GAP = 0.08
+    TITLE_GAP = 0.22
+
+    # UI element sizing (in points) - from design tokens
+    BORDER_WIDTH_THIN = LINE_WIDTHS["thin"]
+    BORDER_WIDTH_MEDIUM = LINE_WIDTHS["normal"]
+    BORDER_WIDTH_THICK = LINE_WIDTHS["thick"]
+
+    # Shadow properties (in points) - from design tokens
+    # Type ignore: we know these specific keys return dicts, not None
+    SHADOW_BLUR_SM = SHADOWS["sm"]["blur"]  # type: ignore[index]
+    SHADOW_BLUR_MD = SHADOWS["md"]["blur"]  # type: ignore[index]
+    SHADOW_BLUR_LG = SHADOWS["lg"]["blur"]  # type: ignore[index]
+    SHADOW_DISTANCE_SM = SHADOWS["sm"]["offset_y"]  # type: ignore[index]
+    SHADOW_DISTANCE_MD = SHADOWS["md"]["offset_y"]  # type: ignore[index]
+    SHADOW_DISTANCE_LG = SHADOWS["lg"]["offset_y"]  # type: ignore[index]
+
+    # Spacing (in points) - use FONT_SIZES for consistency
+    SPACE_XS = 2
+    SPACE_SM = 3
+    SPACE_MD = 4
+    SPACE_LG = 6
+
+
 # Theme Names
 ThemeName = Literal[
     "default",
@@ -191,15 +382,26 @@ class Spacing:
 
 
 # Color Constants (RGB tuples)
-class Colors:
-    """Common color constants."""
+# NOTE: These now reference the design token system
+# For new code, import directly from tokens.colors instead
 
-    PRIMARY_BLUE = (0, 112, 192)
-    ACCENT_ORANGE = (255, 127, 0)
-    SUCCESS_GREEN = (84, 130, 53)
-    WARNING_YELLOW = (255, 192, 0)
-    ERROR_RED = (192, 0, 0)
-    NEUTRAL_GRAY = (127, 127, 127)
+
+def _hex_to_rgb(hex_str: str) -> tuple[int, int, int]:
+    """Convert hex color to RGB tuple."""
+    hex_str = hex_str.lstrip("#")
+    rgb = tuple(int(hex_str[i : i + 2], 16) for i in (0, 2, 4))
+    return rgb  # type: ignore[return-value]
+
+
+class Colors:
+    """Common color constants - using design tokens."""
+
+    PRIMARY_BLUE = _hex_to_rgb(PALETTE["blue"][600])  # type: ignore[index]
+    ACCENT_ORANGE = _hex_to_rgb(PALETTE["orange"][500])  # type: ignore[index]
+    SUCCESS_GREEN = _hex_to_rgb(UTILITY_COLORS["status"]["success"])  # type: ignore[index]
+    WARNING_YELLOW = _hex_to_rgb(UTILITY_COLORS["status"]["warning"])  # type: ignore[index]
+    ERROR_RED = _hex_to_rgb(UTILITY_COLORS["status"]["error"])  # type: ignore[index]
+    NEUTRAL_GRAY = _hex_to_rgb(PALETTE["zinc"][500])  # type: ignore[index]
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
 

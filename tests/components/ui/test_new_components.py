@@ -2,9 +2,6 @@
 Tests for new PowerPoint-specific components: ProgressBar, Icon, Timeline, Tile, Avatar, Chat.
 """
 
-import pytest
-from unittest.mock import MagicMock
-
 from chuk_mcp_pptx.components.core.progress import ProgressBar
 from chuk_mcp_pptx.components.core.icon import Icon, IconList, ICON_SYMBOLS
 from chuk_mcp_pptx.components.core.timeline import Timeline
@@ -121,11 +118,7 @@ class TestIconList:
 
     def test_render(self, mock_slide, dark_theme):
         """Test rendering."""
-        items = [
-            ("check", "Feature 1"),
-            ("rocket", "Feature 2"),
-            ("star", "Feature 3")
-        ]
+        items = [("check", "Feature 1"), ("rocket", "Feature 2"), ("star", "Feature 3")]
         icon_list = IconList(items, variant="success", theme=dark_theme)
         shapes = icon_list.render(mock_slide, left=1, top=2, width=5)
         assert isinstance(shapes, list)
@@ -138,10 +131,7 @@ class TestTimeline:
 
     def test_init(self, dark_theme):
         """Test initialization."""
-        events = [
-            {"date": "Q1", "title": "Start"},
-            {"date": "Q2", "title": "Build"}
-        ]
+        events = [{"date": "Q1", "title": "Start"}, {"date": "Q2", "title": "Build"}]
         timeline = Timeline(events, theme=dark_theme)
         assert timeline.events == events
 
@@ -165,9 +155,9 @@ class TestTimeline:
         """Test highlighted events."""
         events = [
             {"date": "Q1", "title": "Plan"},
-            {"date": "Q2", "title": "Launch", "highlight": True}
+            {"date": "Q2", "title": "Launch", "highlight": True},
         ]
-        timeline = Timeline(events, theme=dark_theme)
+        Timeline(events, theme=dark_theme)
         assert events[1]["highlight"] is True
 
     def test_render_empty(self, mock_slide, dark_theme):
@@ -181,7 +171,7 @@ class TestTimeline:
         events = [
             {"date": "Jan", "title": "Start"},
             {"date": "Feb", "title": "Mid"},
-            {"date": "Mar", "title": "End"}
+            {"date": "Mar", "title": "End"},
         ]
         timeline = Timeline(events, style="arrow", theme=dark_theme)
         shapes = timeline.render(mock_slide, left=1, top=2, width=8)
@@ -243,7 +233,9 @@ class TestIconTile:
 
     def test_render(self, mock_slide, dark_theme):
         """Test rendering."""
-        tile = IconTile("check", label="Done", variant="filled", color_variant="success", theme=dark_theme)
+        tile = IconTile(
+            "check", label="Done", variant="filled", color_variant="success", theme=dark_theme
+        )
         shape = tile.render(mock_slide, left=1, top=2)
         assert shape is not None
 
@@ -317,12 +309,7 @@ class TestAvatarWithLabel:
 
     def test_init(self, dark_theme):
         """Test initialization."""
-        avatar = AvatarWithLabel(
-            text="JD",
-            label="John Doe",
-            sublabel="Designer",
-            theme=dark_theme
-        )
+        avatar = AvatarWithLabel(text="JD", label="John Doe", sublabel="Designer", theme=dark_theme)
         assert avatar.text == "JD"
         assert avatar.label == "John Doe"
         assert avatar.sublabel == "Designer"
@@ -330,11 +317,15 @@ class TestAvatarWithLabel:
     def test_orientations(self, dark_theme):
         """Test orientations."""
         # Horizontal
-        h_avatar = AvatarWithLabel(text="JD", label="John", orientation="horizontal", theme=dark_theme)
+        h_avatar = AvatarWithLabel(
+            text="JD", label="John", orientation="horizontal", theme=dark_theme
+        )
         assert h_avatar.orientation == "horizontal"
 
         # Vertical
-        v_avatar = AvatarWithLabel(text="JD", label="John", orientation="vertical", theme=dark_theme)
+        v_avatar = AvatarWithLabel(
+            text="JD", label="John", orientation="vertical", theme=dark_theme
+        )
         assert v_avatar.orientation == "vertical"
 
     def test_render(self, mock_slide, dark_theme):
@@ -344,7 +335,7 @@ class TestAvatarWithLabel:
             label="John Doe",
             sublabel="Product Designer",
             variant="filled",
-            theme=dark_theme
+            theme=dark_theme,
         )
         shapes = avatar.render(mock_slide, left=1, top=2, width=3)
         assert isinstance(shapes, list)
@@ -356,11 +347,7 @@ class TestAvatarGroup:
 
     def test_init(self, dark_theme):
         """Test initialization."""
-        members = [
-            {"text": "JD"},
-            {"text": "AS"},
-            {"text": "BM"}
-        ]
+        members = [{"text": "JD"}, {"text": "AS"}, {"text": "BM"}]
         group = AvatarGroup(members, theme=dark_theme)
         assert group.members == members
 
@@ -381,7 +368,7 @@ class TestAvatarGroup:
         members = [
             {"text": "JD", "color_variant": "primary"},
             {"text": "AS", "color_variant": "success"},
-            {"text": "BM", "color_variant": "warning"}
+            {"text": "BM", "color_variant": "warning"},
         ]
         group = AvatarGroup(members, theme=dark_theme)
         shapes = group.render(mock_slide, left=1, top=2)
@@ -413,23 +400,13 @@ class TestChatMessage:
 
     def test_with_sender(self, dark_theme):
         """Test message with sender."""
-        msg = ChatMessage(
-            text="Hello!",
-            sender="John Doe",
-            timestamp="10:30 AM",
-            theme=dark_theme
-        )
+        msg = ChatMessage(text="Hello!", sender="John Doe", timestamp="10:30 AM", theme=dark_theme)
         assert msg.sender == "John Doe"
         assert msg.timestamp == "10:30 AM"
 
     def test_with_avatar(self, dark_theme):
         """Test message with avatar."""
-        msg = ChatMessage(
-            text="Hi there!",
-            avatar_text="JD",
-            show_avatar=True,
-            theme=dark_theme
-        )
+        msg = ChatMessage(text="Hi there!", avatar_text="JD", show_avatar=True, theme=dark_theme)
         assert msg.avatar_text == "JD"
         assert msg.show_avatar is True
 
@@ -441,7 +418,7 @@ class TestChatMessage:
             avatar_text="SA",
             variant="received",
             show_avatar=True,
-            theme=dark_theme
+            theme=dark_theme,
         )
         shapes = msg.render(mock_slide, left=1, top=2, width=6)
         assert len(shapes) >= 1  # Bubble + avatar
@@ -449,21 +426,14 @@ class TestChatMessage:
     def test_render_sent(self, mock_slide, dark_theme):
         """Test rendering sent message."""
         msg = ChatMessage(
-            text="I need help",
-            variant="sent",
-            timestamp="10:30 AM",
-            theme=dark_theme
+            text="I need help", variant="sent", timestamp="10:30 AM", theme=dark_theme
         )
         shapes = msg.render(mock_slide, left=1, top=2, width=6)
         assert len(shapes) >= 1
 
     def test_render_system(self, mock_slide, dark_theme):
         """Test rendering system message."""
-        msg = ChatMessage(
-            text="John Doe joined the chat",
-            variant="system",
-            theme=dark_theme
-        )
+        msg = ChatMessage(text="John Doe joined the chat", variant="system", theme=dark_theme)
         shapes = msg.render(mock_slide, left=1, top=2, width=6)
         assert len(shapes) >= 1
 
@@ -474,7 +444,7 @@ class TestChatMessage:
 
         long_msg = ChatMessage(
             text="This is a much longer message that should result in a taller bubble because it will wrap across multiple lines in the text frame.",
-            theme=dark_theme
+            theme=dark_theme,
         )
         long_height = long_msg._calculate_bubble_height(4.0)
 
@@ -488,7 +458,7 @@ class TestChatConversation:
         """Test initialization."""
         messages = [
             {"text": "Hello!", "variant": "sent"},
-            {"text": "Hi there!", "variant": "received"}
+            {"text": "Hi there!", "variant": "received"},
         ]
         conversation = ChatConversation(messages, theme=dark_theme)
         assert conversation.messages == messages
@@ -502,24 +472,20 @@ class TestChatConversation:
     def test_render(self, mock_slide, dark_theme):
         """Test rendering conversation."""
         messages = [
-            {
-                "text": "Hi! I need help",
-                "variant": "sent",
-                "timestamp": "10:30 AM"
-            },
+            {"text": "Hi! I need help", "variant": "sent", "timestamp": "10:30 AM"},
             {
                 "text": "Hello! How can I assist you?",
                 "sender": "Support",
                 "avatar_text": "SA",
                 "variant": "received",
                 "show_avatar": True,
-                "timestamp": "10:31 AM"
+                "timestamp": "10:31 AM",
             },
             {
                 "text": "I have a question about my order",
                 "variant": "sent",
-                "timestamp": "10:32 AM"
-            }
+                "timestamp": "10:32 AM",
+            },
         ]
         conversation = ChatConversation(messages, theme=dark_theme)
         shapes = conversation.render(mock_slide, left=1, top=2, width=7)
@@ -543,7 +509,7 @@ class TestComponentIntegration:
             avatar_text="AS",
             variant="received",
             show_avatar=True,
-            theme=dark_theme
+            theme=dark_theme,
         )
         shapes = msg.render(mock_slide, left=1, top=2, width=6)
         # Should include avatar shape

@@ -6,23 +6,40 @@ Shows all variants, sizes, composition patterns, and real-world usage examples.
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pptx import Presentation
 from pptx.util import Inches
 
 from chuk_mcp_pptx.components.core import (
-    Button, IconButton, ButtonGroup,
-    Badge, DotBadge, CountBadge,
-    Alert, Card, MetricCard,
-    ProgressBar, Icon, IconList, Timeline,
-    Tile, IconTile, ValueTile,
-    Avatar, AvatarWithLabel, AvatarGroup,
-    Shape, Connector,
-    ProcessFlow, CycleDiagram, HierarchyDiagram,
+    Button,
+    IconButton,
+    ButtonGroup,
+    Badge,
+    DotBadge,
+    CountBadge,
+    Alert,
+    Card,
+    MetricCard,
+    ProgressBar,
+    Icon,
+    IconList,
+    Timeline,
+    IconTile,
+    ValueTile,
+    Avatar,
+    AvatarWithLabel,
+    AvatarGroup,
+    Shape,
+    Connector,
+    ProcessFlow,
+    CycleDiagram,
+    HierarchyDiagram,
     Image,
-    TextBox, BulletList,
-    Table
+    TextBox,
+    BulletList,
+    Table,
 )
 from chuk_mcp_pptx.components.core import Container, Grid, Stack
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
@@ -83,7 +100,7 @@ def create_button_showcase(prs, theme):
     # Button groups
     buttons_config = [
         {"text": "Save", "variant": "default", "size": "md"},
-        {"text": "Cancel", "variant": "ghost", "size": "md"}
+        {"text": "Cancel", "variant": "ghost", "size": "md"},
     ]
     group = ButtonGroup(buttons=buttons_config, orientation="horizontal", spacing=0.2, theme=theme)
     group.render(slide, left=0.5, top=5.8)
@@ -276,9 +293,9 @@ def create_progress_icon_timeline_showcase(prs, theme):
     theme.apply_to_slide(slide)
 
     # Progress bars
-    ProgressBar(value=75, label="Project Progress", show_percentage=True, variant="success", theme=theme).render(
-        slide, left=0.5, top=1.9, width=4.0
-    )
+    ProgressBar(
+        value=75, label="Project Progress", show_percentage=True, variant="success", theme=theme
+    ).render(slide, left=0.5, top=1.9, width=4.0)
 
     ProgressBar(value=60, segments=10, style="segmented", label="Milestones", theme=theme).render(
         slide, left=0.5, top=2.8, width=4.0
@@ -295,7 +312,7 @@ def create_progress_icon_timeline_showcase(prs, theme):
     features = [
         ("check", "Fast & Reliable"),
         ("check", "Easy to Use"),
-        ("rocket", "High Performance")
+        ("rocket", "High Performance"),
     ]
     IconList(features, variant="success", icon_size="sm", theme=theme).render(
         slide, left=5.0, top=2.8, width=4.0
@@ -305,11 +322,9 @@ def create_progress_icon_timeline_showcase(prs, theme):
     events = [
         {"date": "Q1", "title": "Plan"},
         {"date": "Q2", "title": "Build"},
-        {"date": "Q3", "title": "Launch", "highlight": True}
+        {"date": "Q3", "title": "Launch", "highlight": True},
     ]
-    Timeline(events, style="arrow", theme=theme).render(
-        slide, left=0.5, top=4.5, width=8.5
-    )
+    Timeline(events, style="arrow", theme=theme).render(slide, left=0.5, top=4.5, width=8.5)
 
 
 def create_tile_avatar_showcase(prs, theme):
@@ -358,7 +373,7 @@ def create_tile_avatar_showcase(prs, theme):
         variant="filled",
         color_variant="primary",
         orientation="horizontal",
-        theme=theme
+        theme=theme,
     )
     avatar_label.render(slide, left=0.5, top=5.5, width=3.5)
 
@@ -368,7 +383,7 @@ def create_tile_avatar_showcase(prs, theme):
         {"text": "AS", "color_variant": "success"},
         {"text": "BM", "color_variant": "warning"},
         {"text": "KL", "color_variant": "destructive"},
-        {"text": "MN", "color_variant": "default"}
+        {"text": "MN", "color_variant": "default"},
     ]
     group = AvatarGroup(members, max_display=3, overlap=True, size="sm", theme=theme)
     group.render(slide, left=5.0, top=5.6)
@@ -394,7 +409,7 @@ def create_combined_dashboard(prs, theme):
     # Action buttons using Stack
     buttons = [
         Button(text="Refresh", variant="outline", size="sm", theme=theme),
-        Button(text="Export", variant="ghost", size="sm", theme=theme)
+        Button(text="Export", variant="ghost", size="sm", theme=theme),
     ]
     stack = Stack(direction="horizontal", gap="sm")
     stack.render_children(slide, buttons, left=0.5, top=1.8, item_width=1.2, item_height=0.4)
@@ -412,7 +427,9 @@ def create_combined_dashboard(prs, theme):
 
     for label, value, change, trend, col_start in metrics:
         pos = grid.get_cell(col_span=4, col_start=col_start)
-        MetricCard(label=label, value=value, change=change, trend=trend, theme=theme).render(slide, **pos)
+        MetricCard(label=label, value=value, change=change, trend=trend, theme=theme).render(
+            slide, **pos
+        )
 
     # Alert notification
     alert = Alert(variant="info", theme=theme)
@@ -454,16 +471,18 @@ def create_shapes_showcase(prs, theme):
         ("cloud", "Cloud", 7.3, 3.8),
     ]
 
-    colors = ["primary.DEFAULT", "success.DEFAULT", "warning.DEFAULT", "destructive.DEFAULT", "accent.DEFAULT"]
+    colors = [
+        "primary.DEFAULT",
+        "success.DEFAULT",
+        "warning.DEFAULT",
+        "destructive.DEFAULT",
+        "accent.DEFAULT",
+    ]
 
     for idx, (shape_type, label, left, top) in enumerate(shapes_demo):
         fill_color = colors[idx % len(colors)]
         shape = Shape(
-            shape_type=shape_type,
-            text=label,
-            fill_color=fill_color,
-            line_width=0,
-            theme=theme
+            shape_type=shape_type, text=label, fill_color=fill_color, line_width=0, theme=theme
         )
         shape.render(slide, left=left, top=top, width=1.5, height=1.5)
 
@@ -483,49 +502,63 @@ def create_connectors_showcase(prs, theme):
     theme.apply_to_slide(slide)
 
     # Create shapes to connect
-    shape1 = Shape(shape_type="rounded_rectangle", text="Start",
-                   fill_color="primary.DEFAULT", theme=theme)
+    shape1 = Shape(
+        shape_type="rounded_rectangle", text="Start", fill_color="primary.DEFAULT", theme=theme
+    )
     shape1.render(slide, left=1.5, top=2, width=2, height=1)
 
-    shape2 = Shape(shape_type="rounded_rectangle", text="Process",
-                   fill_color="secondary.DEFAULT", theme=theme)
+    shape2 = Shape(
+        shape_type="rounded_rectangle", text="Process", fill_color="secondary.DEFAULT", theme=theme
+    )
     shape2.render(slide, left=4.5, top=2, width=2, height=1)
 
-    shape3 = Shape(shape_type="rounded_rectangle", text="End",
-                   fill_color="success.DEFAULT", theme=theme)
+    shape3 = Shape(
+        shape_type="rounded_rectangle", text="End", fill_color="success.DEFAULT", theme=theme
+    )
     shape3.render(slide, left=7.5, top=2, width=2, height=1)
 
     # Connectors
-    Connector(3.5, 2.5, 4.5, 2.5, "straight", "primary.DEFAULT", 3,
-              arrow_end=True, theme=theme).render(slide)
-    Connector(6.5, 2.5, 7.5, 2.5, "straight", "primary.DEFAULT", 3,
-              arrow_end=True, theme=theme).render(slide)
+    Connector(
+        3.5, 2.5, 4.5, 2.5, "straight", "primary.DEFAULT", 3, arrow_end=True, theme=theme
+    ).render(slide)
+    Connector(
+        6.5, 2.5, 7.5, 2.5, "straight", "primary.DEFAULT", 3, arrow_end=True, theme=theme
+    ).render(slide)
 
     # Show connector types
     y = 4.5
     # Straight
-    Shape(shape_type="oval", text="A", fill_color="accent.DEFAULT",
-          theme=theme).render(slide, 1, y, 0.8, 0.8)
-    Shape(shape_type="oval", text="B", fill_color="accent.DEFAULT",
-          theme=theme).render(slide, 2.5, y, 0.8, 0.8)
-    Connector(1.8, y+0.4, 2.5, y+0.4, "straight", "muted.foreground", 2,
-              arrow_end=True, theme=theme).render(slide)
+    Shape(shape_type="oval", text="A", fill_color="accent.DEFAULT", theme=theme).render(
+        slide, 1, y, 0.8, 0.8
+    )
+    Shape(shape_type="oval", text="B", fill_color="accent.DEFAULT", theme=theme).render(
+        slide, 2.5, y, 0.8, 0.8
+    )
+    Connector(
+        1.8, y + 0.4, 2.5, y + 0.4, "straight", "muted.foreground", 2, arrow_end=True, theme=theme
+    ).render(slide)
 
     # Elbow
-    Shape(shape_type="oval", text="C", fill_color="warning.DEFAULT",
-          theme=theme).render(slide, 4, y, 0.8, 0.8)
-    Shape(shape_type="oval", text="D", fill_color="warning.DEFAULT",
-          theme=theme).render(slide, 5.5, y+1, 0.8, 0.8)
-    Connector(4.8, y+0.4, 5.5, y+1.4, "elbow", "muted.foreground", 2,
-              arrow_end=True, theme=theme).render(slide)
+    Shape(shape_type="oval", text="C", fill_color="warning.DEFAULT", theme=theme).render(
+        slide, 4, y, 0.8, 0.8
+    )
+    Shape(shape_type="oval", text="D", fill_color="warning.DEFAULT", theme=theme).render(
+        slide, 5.5, y + 1, 0.8, 0.8
+    )
+    Connector(
+        4.8, y + 0.4, 5.5, y + 1.4, "elbow", "muted.foreground", 2, arrow_end=True, theme=theme
+    ).render(slide)
 
     # Curved
-    Shape(shape_type="oval", text="E", fill_color="destructive.DEFAULT",
-          theme=theme).render(slide, 7, y, 0.8, 0.8)
-    Shape(shape_type="oval", text="F", fill_color="destructive.DEFAULT",
-          theme=theme).render(slide, 8.5, y+1, 0.8, 0.8)
-    Connector(7.8, y+0.4, 8.5, y+1.4, "curved", "muted.foreground", 2,
-              arrow_end=True, theme=theme).render(slide)
+    Shape(shape_type="oval", text="E", fill_color="destructive.DEFAULT", theme=theme).render(
+        slide, 7, y, 0.8, 0.8
+    )
+    Shape(shape_type="oval", text="F", fill_color="destructive.DEFAULT", theme=theme).render(
+        slide, 8.5, y + 1, 0.8, 0.8
+    )
+    Connector(
+        7.8, y + 0.4, 8.5, y + 1.4, "curved", "muted.foreground", 2, arrow_end=True, theme=theme
+    ).render(slide)
 
 
 def create_smartart_showcase(prs, theme):
@@ -543,18 +576,15 @@ def create_smartart_showcase(prs, theme):
     theme.apply_to_slide(slide)
 
     # ProcessFlow
-    process = ProcessFlow(items=["Plan", "Design", "Build", "Test"],
-                         theme=theme)
+    process = ProcessFlow(items=["Plan", "Design", "Build", "Test"], theme=theme)
     process.render(slide, left=0.5, top=1.8, width=9, height=1.3)
 
     # CycleDiagram
-    cycle = CycleDiagram(items=["Plan", "Do", "Check", "Act"],
-                        theme=theme)
+    cycle = CycleDiagram(items=["Plan", "Do", "Check", "Act"], theme=theme)
     cycle.render(slide, left=0.5, top=3.5, width=4, height=3.5)
 
     # HierarchyDiagram
-    hierarchy = HierarchyDiagram(items=["CEO", "CTO", "CFO", "COO"],
-                                theme=theme)
+    hierarchy = HierarchyDiagram(items=["CEO", "CTO", "CFO", "COO"], theme=theme)
     hierarchy.render(slide, left=5, top=3.5, width=4.5, height=3.5)
 
 
@@ -578,34 +608,34 @@ def create_table_showcase(prs, theme):
         data=[
             ["Laptops", "$100K", "$120K", "$110K"],
             ["Phones", "$80K", "$90K", "$95K"],
-            ["Tablets", "$60K", "$65K", "$70K"]
+            ["Tablets", "$60K", "$65K", "$70K"],
         ],
         variant="default",
         size="sm",
-        theme=theme
+        theme=theme,
     )
     table1.render(slide, left=0.5, top=1.8, width=4.5, height=2.2)
 
     # Label for default table
-    label1 = TextBox(text="Default Variant", font_size=10, bold=True, alignment="center", theme=theme)
+    label1 = TextBox(
+        text="Default Variant", font_size=10, bold=True, alignment="center", theme=theme
+    )
     label1.render(slide, left=0.5, top=1.6, width=4.5, height=0.3)
 
     # Bordered table - Top right
     table2 = Table(
         headers=["Feature", "Basic", "Pro"],
-        data=[
-            ["Storage", "10GB", "100GB"],
-            ["Users", "1", "10"],
-            ["Support", "Email", "24/7"]
-        ],
+        data=[["Storage", "10GB", "100GB"], ["Users", "1", "10"], ["Support", "Email", "24/7"]],
         variant="bordered",
         size="sm",
-        theme=theme
+        theme=theme,
     )
     table2.render(slide, left=5.5, top=1.8, width=4.0, height=2.2)
 
     # Label for bordered table
-    label2 = TextBox(text="Bordered Variant", font_size=10, bold=True, alignment="center", theme=theme)
+    label2 = TextBox(
+        text="Bordered Variant", font_size=10, bold=True, alignment="center", theme=theme
+    )
     label2.render(slide, left=5.5, top=1.6, width=4.0, height=0.3)
 
     # Striped table - Bottom left
@@ -615,34 +645,34 @@ def create_table_showcase(prs, theme):
             ["January", "$50K", "$30K", "$20K"],
             ["February", "$55K", "$32K", "$23K"],
             ["March", "$60K", "$35K", "$25K"],
-            ["April", "$65K", "$38K", "$27K"]
+            ["April", "$65K", "$38K", "$27K"],
         ],
         variant="striped",
         size="md",
-        theme=theme
+        theme=theme,
     )
     table3.render(slide, left=0.5, top=4.5, width=4.5, height=2.5)
 
     # Label for striped table
-    label3 = TextBox(text="Striped Variant", font_size=10, bold=True, alignment="center", theme=theme)
+    label3 = TextBox(
+        text="Striped Variant", font_size=10, bold=True, alignment="center", theme=theme
+    )
     label3.render(slide, left=0.5, top=4.3, width=4.5, height=0.3)
 
     # Minimal table - Bottom right
     table4 = Table(
         headers=["Name", "Score"],
-        data=[
-            ["Alice", "95"],
-            ["Bob", "87"],
-            ["Charlie", "92"]
-        ],
+        data=[["Alice", "95"], ["Bob", "87"], ["Charlie", "92"]],
         variant="minimal",
         size="lg",
-        theme=theme
+        theme=theme,
     )
     table4.render(slide, left=5.5, top=4.5, width=4.0, height=2.5)
 
     # Label for minimal table
-    label4 = TextBox(text="Minimal Variant", font_size=10, bold=True, alignment="center", theme=theme)
+    label4 = TextBox(
+        text="Minimal Variant", font_size=10, bold=True, alignment="center", theme=theme
+    )
     label4.render(slide, left=5.5, top=4.3, width=4.0, height=0.3)
 
 
@@ -661,11 +691,7 @@ def create_text_showcase(prs, theme):
     theme.apply_to_slide(slide)
 
     # TextBox examples - Row 1
-    text1 = TextBox(
-        text="Simple Text Box",
-        font_size=18,
-        theme=theme
-    )
+    text1 = TextBox(text="Simple Text Box", font_size=18, theme=theme)
     text1.render(slide, left=0.5, top=1.8, width=4, height=0.8)
 
     text2 = TextBox(
@@ -674,33 +700,20 @@ def create_text_showcase(prs, theme):
         bold=True,
         alignment="center",
         color="primary.DEFAULT",
-        theme=theme
+        theme=theme,
     )
     text2.render(slide, left=5, top=1.8, width=4, height=0.8)
 
     # TextBox with different styles - Row 2
-    text3 = TextBox(
-        text="Left Aligned",
-        alignment="left",
-        color="secondary.DEFAULT",
-        theme=theme
-    )
+    text3 = TextBox(text="Left Aligned", alignment="left", color="secondary.DEFAULT", theme=theme)
     text3.render(slide, left=0.5, top=2.8, width=2.8, height=0.6)
 
     text4 = TextBox(
-        text="Right Aligned",
-        alignment="right",
-        italic=True,
-        color="accent.DEFAULT",
-        theme=theme
+        text="Right Aligned", alignment="right", italic=True, color="accent.DEFAULT", theme=theme
     )
     text4.render(slide, left=3.5, top=2.8, width=2.8, height=0.6)
 
-    text5 = TextBox(
-        text="Justified Text Example",
-        alignment="justify",
-        theme=theme
-    )
+    text5 = TextBox(text="Justified Text Example", alignment="justify", theme=theme)
     text5.render(slide, left=6.5, top=2.8, width=3, height=0.6)
 
     # BulletList examples
@@ -708,7 +721,7 @@ def create_text_showcase(prs, theme):
         items=["Revenue Growth", "Cost Reduction", "Market Expansion"],
         font_size=16,
         color="primary.DEFAULT",
-        theme=theme
+        theme=theme,
     )
     bullets1.render(slide, left=0.5, top=4, width=4, height=2.5)
 
@@ -717,7 +730,7 @@ def create_text_showcase(prs, theme):
         bullet_char="→",
         font_size=16,
         color="secondary.DEFAULT",
-        theme=theme
+        theme=theme,
     )
     bullets2.render(slide, left=5, top=4, width=4, height=2.5)
 
@@ -735,16 +748,16 @@ def create_images_showcase(prs, theme):
         # Create different colored sample images
         colors = [
             (255, 107, 107),  # Red
-            (78, 205, 196),   # Cyan
+            (78, 205, 196),  # Cyan
             (255, 195, 113),  # Orange
-            (99, 110, 250),   # Blue
+            (99, 110, 250),  # Blue
         ]
 
         for i, color in enumerate(colors):
             # Create image
-            img = PILImage.new('RGB', (400, 300), color=color)
+            img = PILImage.new("RGB", (400, 300), color=color)
             # Save to temp file
-            temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+            temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
             img.save(temp_file.name)
             temp_images.append(temp_file.name)
             temp_file.close()
@@ -758,10 +771,7 @@ def create_images_showcase(prs, theme):
         img_full.render(slide1, left=0, top=0, width=10, height=7.5)
 
         # Overlay title
-        title_box = slide1.shapes.add_textbox(
-            Inches(0.5), Inches(3),
-            Inches(9), Inches(1.5)
-        )
+        title_box = slide1.shapes.add_textbox(Inches(0.5), Inches(3), Inches(9), Inches(1.5))
         text_frame = title_box.text_frame
         text_frame.text = "Full-Bleed Hero Image"
         p = text_frame.paragraphs[0]
@@ -782,17 +792,17 @@ def create_images_showcase(prs, theme):
 
         # 2x2 Grid
         positions = [
-            (0.5, 1.8, 4.5, 2.5),    # Top-left
-            (5.2, 1.8, 4.5, 2.5),    # Top-right
-            (0.5, 4.6, 4.5, 2.5),    # Bottom-left
-            (5.2, 4.6, 4.5, 2.5),    # Bottom-right
+            (0.5, 1.8, 4.5, 2.5),  # Top-left
+            (5.2, 1.8, 4.5, 2.5),  # Top-right
+            (0.5, 4.6, 4.5, 2.5),  # Bottom-left
+            (5.2, 4.6, 4.5, 2.5),  # Bottom-right
         ]
 
         for idx, (left, top, width, height) in enumerate(positions):
             img = Image(
                 image_source=temp_images[idx % len(temp_images)],
                 shadow=idx % 2 == 0,  # Alternate shadow
-                theme=theme
+                theme=theme,
             )
             img.render(slide2, left=left, top=top, width=width, height=height)
 
@@ -808,20 +818,12 @@ def create_images_showcase(prs, theme):
         theme.apply_to_slide(slide3)
 
         # Large image with shadow
-        img_large = Image(
-            image_source=temp_images[0],
-            shadow=True,
-            theme=theme
-        )
+        img_large = Image(image_source=temp_images[0], shadow=True, theme=theme)
         img_large.render(slide3, left=0.5, top=1.8, width=6, height=4)
 
         # Small images stacked vertically (no shadow)
         for i in range(3):
-            img_small = Image(
-                image_source=temp_images[i + 1],
-                shadow=False,
-                theme=theme
-            )
+            img_small = Image(image_source=temp_images[i + 1], shadow=False, theme=theme)
             img_small.render(slide3, left=7, top=1.8 + i * 1.7, width=2.5, height=1.4)
 
         # Slide 4: Aspect Ratio Variations
@@ -859,15 +861,16 @@ def create_images_showcase(prs, theme):
         theme.apply_to_slide(slide5)
 
         # Create a sample photo for filter demos (using a gradient-like pattern)
-        sample_img = PILImage.new('RGB', (400, 300), color=(255, 107, 107))
+        sample_img = PILImage.new("RGB", (400, 300), color=(255, 107, 107))
         # Add some visual interest with colored rectangles
         from PIL import ImageDraw
+
         draw = ImageDraw.Draw(sample_img)
         draw.rectangle([50, 50, 150, 150], fill=(78, 205, 196))
         draw.rectangle([200, 100, 350, 250], fill=(255, 195, 113))
         draw.ellipse([120, 150, 280, 280], fill=(99, 110, 250))
 
-        sample_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+        sample_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
         sample_img.save(sample_file.name)
         sample_file.close()
         temp_images.append(sample_file.name)
@@ -899,7 +902,12 @@ def create_images_showcase(prs, theme):
             ("Sharpen", {"sharpen": True}, col_positions[0], row_positions[2]),
             ("Invert", {"invert": True}, col_positions[1], row_positions[2]),
             ("Desaturate", {"saturation": 0.3}, col_positions[2], row_positions[2]),
-            ("Combined", {"blur_radius": 3, "brightness": 1.2, "saturation": 1.5}, col_positions[3], row_positions[2]),
+            (
+                "Combined",
+                {"blur_radius": 3, "brightness": 1.2, "saturation": 1.5},
+                col_positions[3],
+                row_positions[2],
+            ),
         ]
 
         filter_demos = filter_demos_row1 + filter_demos_row2 + filter_demos_row3
@@ -911,8 +919,7 @@ def create_images_showcase(prs, theme):
 
             # Add label
             label_box = slide5.shapes.add_textbox(
-                Inches(left), Inches(top),
-                Inches(2.0), Inches(0.25)
+                Inches(left), Inches(top), Inches(2.0), Inches(0.25)
             )
             text_frame = label_box.text_frame
             text_frame.text = label
@@ -924,10 +931,11 @@ def create_images_showcase(prs, theme):
     finally:
         # Cleanup temp images
         import os
+
         for temp_path in temp_images:
             try:
                 os.unlink(temp_path)
-            except:
+            except OSError:
                 pass
 
 
@@ -956,34 +964,26 @@ def create_text_with_grid_showcase(prs, theme):
         bold=True,
         alignment="center",
         color="primary.DEFAULT",
-        theme=theme
+        theme=theme,
     )
     header.render(slide, **pos_header)
 
     # Row 2: Two columns (6 + 6) - bullet lists side by side
     pos_left = grid.get_span(col_span=6, col_start=0, left=0.5, top=2.8, width=9.0, height=2.2)
     bullets_left = BulletList(
-        items=[
-            "Revenue Growth: +15%",
-            "Customer Acquisition: 2.5K",
-            "Market Share: 23%"
-        ],
+        items=["Revenue Growth: +15%", "Customer Acquisition: 2.5K", "Market Share: 23%"],
         color="primary.DEFAULT",
         bullet_char="→",
-        theme=theme
+        theme=theme,
     )
     bullets_left.render(slide, **pos_left)
 
     pos_right = grid.get_span(col_span=6, col_start=6, left=0.5, top=2.8, width=9.0, height=2.2)
     bullets_right = BulletList(
-        items=[
-            "Q1 Performance Strong",
-            "New Product Launch",
-            "Team Expansion Plan"
-        ],
+        items=["Q1 Performance Strong", "New Product Launch", "Team Expansion Plan"],
         color="secondary.DEFAULT",
         bullet_char="•",
-        theme=theme
+        theme=theme,
     )
     bullets_right.render(slide, **pos_right)
 
@@ -991,17 +991,15 @@ def create_text_with_grid_showcase(prs, theme):
     text_items = [
         ("Left Column", "left", 0),
         ("Center Column", "center", 4),
-        ("Right Column", "right", 8)
+        ("Right Column", "right", 8),
     ]
 
     for text, align, col_start in text_items:
-        pos = grid.get_span(col_span=4, col_start=col_start, left=0.5, top=5.2, width=9.0, height=1.0)
+        pos = grid.get_span(
+            col_span=4, col_start=col_start, left=0.5, top=5.2, width=9.0, height=1.0
+        )
         text_box = TextBox(
-            text=text,
-            alignment=align,
-            color="primary.DEFAULT",
-            font_size=16,
-            theme=theme
+            text=text, alignment=align, color="primary.DEFAULT", font_size=16, theme=theme
         )
         text_box.render(slide, **pos)
 
@@ -1023,13 +1021,7 @@ def create_text_with_stack_showcase(prs, theme):
     # Left side: Vertical stack of text boxes
     text_boxes = []
     for i, text in enumerate(["Introduction", "Analysis", "Recommendations", "Conclusion"]):
-        text_box = TextBox(
-            text=text,
-            font_size=18,
-            bold=True,
-            color="primary.DEFAULT",
-            theme=theme
-        )
+        text_box = TextBox(text=text, font_size=18, bold=True, color="primary.DEFAULT", theme=theme)
         text_boxes.append(text_box)
 
     v_stack = Stack(direction="vertical", gap="md", align="start")
@@ -1038,19 +1030,11 @@ def create_text_with_stack_showcase(prs, theme):
     # Right side: Horizontal stack of bullet lists
     # Create multiple small bullet lists
     bullet_lists = []
-    data_sets = [
-        ["Q1", "Q2", "Q3"],
-        ["Jan", "Feb", "Mar"],
-        ["NY", "LA", "SF"]
-    ]
+    data_sets = [["Q1", "Q2", "Q3"], ["Jan", "Feb", "Mar"], ["NY", "LA", "SF"]]
 
     for items in data_sets:
         bullets = BulletList(
-            items=items,
-            font_size=14,
-            bullet_char="→",
-            color="secondary.DEFAULT",
-            theme=theme
+            items=items, font_size=14, bullet_char="→", color="secondary.DEFAULT", theme=theme
         )
         bullet_lists.append(bullets)
 
@@ -1071,16 +1055,16 @@ def create_images_with_grid_showcase(prs, theme):
         # Create different colored sample images
         colors = [
             (255, 107, 107),  # Red
-            (78, 205, 196),   # Cyan
+            (78, 205, 196),  # Cyan
             (255, 195, 113),  # Orange
-            (99, 110, 250),   # Blue
+            (99, 110, 250),  # Blue
             (186, 104, 200),  # Purple
-            (72, 219, 251),   # Light Blue
+            (72, 219, 251),  # Light Blue
         ]
 
         for color in colors:
-            img = PILImage.new('RGB', (400, 300), color=color)
-            temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+            img = PILImage.new("RGB", (400, 300), color=color)
+            temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
             img.save(temp_file.name)
             temp_images.append(temp_file.name)
             temp_file.close()
@@ -1101,39 +1085,36 @@ def create_images_with_grid_showcase(prs, theme):
 
         # Row 1: Two large images (6 + 6 columns)
         for i in range(2):
-            pos = grid.get_span(col_span=6, col_start=i*6, left=0.5, top=1.8, width=9.0, height=2.0)
-            img = Image(
-                image_source=temp_images[i],
-                shadow=True,
-                theme=theme
+            pos = grid.get_span(
+                col_span=6, col_start=i * 6, left=0.5, top=1.8, width=9.0, height=2.0
             )
+            img = Image(image_source=temp_images[i], shadow=True, theme=theme)
             img.render(slide, **pos)
 
         # Row 2: Four small images (3 + 3 + 3 + 3 columns)
         for i in range(4):
-            pos = grid.get_span(col_span=3, col_start=i*3, left=0.5, top=4.0, width=9.0, height=1.8)
+            pos = grid.get_span(
+                col_span=3, col_start=i * 3, left=0.5, top=4.0, width=9.0, height=1.8
+            )
             # Apply different filters to showcase variety
             filters = [
                 {"grayscale": True},
                 {"sepia": True},
                 {"brightness": 1.3},
-                {"blur_radius": 5}
+                {"blur_radius": 5},
             ][i]
 
-            img = Image(
-                image_source=temp_images[i+2],
-                **filters,
-                theme=theme
-            )
+            img = Image(image_source=temp_images[i + 2], **filters, theme=theme)
             img.render(slide, **pos)
 
     finally:
         # Cleanup temp images
         import os
+
         for temp_path in temp_images:
             try:
                 os.unlink(temp_path)
-            except:
+            except OSError:
                 pass
 
 
@@ -1149,15 +1130,15 @@ def create_images_with_stack_showcase(prs, theme):
     try:
         # Create different colored sample images
         colors = [
-            (255, 159, 64),   # Orange
-            (75, 192, 192),   # Teal
+            (255, 159, 64),  # Orange
+            (75, 192, 192),  # Teal
             (153, 102, 255),  # Purple
-            (255, 99, 132),   # Pink
+            (255, 99, 132),  # Pink
         ]
 
         for color in colors:
-            img = PILImage.new('RGB', (400, 300), color=color)
-            temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+            img = PILImage.new("RGB", (400, 300), color=color)
+            temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
             img.save(temp_file.name)
             temp_images.append(temp_file.name)
             temp_file.close()
@@ -1176,11 +1157,7 @@ def create_images_with_stack_showcase(prs, theme):
         # Vertical stack of images on left
         v_images = []
         for i in range(3):
-            img = Image(
-                image_source=temp_images[i],
-                shadow=True,
-                theme=theme
-            )
+            img = Image(image_source=temp_images[i], shadow=True, theme=theme)
             v_images.append(img)
 
         v_stack = Stack(direction="vertical", gap="sm", align="start")
@@ -1195,11 +1172,7 @@ def create_images_with_stack_showcase(prs, theme):
         ]
 
         for i, filters in enumerate(filters_list):
-            img = Image(
-                image_source=temp_images[i],
-                **filters,
-                theme=theme
-            )
+            img = Image(image_source=temp_images[i], **filters, theme=theme)
             h_images.append(img)
 
         h_stack = Stack(direction="horizontal", gap="sm", align="start")
@@ -1208,10 +1181,11 @@ def create_images_with_stack_showcase(prs, theme):
     finally:
         # Cleanup temp images
         import os
+
         for temp_path in temp_images:
             try:
                 os.unlink(temp_path)
-            except:
+            except OSError:
                 pass
 
 

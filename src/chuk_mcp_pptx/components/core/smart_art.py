@@ -6,9 +6,6 @@ Provides professional diagrams like process flows, cycles, hierarchies, etc.
 """
 
 from typing import List, Optional, Dict, Any
-from pptx.util import Inches, Pt
-from pptx.enum.shapes import MSO_SHAPE
-from pptx.dml.color import RGBColor
 import math
 
 from ..base import Component
@@ -20,9 +17,7 @@ from .connector import Connector
 class SmartArtBase(Component):
     """Base class for SmartArt-like diagram components."""
 
-    def __init__(self,
-                 items: List[str],
-                 theme: Optional[Dict[str, Any]] = None):
+    def __init__(self, items: List[str], theme: Optional[Dict[str, Any]] = None):
         """
         Initialize SmartArt component.
 
@@ -59,10 +54,10 @@ class SmartArtBase(Component):
 process = ProcessFlow(items=["Research", "Design", "Develop", "Test", "Deploy"])
 process.render(slide, left=1, top=2, width=8, height=2)
             """,
-            items=["Research", "Design", "Develop"]
+            items=["Research", "Design", "Develop"],
         ),
     ],
-    tags=["smartart", "process", "flow", "diagram"]
+    tags=["smartart", "process", "flow", "diagram"],
 )
 class ProcessFlow(SmartArtBase):
     """
@@ -75,8 +70,7 @@ class ProcessFlow(SmartArtBase):
         process.render(slide, left=1, top=2, width=8, height=2)
     """
 
-    def render(self, slide, left: float, top: float,
-               width: float, height: float) -> List[Any]:
+    def render(self, slide, left: float, top: float, width: float, height: float) -> List[Any]:
         """Render process flow diagram."""
         shapes = []
         num_items = len(self.items)
@@ -105,10 +99,7 @@ class ProcessFlow(SmartArtBase):
             fill_color = self._get_color(idx, "alternating")
 
             shape_comp = Shape(
-                shape_type=shape_type,
-                text=item,
-                fill_color=fill_color,
-                theme=self.theme
+                shape_type=shape_type, text=item, fill_color=fill_color, theme=self.theme
             )
             shape = shape_comp.render(slide, x, top, item_width, height * 0.8)
             shapes.append(shape)
@@ -134,10 +125,10 @@ class ProcessFlow(SmartArtBase):
 cycle = CycleDiagram(items=["Plan", "Do", "Check", "Act"])
 cycle.render(slide, left=1, top=1, width=6, height=5)
             """,
-            items=["Plan", "Do", "Check", "Act"]
+            items=["Plan", "Do", "Check", "Act"],
         ),
     ],
-    tags=["smartart", "cycle", "circular", "diagram"]
+    tags=["smartart", "cycle", "circular", "diagram"],
 )
 class CycleDiagram(SmartArtBase):
     """
@@ -150,8 +141,7 @@ class CycleDiagram(SmartArtBase):
         cycle.render(slide, left=1, top=1, width=6, height=5)
     """
 
-    def render(self, slide, left: float, top: float,
-               width: float, height: float) -> List[Any]:
+    def render(self, slide, left: float, top: float, width: float, height: float) -> List[Any]:
         """Render cycle diagram."""
         shapes = []
         num_items = len(self.items)
@@ -184,10 +174,7 @@ class CycleDiagram(SmartArtBase):
             fill_color = self._get_color(idx, "alternating")
 
             shape_comp = Shape(
-                shape_type="rounded_rectangle",
-                text=item,
-                fill_color=fill_color,
-                theme=self.theme
+                shape_type="rounded_rectangle", text=item, fill_color=fill_color, theme=self.theme
             )
             shape = shape_comp.render(slide, x, y, shape_width, shape_height)
             shapes.append(shape)
@@ -225,7 +212,7 @@ class CycleDiagram(SmartArtBase):
                     connector_type="curved",
                     line_color="muted.foreground",
                     arrow_end=True,
-                    theme=self.theme
+                    theme=self.theme,
                 )
                 connector = connector_comp.render(slide)
                 shapes.append(connector)
@@ -251,10 +238,10 @@ class CycleDiagram(SmartArtBase):
 hierarchy = HierarchyDiagram(items=["CEO", "CTO", "CFO", "COO"])
 hierarchy.render(slide, left=1, top=1, width=8, height=3)
             """,
-            items=["CEO", "CTO", "CFO"]
+            items=["CEO", "CTO", "CFO"],
         ),
     ],
-    tags=["smartart", "hierarchy", "org", "chart", "diagram"]
+    tags=["smartart", "hierarchy", "org", "chart", "diagram"],
 )
 class HierarchyDiagram(SmartArtBase):
     """
@@ -267,8 +254,7 @@ class HierarchyDiagram(SmartArtBase):
         hierarchy.render(slide, left=1, top=1, width=8, height=3)
     """
 
-    def render(self, slide, left: float, top: float,
-               width: float, height: float) -> List[Any]:
+    def render(self, slide, left: float, top: float, width: float, height: float) -> List[Any]:
         """Render hierarchy diagram."""
         shapes = []
 
@@ -283,7 +269,7 @@ class HierarchyDiagram(SmartArtBase):
             shape_type="rounded_rectangle",
             text=self.items[0],
             fill_color="primary.DEFAULT",
-            theme=self.theme
+            theme=self.theme,
         )
         root_shape = root_shape_comp.render(slide, top_x, top_y, 3.0, 0.8)
         shapes.append(root_shape)
@@ -305,7 +291,7 @@ class HierarchyDiagram(SmartArtBase):
                     shape_type="rectangle",
                     text=item,
                     fill_color="secondary.DEFAULT",
-                    theme=self.theme
+                    theme=self.theme,
                 )
                 child_shape = child_shape_comp.render(slide, x, y, item_width, 0.8)
                 shapes.append(child_shape)
@@ -319,7 +305,7 @@ class HierarchyDiagram(SmartArtBase):
                     connector_type="straight",
                     line_color="border.DEFAULT",
                     arrow_end=True,
-                    theme=self.theme
+                    theme=self.theme,
                 )
                 connector = connector_comp.render(slide)
                 shapes.append(connector)

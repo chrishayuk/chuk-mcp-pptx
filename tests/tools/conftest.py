@@ -7,13 +7,11 @@ Updated for Pydantic-native architecture with VFS integration.
 import pytest
 import sys
 import os
-from unittest.mock import MagicMock, AsyncMock, Mock
-from pptx import Presentation
-from pptx.slide import Slide
+from unittest.mock import MagicMock
 from chuk_virtual_fs import AsyncVirtualFileSystem
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 from chuk_mcp_pptx.presentation_manager import PresentationManager
 
@@ -42,7 +40,7 @@ async def presentation_manager_for_tools(vfs_for_tools):
     manager = PresentationManager(vfs=vfs_for_tools, base_path="test_presentations")
 
     # Create a test presentation with 3 slides
-    metadata = await manager.create(name="test_presentation", theme=None)
+    await manager.create(name="test_presentation", theme=None)
 
     # Add 3 slides to the presentation
     result = await manager.get(name="test_presentation")
@@ -72,7 +70,6 @@ def registered_tools(mock_mcp_server, mock_presentation_manager):
 @pytest.fixture
 async def async_run():
     """Helper to run async functions in tests."""
-    import asyncio
 
     async def runner(coro):
         return await coro

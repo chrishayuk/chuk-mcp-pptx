@@ -12,14 +12,13 @@ Shows various chat UI scenarios:
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pptx import Presentation
 from pptx.util import Inches
 
 from chuk_mcp_pptx.components.chat import ChatMessage, ChatConversation
-from chuk_mcp_pptx.components.core.avatar import Avatar, AvatarWithLabel
-from chuk_mcp_pptx.components.core.card import Card
 from chuk_mcp_pptx.themes.theme_manager import ThemeManager
 
 
@@ -41,7 +40,7 @@ def create_basic_messages_slide(prs, theme):
         sender="Support Agent",
         timestamp="10:30 AM",
         variant="received",
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     received.render(slide, left=0.5, top=2.0, width=7.0)
 
@@ -50,15 +49,13 @@ def create_basic_messages_slide(prs, theme):
         text="I need help with my account settings",
         timestamp="10:31 AM",
         variant="sent",
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     sent.render(slide, left=0.5, top=3.3, width=7.0)
 
     # System message (centered)
     system = ChatMessage(
-        text="Support Agent joined the conversation",
-        variant="system",
-        theme=theme.__dict__
+        text="Support Agent joined the conversation", variant="system", theme=theme.__dict__
     )
     system.render(slide, left=0.5, top=4.5, width=7.0)
 
@@ -83,7 +80,7 @@ def create_avatar_messages_slide(prs, theme):
         timestamp="2:15 PM",
         variant="received",
         show_avatar=True,
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     msg1.render(slide, left=0.5, top=2.0, width=7.0)
 
@@ -92,7 +89,7 @@ def create_avatar_messages_slide(prs, theme):
         text="Great! I have a question about billing.",
         timestamp="2:16 PM",
         variant="sent",
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     msg2.render(slide, left=0.5, top=3.5, width=7.0)
 
@@ -104,7 +101,7 @@ def create_avatar_messages_slide(prs, theme):
         timestamp="2:17 PM",
         variant="received",
         show_avatar=True,
-        theme=theme.__dict__
+        theme=theme.__dict__,
     )
     msg3.render(slide, left=0.5, top=4.7, width=7.0)
 
@@ -127,12 +124,12 @@ def create_customer_support_conversation(prs, theme):
             "text": "Welcome to TechSupport! How can we assist you?",
             "sender": "Bot",
             "avatar_icon": "user",
-            "variant": "system"
+            "variant": "system",
         },
         {
             "text": "Hi, I'm having trouble logging into my account",
             "timestamp": "3:45 PM",
-            "variant": "sent"
+            "variant": "sent",
         },
         {
             "text": "I'm sorry to hear that. Let me help you with that. Can you tell me your email address?",
@@ -140,26 +137,18 @@ def create_customer_support_conversation(prs, theme):
             "avatar_text": "AS",
             "timestamp": "3:46 PM",
             "variant": "received",
-            "show_avatar": True
+            "show_avatar": True,
         },
-        {
-            "text": "Sure, it's john.doe@email.com",
-            "timestamp": "3:47 PM",
-            "variant": "sent"
-        },
+        {"text": "Sure, it's john.doe@email.com", "timestamp": "3:47 PM", "variant": "sent"},
         {
             "text": "Thank you! I've found your account. I'm sending a password reset link to your email now.",
             "sender": "Alex (Support)",
             "avatar_text": "AS",
             "timestamp": "3:48 PM",
             "variant": "received",
-            "show_avatar": True
+            "show_avatar": True,
         },
-        {
-            "text": "Perfect, I received it. Thank you!",
-            "timestamp": "3:50 PM",
-            "variant": "sent"
-        }
+        {"text": "Perfect, I received it. Thank you!", "timestamp": "3:50 PM", "variant": "sent"},
     ]
 
     # Reduce spacing and adjust positioning to fit within slide boundaries
@@ -187,7 +176,7 @@ def create_team_messaging_conversation(prs, theme):
             "avatar_text": "SM",
             "timestamp": "10:00 AM",
             "variant": "received",
-            "show_avatar": True
+            "show_avatar": True,
         },
         {
             "text": "Going well! Just finished the API integration.",
@@ -195,7 +184,7 @@ def create_team_messaging_conversation(prs, theme):
             "avatar_text": "JD",
             "timestamp": "10:02 AM",
             "variant": "received",
-            "show_avatar": True
+            "show_avatar": True,
         },
         {
             "text": "Great work! I'm starting on the UI components now.",
@@ -203,7 +192,7 @@ def create_team_messaging_conversation(prs, theme):
             "avatar_text": "AS",
             "timestamp": "10:03 AM",
             "variant": "received",
-            "show_avatar": True
+            "show_avatar": True,
         },
         {
             "text": "Awesome team! Let's sync up at 2pm to review.",
@@ -211,8 +200,8 @@ def create_team_messaging_conversation(prs, theme):
             "avatar_text": "SM",
             "timestamp": "10:05 AM",
             "variant": "received",
-            "show_avatar": True
-        }
+            "show_avatar": True,
+        },
     ]
 
     conversation = ChatConversation(messages, spacing=0.2, theme=theme.__dict__)
@@ -236,34 +225,26 @@ def create_product_demo_conversation(prs, theme):
             "text": "Welcome! I'm your AI assistant. Ask me anything!",
             "sender": "AI Assistant",
             "avatar_icon": "lightbulb",
-            "variant": "system"
+            "variant": "system",
         },
-        {
-            "text": "Can you help me analyze my sales data?",
-            "timestamp": "Now",
-            "variant": "sent"
-        },
+        {"text": "Can you help me analyze my sales data?", "timestamp": "Now", "variant": "sent"},
         {
             "text": "Of course! I can analyze your sales trends, identify top products, and provide insights. What would you like to know?",
             "sender": "AI Assistant",
             "avatar_icon": "lightbulb",
             "timestamp": "Now",
             "variant": "received",
-            "show_avatar": True
+            "show_avatar": True,
         },
-        {
-            "text": "Show me top 5 products from last month",
-            "timestamp": "Now",
-            "variant": "sent"
-        },
+        {"text": "Show me top 5 products from last month", "timestamp": "Now", "variant": "sent"},
         {
             "text": "Here are your top 5 products: 1. Product A ($45K), 2. Product B ($38K), 3. Product C ($32K), 4. Product D ($28K), 5. Product E ($25K)",
             "sender": "AI Assistant",
             "avatar_icon": "chart",
             "timestamp": "Now",
             "variant": "received",
-            "show_avatar": True
-        }
+            "show_avatar": True,
+        },
     ]
 
     conversation = ChatConversation(messages, spacing=0.18, theme=theme.__dict__)
@@ -284,29 +265,22 @@ def create_mixed_scenarios_slide(prs, theme):
 
     # Short exchange - left column
     messages_left = [
-        {
-            "text": "Quick question!",
-            "timestamp": "Now",
-            "variant": "sent"
-        },
+        {"text": "Quick question!", "timestamp": "Now", "variant": "sent"},
         {
             "text": "Sure, what's up?",
             "sender": "Alex",
             "avatar_text": "AS",
             "variant": "received",
-            "show_avatar": True
+            "show_avatar": True,
         },
-        {
-            "text": "When is the deadline?",
-            "variant": "sent"
-        },
+        {"text": "When is the deadline?", "variant": "sent"},
         {
             "text": "Friday at 5pm",
             "sender": "Alex",
             "avatar_text": "AS",
             "variant": "received",
-            "show_avatar": True
-        }
+            "show_avatar": True,
+        },
     ]
 
     conv1 = ChatConversation(messages_left, spacing=0.18, theme=theme.__dict__)
@@ -314,21 +288,15 @@ def create_mixed_scenarios_slide(prs, theme):
 
     # Short exchange - right column
     messages_right = [
-        {
-            "text": "Meeting started",
-            "variant": "system"
-        },
+        {"text": "Meeting started", "variant": "system"},
         {
             "text": "Thanks for joining!",
             "sender": "Sarah",
             "avatar_text": "SM",
             "variant": "received",
-            "show_avatar": True
+            "show_avatar": True,
         },
-        {
-            "text": "Happy to be here!",
-            "variant": "sent"
-        }
+        {"text": "Happy to be here!", "variant": "sent"},
     ]
 
     conv2 = ChatConversation(messages_right, spacing=0.18, theme=theme.__dict__)

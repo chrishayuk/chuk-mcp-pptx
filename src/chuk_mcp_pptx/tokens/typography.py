@@ -82,13 +82,14 @@ PARAGRAPH_SPACING = {
     "3xl": 24,
 }
 
+
 def get_text_style(variant: str = "body") -> Dict[str, Any]:
     """
     Get predefined text styles for common use cases.
-    
+
     Args:
         variant: Style variant (e.g., "body", "heading", "caption")
-    
+
     Returns:
         Dictionary of text style properties
     """
@@ -190,8 +191,9 @@ def get_text_style(variant: str = "body") -> Dict[str, Any]:
             "line_height": LINE_HEIGHTS["relaxed"],
         },
     }
-    
+
     return styles.get(variant, styles["body"])
+
 
 # Typography scale for responsive sizing
 TYPOGRAPHY_SCALE = {

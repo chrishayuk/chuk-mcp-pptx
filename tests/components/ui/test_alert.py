@@ -5,7 +5,7 @@ Tests variants, composition, and rendering.
 
 import pytest
 from pptx import Presentation
-from pptx.util import Inches, Pt
+from pptx.util import Inches
 
 from chuk_mcp_pptx.components.core.alert import Alert
 from chuk_mcp_pptx.themes import ThemeManager
@@ -19,7 +19,7 @@ class TestAlertCreation:
         """Test creating an alert with default settings."""
         alert = Alert()
         assert alert.variant == "info"
-        assert alert.show_icon == True
+        assert alert.show_icon
 
     def test_alert_creation_with_variant(self):
         """Test creating alerts with different variants."""
@@ -31,9 +31,7 @@ class TestAlertCreation:
     def test_alert_with_title_and_description(self):
         """Test alert with title and description."""
         alert = Alert(
-            variant="success",
-            title="Success!",
-            description="Your changes have been saved."
+            variant="success", title="Success!", description="Your changes have been saved."
         )
         assert alert.title_text == "Success!"
         assert alert.description_text == "Your changes have been saved."
@@ -42,7 +40,7 @@ class TestAlertCreation:
     def test_alert_without_icon(self):
         """Test alert without icon."""
         alert = Alert(variant="info", show_icon=False)
-        assert alert.show_icon == False
+        assert not alert.show_icon
 
     def test_alert_with_custom_theme(self):
         """Test alert with custom theme."""
@@ -333,7 +331,7 @@ class TestAlertEdgeCases:
         alert = Alert(
             variant="info",
             title="Error #404",
-            description="Path: /api/v1/users?filter=active&sort=desc"
+            description="Path: /api/v1/users?filter=active&sort=desc",
         )
         shape = alert.render(slide, left=1.0, top=1.0)
         assert shape is not None
@@ -343,18 +341,14 @@ class TestAlertEdgeCases:
         alert = Alert(
             variant="success",
             title="🎉 Congratulations!",
-            description="You've completed the tutorial 🚀"
+            description="You've completed the tutorial 🚀",
         )
         shape = alert.render(slide, left=1.0, top=1.0)
         assert shape is not None
 
     def test_alert_multiline_description(self, slide):
         """Test alert with multiline description."""
-        alert = Alert(
-            variant="warning",
-            title="Important",
-            description="Line 1\nLine 2\nLine 3"
-        )
+        alert = Alert(variant="warning", title="Important", description="Line 1\nLine 2\nLine 3")
         shape = alert.render(slide, left=1.0, top=1.0, height=2.5)
         assert shape is not None
 
@@ -370,7 +364,7 @@ class TestAlertEdgeCases:
         alert = Alert(
             variant="success",
             title="Large Alert",
-            description="This alert takes up a lot of space."
+            description="This alert takes up a lot of space.",
         )
         shape = alert.render(slide, left=0.5, top=0.5, width=9.0, height=6.0)
         assert shape.width == Inches(9.0)
