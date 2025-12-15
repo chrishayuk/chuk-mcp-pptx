@@ -1,10 +1,11 @@
 """
 Pytest configuration and shared fixtures for PowerPoint MCP tests.
 
-Updated for Pydantic-native architecture with VFS integration.
+Updated for chuk-artifacts architecture.
 """
 
 import pytest
+import pytest_asyncio
 import sys
 import os
 import json
@@ -12,7 +13,6 @@ from typing import Any
 from unittest.mock import MagicMock
 from pptx import Presentation
 from pptx.slide import Slide
-from chuk_virtual_fs import AsyncVirtualFileSystem
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -161,17 +161,14 @@ def temp_output_dir(tmp_path):
     return output_dir
 
 
-@pytest.fixture
-async def vfs():
-    """Create an async virtual filesystem with memory provider for testing."""
-    async with AsyncVirtualFileSystem(provider="memory") as fs:
-        yield fs
+@pytest_asyncio.fixture
+async def presentation_manager():
+    """Create a PresentationManager for testing.
 
-
-@pytest.fixture
-async def presentation_manager(vfs):
-    """Create a PresentationManager with VFS for testing."""
-    manager = PresentationManager(vfs=vfs, base_path="test_presentations")
+    Uses chuk-artifacts via chuk-mcp-server context (if available).
+    Falls back to in-memory only if no artifact store is configured.
+    """
+    manager = PresentationManager(base_path="test_presentations")
     return manager
 
 

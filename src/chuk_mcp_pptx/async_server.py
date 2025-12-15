@@ -3,15 +3,16 @@
 Async PowerPoint MCP Server using chuk-mcp-server
 
 This server provides async MCP tools for creating and managing PowerPoint presentations
-using the python-pptx library. It supports multiple presentations with virtual filesystem
-integration for flexible storage (file, memory, sqlite, s3).
+using the python-pptx library. It supports multiple presentations with chuk-artifacts
+integration for flexible storage (memory, filesystem, sqlite, s3).
+
+Storage is managed through chuk-mcp-server's built-in artifact store context.
 """
 
 import asyncio
 import logging
 
 from chuk_mcp_server import ChukMCPServer
-from chuk_virtual_fs import AsyncVirtualFileSystem
 from .presentation_manager import PresentationManager
 from .models import (
     ErrorResponse,
@@ -49,16 +50,9 @@ logger = logging.getLogger(__name__)
 # Create the MCP server instance
 mcp = ChukMCPServer("chuk-mcp-pptx-async")
 
-# Initialize virtual filesystem with memory provider for fast in-memory storage
-# You can change provider to "sqlite" or "s3" as needed
-# Note: "file" provider requires additional configuration
-vfs = AsyncVirtualFileSystem(provider="memory")
-
-# VFS will be initialized on first use by PresentationManager
-# This avoids blocking during module import
-
-# Create presentation manager instance with virtual filesystem
-manager = PresentationManager(vfs=vfs, base_path="presentations")
+# Create presentation manager instance
+# Uses chuk-mcp-server's built-in artifact store context for persistence
+manager = PresentationManager(base_path="presentations")
 
 # Create theme manager instance
 theme_manager = ThemeManager()
@@ -354,6 +348,8 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
             name=pres_name,
             format="file",
             path=path,
+            artifact_uri=manager.get_artifact_uri(pres_name),
+            namespace_id=manager.get_namespace_id(pres_name),
             size_bytes=size_bytes,
             message=SuccessMessages.PRESENTATION_SAVED.format(path=path),
         ).model_dump_json()
@@ -392,6 +388,8 @@ async def pptx_export_base64(presentation: str | None = None) -> str:
             name=pres_name,
             format="base64",
             path=None,
+            artifact_uri=manager.get_artifact_uri(pres_name),
+            namespace_id=manager.get_namespace_id(pres_name),
             size_bytes=len(data),
             message=f"Exported presentation '{pres_name}' as base64 ({len(data)} bytes)",
         ).model_dump_json()
@@ -435,6 +433,8 @@ async def pptx_import_base64(data: str, name: str) -> str:
             name=name,
             source="base64",
             slide_count=slide_count,
+            artifact_uri=manager.get_artifact_uri(name),
+            namespace_id=manager.get_namespace_id(name),
             message=f"Imported presentation '{name}' with {slide_count} slides",
         ).model_dump_json()
     except Exception as e:
@@ -445,7 +445,7 @@ async def pptx_import_base64(data: str, name: str) -> str:
 @mcp.tool  # type: ignore[arg-type]
 async def pptx_list() -> str:
     """
-    List all presentations currently in memory and VFS.
+    List all presentations currently in memory.
 
     Returns a JSON array of presentation names with metadata.
 
@@ -562,8 +562,8 @@ async def pptx_get_info(presentation: str | None = None) -> str:
 # Run the server
 if __name__ == "__main__":
     logger.info("Starting PowerPoint MCP Server...")
-    logger.info(f"VFS Provider: {vfs.provider}")
     logger.info(f"Base Path: {manager.base_path}")
+    logger.info("Storage: Using chuk-mcp-server artifact store context")
 
     # Run in stdio mode when executed directly
     mcp.run(stdio=True)

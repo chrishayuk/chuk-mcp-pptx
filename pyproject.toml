@@ -10,8 +10,8 @@ dependencies = [
     "python-pptx>=1.0.2",
     "Pillow>=10.0.0",
     "aiofiles>=23.0.0",
-    "chuk-mcp-server>=0.7.5",
-    "chuk-virtual-fs>=0.2.2",
+    "chuk-mcp-server>=0.15.1",
+    "chuk-artifacts",
 ]
 
 [project.optional-dependencies]
@@ -62,8 +62,9 @@ addopts = [
     "-ra",
     "--strict-markers",
     "--tb=short",
-    "--asyncio-mode=auto",
 ]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 branch = true

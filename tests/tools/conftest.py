@@ -1,14 +1,14 @@
 """
 Shared fixtures for tools tests.
 
-Updated for Pydantic-native architecture with VFS integration.
+Updated for chuk-artifacts architecture.
 """
 
 import pytest
+import pytest_asyncio
 import sys
 import os
 from unittest.mock import MagicMock
-from chuk_virtual_fs import AsyncVirtualFileSystem
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
@@ -24,20 +24,14 @@ def mock_mcp_server():
     return mcp
 
 
-@pytest.fixture
-async def vfs_for_tools():
-    """Create an async virtual filesystem with memory provider for tool testing."""
-    async with AsyncVirtualFileSystem(provider="memory") as fs:
-        yield fs
-
-
-@pytest.fixture
-async def presentation_manager_for_tools(vfs_for_tools):
-    """Create a PresentationManager with VFS for tool testing.
+@pytest_asyncio.fixture
+async def presentation_manager_for_tools():
+    """Create a PresentationManager for tool testing.
 
     Pre-creates a test presentation with 3 slides.
+    Uses chuk-artifacts via chuk-mcp-server context (if available).
     """
-    manager = PresentationManager(vfs=vfs_for_tools, base_path="test_presentations")
+    manager = PresentationManager(base_path="test_presentations")
 
     # Create a test presentation with 3 slides
     await manager.create(name="test_presentation", theme=None)
@@ -54,7 +48,7 @@ async def presentation_manager_for_tools(vfs_for_tools):
 
 
 # Keep old name for backward compatibility
-@pytest.fixture
+@pytest_asyncio.fixture
 async def mock_presentation_manager(presentation_manager_for_tools):
     """Alias for backward compatibility with existing tests."""
     return presentation_manager_for_tools
@@ -67,7 +61,7 @@ def registered_tools(mock_mcp_server, mock_presentation_manager):
     return tools
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_run():
     """Helper to run async functions in tests."""
 
