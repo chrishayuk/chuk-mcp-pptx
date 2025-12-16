@@ -66,7 +66,7 @@ def register_inspection_tools(mcp, manager):
         """
 
         def _inspect_slide():
-            prs = manager.get(presentation)
+            prs = manager.get_presentation(presentation)
             if not prs:
                 return "Error: No presentation found"
 
@@ -392,7 +392,7 @@ def register_inspection_tools(mcp, manager):
         """
 
         def _fix_layout():
-            prs = manager.get(presentation)
+            prs = manager.get_presentation(presentation)
             if not prs:
                 return "Error: No presentation found"
 
@@ -423,8 +423,7 @@ def register_inspection_tools(mcp, manager):
                 if spacing_improved:
                     fixes_applied.append(f"Improved spacing for {spacing_improved} elements")
 
-            # Update in VFS if enabled
-            manager.update(presentation)
+            # Note: Changes are persisted in memory; use pptx_save to persist to file
 
             if fixes_applied:
                 return "Layout fixes applied:\n" + "\n".join(f"  • {fix}" for fix in fixes_applied)
@@ -640,7 +639,7 @@ def register_inspection_tools(mcp, manager):
         """
 
         def _analyze_presentation():
-            prs = manager.get(presentation)
+            prs = manager.get_presentation(presentation)
             if not prs:
                 return "Error: No presentation found"
 

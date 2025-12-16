@@ -412,7 +412,9 @@ class PresentationManager:
                     name=name,
                     slide_count=len(prs.slides),
                     is_current=(name == self._current_presentation),
-                    file_path=self.get_artifact_uri(name) if metadata and metadata.is_saved else None,
+                    file_path=self.get_artifact_uri(name)
+                    if metadata and metadata.is_saved
+                    else None,
                     namespace_id=self.get_namespace_id(name),
                 )
             )
