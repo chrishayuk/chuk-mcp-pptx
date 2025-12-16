@@ -84,7 +84,8 @@ class PresentationInfo(BaseModel):
     name: str = Field(..., description="Presentation name", min_length=1)
     slide_count: int = Field(..., description="Number of slides", ge=0)
     is_current: bool = Field(..., description="Whether this is the current active presentation")
-    file_path: str | None = Field(None, description="VFS path if saved to filesystem")
+    file_path: str | None = Field(None, description="Artifact URI if saved to artifact store")
+    namespace_id: str | None = Field(None, description="Namespace ID in artifact store")
 
     class Config:
         extra = "forbid"
@@ -107,8 +108,15 @@ class ExportResponse(BaseModel):
     """Response model for presentation export operations."""
 
     name: str = Field(..., description="Presentation name", min_length=1)
-    format: Literal["base64", "file", "vfs"] = Field(..., description="Export format")
-    path: str | None = Field(None, description="File path or VFS path if applicable")
+    format: Literal["base64", "file", "artifact"] = Field(..., description="Export format")
+    path: str | None = Field(None, description="File path if applicable")
+    artifact_uri: str | None = Field(None, description="Artifact URI if saved to artifact store")
+    namespace_id: str | None = Field(None, description="Namespace ID in artifact store")
+    download_url: str | None = Field(None, description="Presigned download URL (valid for 1 hour)")
+    mime_type: str = Field(
+        default="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        description="MIME type of the exported presentation",
+    )
     size_bytes: int | None = Field(None, description="Size of exported data in bytes", ge=0)
     message: str = Field(..., description="Operation result message")
 
@@ -120,8 +128,10 @@ class ImportResponse(BaseModel):
     """Response model for presentation import operations."""
 
     name: str = Field(..., description="Imported presentation name", min_length=1)
-    source: Literal["base64", "file", "vfs"] = Field(..., description="Import source")
+    source: Literal["base64", "file", "artifact"] = Field(..., description="Import source")
     slide_count: int = Field(..., description="Number of slides imported", ge=0)
+    artifact_uri: str | None = Field(None, description="Artifact URI in artifact store")
+    namespace_id: str | None = Field(None, description="Namespace ID in artifact store")
     message: str = Field(..., description="Operation result message")
 
     class Config:
@@ -134,11 +144,14 @@ class StatusResponse(BaseModel):
     server: str = Field(default="chuk-mcp-pptx", description="Server name")
     version: str = Field(default="0.1.0", description="Server version")
     storage_provider: str = Field(
-        ..., description="Active storage provider (file/memory/sqlite/s3)"
+        ..., description="Active storage provider (memory/filesystem/sqlite/s3)"
     )
-    storage_path: str = Field(..., description="Base path for presentations in VFS")
+    storage_path: str = Field(..., description="Base path for presentations")
     presentations_loaded: int = Field(..., description="Number of presentations in memory", ge=0)
     current_presentation: str | None = Field(None, description="Current active presentation")
+    artifact_store_available: bool = Field(
+        default=False, description="Whether artifact store is available"
+    )
 
     class Config:
         extra = "forbid"

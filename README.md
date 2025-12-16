@@ -11,7 +11,8 @@ A powerful, LLM-friendly PowerPoint design system with MCP server integration. B
 - **📋 Component Registry** - LLM-friendly schemas and discovery
 - **🎯 Design Tokens** - Consistent colors, typography, spacing
 - **🤖 MCP Integration** - Full Model Context Protocol support
-- **✅ Fully Tested** - 1387 tests with comprehensive coverage
+- **✅ Fully Tested** - 1900+ tests with comprehensive coverage
+- **☁️ Cloud Ready** - Deploy to Fly.io with Tigris S3 and Redis
 
 ## Project Structure
 
@@ -41,7 +42,7 @@ chuk-mcp-pptx/
 │   └── server.py         # Server entry point
 ├── docs/                 # Comprehensive documentation
 ├── examples/             # Examples and demos
-├── tests/                # 1387 comprehensive tests
+├── tests/                # 1900+ comprehensive tests
 └── outputs/              # Generated presentations
 ```
 
@@ -170,6 +171,7 @@ The server provides comprehensive MCP tools organized by category:
 - `pptx_load` - Load presentation from disk
 - `pptx_export_base64` - Export as base64 data
 - `pptx_import_base64` - Import from base64 data
+- `pptx_get_download_url` - Get presigned download URL (cloud deployments)
 
 ## Running the Server
 
@@ -186,64 +188,140 @@ MCP_TRANSPORT=stdio uv run python -m chuk_mcp_pptx.server
 MCP_TRANSPORT=http MCP_PORT=8080 uv run python -m chuk_mcp_pptx.server
 ```
 
+## Cloud Deployment (Fly.io)
+
+Deploy the PowerPoint MCP Server to Fly.io with Tigris S3 storage and Redis for production use.
+
+### Quick Deploy
+
+```bash
+# 1. Create the app
+fly apps create chuk-mcp-pptx
+
+# 2. Create Tigris S3 bucket for artifact storage
+fly storage create
+
+# 3. Create Redis instance
+fly redis create --name chuk-mcp-pptx-redis --region lhr --no-replicas --enable-eviction
+
+# 4. Set Redis URL secret (from redis create output)
+fly secrets set REDIS_URL="redis://default:password@fly-chuk-mcp-pptx-redis.upstash.io:6379"
+
+# 5. Deploy
+fly deploy
+```
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Fly.io Edge                            │
+│                   (chuk-mcp-pptx.fly.dev)                  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 PowerPoint MCP Server                       │
+│                   (Python + FastMCP)                        │
+│                                                             │
+│  ┌─────────────────┐  ┌─────────────────────────────────┐  │
+│  │ Presentation    │  │ chuk-artifacts                  │  │
+│  │ Manager         │──│ (S3 + Redis backend)            │  │
+│  └─────────────────┘  └─────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+          │                            │
+          ▼                            ▼
+┌─────────────────────┐  ┌─────────────────────────────────┐
+│    Fly Redis        │  │       Tigris S3                 │
+│  (Upstash managed)  │  │   (Object storage)              │
+│                     │  │                                 │
+│  • Session metadata │  │  • Presentation files (.pptx)   │
+│  • Distributed lock │  │  • Exported artifacts           │
+└─────────────────────┘  └─────────────────────────────────┘
+```
+
+### Environment Variables
+
+| Variable | Description | Set Via |
+|----------|-------------|---------|
+| `CHUK_ARTIFACTS_PROVIDER` | Storage provider (`s3`) | fly.toml |
+| `AWS_ACCESS_KEY_ID` | Tigris access key | secrets |
+| `AWS_SECRET_ACCESS_KEY` | Tigris secret key | secrets |
+| `AWS_ENDPOINT_URL_S3` | Tigris endpoint | secrets |
+| `BUCKET_NAME` | S3 bucket name | secrets |
+| `REDIS_URL` | Redis connection URL | secrets |
+
+### GitHub Actions Auto-Deploy
+
+Add `FLY_API_TOKEN` to your repository secrets for automatic deployment on push to main:
+
+```bash
+fly tokens create deploy -x 999999h
+```
+
+The included `.github/workflows/fly-deploy.yml` handles automatic deployment.
+
+### Getting Download URLs
+
+When deployed to Fly.io with S3 storage, use `pptx_get_download_url` to get presigned URLs:
+
+```python
+# Create and save a presentation
+pptx_create(name="report")
+pptx_add_title_slide(title="Q4 Report")
+
+# Get a download URL (valid for 1 hour by default)
+result = pptx_get_download_url()
+# Returns: {"url": "https://fly.storage.tigris.dev/...", "expires_in": 3600}
+
+# Custom expiration (2 hours)
+result = pptx_get_download_url(expires_in=7200)
+```
+
+For detailed deployment instructions, see [FLY_DEPLOYMENT.md](FLY_DEPLOYMENT.md).
+
 ## Storage Configuration
 
-The server uses `chuk-virtual-fs` for flexible storage with support for multiple backends:
+The server uses `chuk-artifacts` for flexible storage with support for multiple backends:
 
 ### Storage Providers
 
-- **file** (default): Local filesystem storage
-- **memory**: In-memory storage (fast, for testing)
+- **memory** (default): In-memory storage (for local development)
+- **file**: Local filesystem storage
 - **sqlite**: SQLite database storage
-- **s3**: AWS S3 or S3-compatible storage
+- **s3**: AWS S3 or S3-compatible storage (Tigris, MinIO, etc.)
 
-### Configuring Storage Provider
+### Environment-Based Configuration
 
-Storage is configured in `async_server.py` (line 49):
+Storage is configured via environment variables:
 
-```python
-# Change provider here
-vfs = AsyncVirtualFileSystem(provider="file")  # or "memory", "sqlite", "s3"
+```bash
+# S3/Tigris storage (production)
+export CHUK_ARTIFACTS_PROVIDER=s3
+export AWS_ACCESS_KEY_ID=your_key
+export AWS_SECRET_ACCESS_KEY=your_secret
+export AWS_ENDPOINT_URL_S3=https://fly.storage.tigris.dev
+export BUCKET_NAME=your-bucket
+
+# Redis for metadata (optional but recommended for S3)
+export REDIS_URL=redis://localhost:6379
 ```
 
-**Default Configuration**:
-```python
-# Uses local filesystem with presentations stored in ./presentations/
-vfs = AsyncVirtualFileSystem(provider="file")
-manager = PresentationManager(vfs=vfs, base_path="presentations")
-```
+### Artifact Store Integration
 
-**Example Configurations**:
+The server automatically persists presentations to the configured artifact store:
 
-```python
-# In-memory storage (for testing)
-vfs = AsyncVirtualFileSystem(provider="memory")
-
-# SQLite storage
-vfs = AsyncVirtualFileSystem(provider="sqlite", db_path="presentations.db")
-
-# S3 storage
-vfs = AsyncVirtualFileSystem(
-    provider="s3",
-    bucket="my-presentations",
-    region="us-east-1"
-)
-```
-
-### Virtual Filesystem Integration
-
-The server automatically persists all presentations to the configured storage backend:
-
-1. **Auto-save**: Presentations are automatically saved to VFS when created or modified
-2. **Auto-load**: Presentations are loaded from VFS when accessed
-3. **Multi-server**: Multiple server instances can share presentations via VFS
-4. **Flexible storage**: Switch storage backends without code changes
+1. **Auto-save**: Presentations are automatically saved when created or modified
+2. **Auto-load**: Presentations are loaded from the store when accessed
+3. **Multi-server**: Multiple server instances can share presentations via S3
+4. **Presigned URLs**: Generate download URLs for cloud-stored presentations
 
 ### Storage Patterns
 
-1. **Virtual Filesystem**: All presentations use VFS for persistence (flexible backends)
+1. **Artifact Store**: All presentations use chuk-artifacts for persistence
 2. **Base64 transfer**: Export/import presentations as base64 for transfer
-3. **Image support**: Add images via file path or base64 data URLs
+3. **Presigned URLs**: Get direct download links from S3/Tigris storage
+4. **Image support**: Add images via file path or base64 data URLs
 
 ## Example Usage
 
@@ -352,7 +430,7 @@ uv run python examples/tokens_showcase.py
 ### Run All Tests
 
 ```bash
-# All 1387 tests
+# All 1900+ tests
 uv run pytest tests/ -v
 
 # Specific test suites
@@ -372,12 +450,15 @@ uv run pytest tests/tokens/ -v                   # Token tests (10+ tests)
 - **Theme System**: 30+ tests - 100% pass ✅
 - **Token System**: 10+ tests - 100% pass ✅
 
-**Total: 1387 tests, all passing** 🎉
+**Total: 1900+ tests, all passing** 🎉
 
 ## Dependencies
 
 - `python-pptx` - PowerPoint file creation and manipulation
 - `chuk-mcp-server` - MCP server framework
+- `chuk-artifacts` - Flexible artifact storage (memory, file, sqlite, s3)
 - `mcp` - Model Context Protocol implementation
 - `pydantic` - Schema validation
+- `aiobotocore` - Async S3 client (for cloud deployments)
+- `redis` - Redis client (for distributed deployments)
 - `pytest` - Testing framework

@@ -1,9 +1,10 @@
 """
 Presentation Manager for PowerPoint MCP Server
 
-Manages PowerPoint presentations with support for virtual filesystem integration.
-Each presentation can be auto-saved to VFS for persistence and multi-server access.
+Manages PowerPoint presentations with support for chuk-artifacts integration.
+Each presentation is stored as a BLOB namespace for persistence and multi-server access.
 
+Uses chuk-mcp-server's built-in artifact store context for storage.
 Uses Pydantic models throughout for type safety and validation.
 """
 
@@ -14,7 +15,6 @@ import base64
 import io
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING
 from pptx import Presentation
 from pptx.presentation import Presentation as PresentationType
 
@@ -25,54 +25,73 @@ from .models import (
     ListPresentationsResponse,
 )
 
-if TYPE_CHECKING:
-    from chuk_virtual_fs import AsyncVirtualFileSystem
-
 logger = logging.getLogger(__name__)
 
 
 class PresentationManager:
     """
-    Manages PowerPoint presentations with VFS integration.
+    Manages PowerPoint presentations with chuk-artifacts integration.
 
-    Uses chuk-virtual-fs for flexible storage (file, memory, sqlite, s3).
+    Uses chuk-mcp-server's built-in artifact store context for flexible storage
+    (memory, filesystem, sqlite, s3). Each presentation is stored as a BLOB
+    namespace with automatic session management.
     Presentations and metadata are Pydantic models for type safety.
     """
 
-    def __init__(self, vfs: "AsyncVirtualFileSystem", base_path: str = "presentations") -> None:
+    # MIME type for PowerPoint presentations
+    PPTX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+
+    def __init__(self, base_path: str = "presentations") -> None:
         """
         Initialize the presentation manager.
 
         Args:
-            vfs: Virtual filesystem instance for file operations
-            base_path: Base directory in VFS for storing presentations
+            base_path: Base path prefix for presentation names
         """
-        self.vfs = vfs
         self.base_path = base_path
         self._presentations: dict[str, PresentationType] = {}
         self._metadata: dict[str, PresentationMetadata] = {}
+        self._namespace_ids: dict[str, str] = {}  # name -> namespace_id mapping
         self._current_presentation: str | None = None
-        self._vfs_initialized: bool = False
-        logger.info(f"PresentationManager initialized with VFS, base path: {base_path}")
+        logger.info(f"PresentationManager initialized, base path: {base_path}")
 
-    async def _ensure_vfs_initialized(self) -> None:
-        """Ensure VFS is initialized before use."""
-        if not self._vfs_initialized:
-            await self.vfs.initialize()
-            self._vfs_initialized = True
-            logger.info("VFS initialized")
+    def _get_store(self):
+        """Get the artifact store from context."""
+        from chuk_mcp_server import get_artifact_store, has_artifact_store
 
-    def _get_vfs_path(self, name: str) -> str:
-        """Get the VFS path for a presentation."""
-        # Sanitize the name to prevent directory traversal
+        if has_artifact_store():
+            return get_artifact_store()
+        return None
+
+    def _sanitize_name(self, name: str) -> str:
+        """Sanitize presentation name to prevent directory traversal."""
         safe_name = "".join(c for c in name if c.isalnum() or c in ("-", "_"))
         if not safe_name:
             safe_name = "presentation"
-        return f"{self.base_path}/{safe_name}.pptx"
+        return safe_name
 
-    async def _save_to_vfs(self, name: str, prs: PresentationType) -> bool:
+    def get_namespace_id(self, name: str) -> str | None:
+        """Get the namespace ID for a presentation by name."""
+        return self._namespace_ids.get(name)
+
+    def get_artifact_uri(self, name: str) -> str | None:
         """
-        Save presentation to VFS.
+        Get the artifact URI for a presentation.
+
+        Args:
+            name: Presentation name
+
+        Returns:
+            Artifact URI string or None if not found
+        """
+        namespace_id = self._namespace_ids.get(name)
+        if namespace_id:
+            return f"artifact://chuk-mcp-pptx/{self.base_path}/{name}"
+        return None
+
+    async def _save_to_store(self, name: str, prs: PresentationType) -> bool:
+        """
+        Save presentation to artifact store.
 
         Args:
             name: Presentation name
@@ -81,33 +100,56 @@ class PresentationManager:
         Returns:
             True if successful, False otherwise
         """
+        store = self._get_store()
+        if not store:
+            logger.debug("No artifact store available, skipping persistence")
+            return False
+
+        from chuk_mcp_server import NamespaceType, StorageScope
+
         try:
-            # Ensure VFS is initialized
-            await self._ensure_vfs_initialized()
-
-            # Ensure base directory exists
-            if not await self.vfs.exists(self.base_path):
-                await self.vfs.mkdir(self.base_path)
-                logger.info(f"Created VFS directory: {self.base_path}")
-
             # Convert presentation to bytes (wrap blocking I/O)
             buffer = io.BytesIO()
             await asyncio.to_thread(prs.save, buffer)
             buffer.seek(0)
             data = buffer.read()
 
-            # Save to VFS
-            file_path = self._get_vfs_path(name)
-            await self.vfs.write_file(file_path, data)
-            logger.info(f"Saved presentation to VFS: {file_path}")
+            # Check if namespace already exists
+            namespace_id = self._namespace_ids.get(name)
+
+            if namespace_id:
+                # Update existing namespace
+                await store.write_namespace(namespace_id, data=data)
+                logger.info(f"Updated presentation in artifact store: {name} ({namespace_id})")
+            else:
+                # Create new BLOB namespace
+                safe_name = self._sanitize_name(name)
+                namespace_info = await store.create_namespace(
+                    type=NamespaceType.BLOB,
+                    scope=StorageScope.SESSION,
+                    name=f"{self.base_path}/{safe_name}",
+                    metadata={
+                        "mime_type": self.PPTX_MIME_TYPE,
+                        "presentation_name": name,
+                        "file_extension": ".pptx",
+                    },
+                )
+                self._namespace_ids[name] = namespace_info.namespace_id
+
+                # Write the presentation data
+                await store.write_namespace(namespace_info.namespace_id, data=data)
+                logger.info(
+                    f"Saved presentation to artifact store: {name} ({namespace_info.namespace_id})"
+                )
+
             return True
         except Exception as e:
-            logger.error(f"Failed to save to VFS: {e}")
+            logger.error(f"Failed to save to artifact store: {e}")
             return False
 
-    async def _load_from_vfs(self, name: str) -> PresentationType | None:
+    async def _load_from_store(self, name: str) -> PresentationType | None:
         """
-        Load presentation from VFS.
+        Load presentation from artifact store.
 
         Args:
             name: Presentation name
@@ -115,30 +157,34 @@ class PresentationManager:
         Returns:
             Presentation object or None if not found
         """
-        try:
-            # Ensure VFS is initialized
-            await self._ensure_vfs_initialized()
-
-            file_path = self._get_vfs_path(name)
-
-            # Check if file exists
-            if not await self.vfs.exists(file_path):
-                logger.debug(f"Presentation not found in VFS: {file_path}")
-                return None
-
-            # Read from VFS
-            data = await self.vfs.read_file(file_path)
-            buffer = io.BytesIO(data)
-            prs = Presentation(buffer)
-            logger.info(f"Loaded presentation from VFS: {file_path}")
-            return prs
-        except Exception as e:
-            logger.error(f"Failed to load from VFS: {e}")
+        store = self._get_store()
+        if not store:
+            logger.debug("No artifact store available")
             return None
 
-    async def _delete_from_vfs(self, name: str) -> bool:
+        try:
+            namespace_id = self._namespace_ids.get(name)
+            if not namespace_id:
+                logger.debug(f"Presentation not found in namespace mapping: {name}")
+                return None
+
+            # Read from artifact store
+            data = await store.read_namespace(namespace_id)
+            if data is None:
+                logger.debug(f"No data found for namespace: {namespace_id}")
+                return None
+
+            buffer = io.BytesIO(data)
+            prs = Presentation(buffer)
+            logger.info(f"Loaded presentation from artifact store: {name} ({namespace_id})")
+            return prs
+        except Exception as e:
+            logger.error(f"Failed to load from artifact store: {e}")
+            return None
+
+    async def _delete_from_store(self, name: str) -> bool:
         """
-        Delete presentation from VFS.
+        Delete presentation from artifact store.
 
         Args:
             name: Presentation name
@@ -146,18 +192,23 @@ class PresentationManager:
         Returns:
             True if successful, False otherwise
         """
-        try:
-            file_path = self._get_vfs_path(name)
+        store = self._get_store()
+        if not store:
+            logger.debug("No artifact store available")
+            return False
 
-            if await self.vfs.exists(file_path):
-                await self.vfs.delete(file_path)
-                logger.info(f"Deleted presentation from VFS: {file_path}")
-                return True
-            else:
-                logger.warning(f"Presentation not found in VFS for deletion: {file_path}")
+        try:
+            namespace_id = self._namespace_ids.get(name)
+            if not namespace_id:
+                logger.warning(f"Presentation not found in namespace mapping for deletion: {name}")
                 return False
+
+            await store.destroy_namespace(namespace_id)
+            del self._namespace_ids[name]
+            logger.info(f"Deleted presentation from artifact store: {name} ({namespace_id})")
+            return True
         except Exception as e:
-            logger.error(f"Failed to delete from VFS: {e}")  # nosec B608
+            logger.error(f"Failed to delete from artifact store: {e}")  # nosec B608
             return False
 
     async def create(self, name: str, theme: str | None = None) -> PresentationMetadata:
@@ -175,20 +226,19 @@ class PresentationManager:
         self._presentations[name] = prs
         self._current_presentation = name
 
+        # Auto-save to artifact store (creates namespace)
+        saved = await self._save_to_store(name, prs)
+
         # Create metadata
         metadata = PresentationMetadata(
             name=name,
             slide_count=len(prs.slides),
             theme=theme,
-            vfs_path=self._get_vfs_path(name),
-            is_saved=False,
+            vfs_path=self.get_artifact_uri(name),
+            namespace_id=self.get_namespace_id(name),
+            is_saved=saved,
         )
         self._metadata[name] = metadata
-
-        # Auto-save to VFS
-        saved = await self._save_to_vfs(name, prs)
-        if saved:
-            metadata.is_saved = True
 
         return metadata
 
@@ -218,15 +268,16 @@ class PresentationManager:
                 metadata = PresentationMetadata(
                     name=pres_name,
                     slide_count=len(prs.slides),
-                    vfs_path=self._get_vfs_path(pres_name),
+                    vfs_path=self.get_artifact_uri(pres_name),
+                    namespace_id=self.get_namespace_id(pres_name),
                     is_saved=True,
                 )
                 self._metadata[pres_name] = metadata
 
             return (prs, metadata)
 
-        # Try loading from VFS
-        loaded_prs = await self._load_from_vfs(pres_name)
+        # Try loading from artifact store
+        loaded_prs = await self._load_from_store(pres_name)
         if loaded_prs is not None:
             self._presentations[pres_name] = loaded_prs
 
@@ -234,7 +285,8 @@ class PresentationManager:
             metadata = PresentationMetadata(
                 name=pres_name,
                 slide_count=len(loaded_prs.slides),
-                vfs_path=self._get_vfs_path(pres_name),
+                vfs_path=self.get_artifact_uri(pres_name),
+                namespace_id=self.get_namespace_id(pres_name),
                 is_saved=True,
             )
             self._metadata[pres_name] = metadata
@@ -275,7 +327,7 @@ class PresentationManager:
 
     async def save(self, name: str | None = None) -> bool:
         """
-        Save presentation to VFS.
+        Save presentation to artifact store.
 
         Args:
             name: Presentation name (uses current if not specified)
@@ -287,13 +339,13 @@ class PresentationManager:
         if not pres_name or pres_name not in self._presentations:
             return False
 
-        return await self._save_to_vfs(pres_name, self._presentations[pres_name])
+        return await self._save_to_store(pres_name, self._presentations[pres_name])
 
     async def update(self, name: str | None = None) -> bool:
         """
-        Update presentation in VFS after modifications.
+        Update presentation in artifact store after modifications.
 
-        This should be called after any modification to ensure VFS persistence.
+        This should be called after any modification to ensure persistence.
         Also updates metadata (slide count, modified time, etc.).
 
         Args:
@@ -313,11 +365,11 @@ class PresentationManager:
             metadata.slide_count = len(prs.slides)
             metadata.modified_at = datetime.now()
 
-        return await self._save_to_vfs(pres_name, prs)
+        return await self._save_to_store(pres_name, prs)
 
     async def delete(self, name: str) -> bool:
         """
-        Delete a presentation from memory and VFS.
+        Delete a presentation from memory and artifact store.
 
         Args:
             name: Presentation name
@@ -329,6 +381,8 @@ class PresentationManager:
             return False
 
         del self._presentations[name]
+        if name in self._metadata:
+            del self._metadata[name]
 
         # Update current if we deleted it
         if self._current_presentation == name:
@@ -336,8 +390,8 @@ class PresentationManager:
                 next(iter(self._presentations), None) if self._presentations else None
             )
 
-        # Delete from VFS
-        await self._delete_from_vfs(name)
+        # Delete from artifact store
+        await self._delete_from_store(name)
 
         return True
 
@@ -350,7 +404,7 @@ class PresentationManager:
         """
         presentations: list[PresentationInfo] = []
 
-        # List from memory
+        # List from memory (artifact store presentations are tracked via _namespace_ids)
         for name, prs in self._presentations.items():
             metadata = self._metadata.get(name)
             presentations.append(
@@ -358,42 +412,12 @@ class PresentationManager:
                     name=name,
                     slide_count=len(prs.slides),
                     is_current=(name == self._current_presentation),
-                    file_path=self._get_vfs_path(name) if metadata and metadata.is_saved else None,
+                    file_path=self.get_artifact_uri(name)
+                    if metadata and metadata.is_saved
+                    else None,
+                    namespace_id=self.get_namespace_id(name),
                 )
             )
-
-        # List from VFS (presentations not yet loaded into memory)
-        try:
-            if await self.vfs.exists(self.base_path):
-                files = await self.vfs.ls(self.base_path)
-                existing_names = {p.name for p in presentations}
-
-                for file in files:
-                    if file.endswith(".pptx"):
-                        name = file[:-5]  # Remove .pptx extension
-                        if name not in existing_names:
-                            # Load to get slide count
-                            loaded_prs = await self._load_from_vfs(name)
-                            if loaded_prs is not None:
-                                self._presentations[name] = loaded_prs
-                                metadata = PresentationMetadata(
-                                    name=name,
-                                    slide_count=len(loaded_prs.slides),
-                                    vfs_path=self._get_vfs_path(name),
-                                    is_saved=True,
-                                )
-                                self._metadata[name] = metadata
-
-                                presentations.append(
-                                    PresentationInfo(
-                                        name=name,
-                                        slide_count=len(loaded_prs.slides),
-                                        is_current=False,
-                                        file_path=self._get_vfs_path(name),
-                                    )
-                                )
-        except Exception as e:
-            logger.error(f"Failed to list VFS presentations: {e}")
 
         return ListPresentationsResponse(
             presentations=presentations,
@@ -412,8 +436,8 @@ class PresentationManager:
             True if successful, False if presentation not found
         """
         if name not in self._presentations:
-            # Try loading from VFS
-            prs = await self._load_from_vfs(name)
+            # Try loading from artifact store
+            prs = await self._load_from_store(name)
             if prs:
                 self._presentations[name] = prs
             else:
@@ -509,8 +533,18 @@ class PresentationManager:
             self._presentations[name] = prs
             self._current_presentation = name
 
-            # Auto-save to VFS
-            await self._save_to_vfs(name, prs)
+            # Auto-save to artifact store
+            await self._save_to_store(name, prs)
+
+            # Create metadata
+            metadata = PresentationMetadata(
+                name=name,
+                slide_count=len(prs.slides),
+                vfs_path=self.get_artifact_uri(name),
+                namespace_id=self.get_namespace_id(name),
+                is_saved=True,
+            )
+            self._metadata[name] = metadata
 
             return True
         except Exception as e:
@@ -520,64 +554,9 @@ class PresentationManager:
     def clear_all(self) -> None:
         """Clear all presentations from memory."""
         self._presentations.clear()
+        self._metadata.clear()
+        self._namespace_ids.clear()
         self._current_presentation = None
 
-        # Note: This doesn't delete from VFS, only clears memory
-        # VFS presentations can still be loaded on demand
-
-    async def export_to_vfs(self, name: str, file_path: str) -> str:
-        """
-        Export presentation to a specific VFS path.
-
-        Args:
-            name: Presentation name
-            file_path: Destination path in VFS
-
-        Returns:
-            Success message or error
-        """
-        if name not in self._presentations:
-            return f"Error: Presentation '{name}' not found"
-
-        try:
-            prs = self._presentations[name]
-            buffer = io.BytesIO()
-            await asyncio.to_thread(prs.save, buffer)
-            buffer.seek(0)
-            data = buffer.read()
-
-            await self.vfs.write_file(file_path, data)
-            return f"Exported presentation '{name}' to {file_path}"
-        except Exception as e:
-            logger.error(f"Failed to export to VFS: {e}")
-            return f"Error: {e}"
-
-    async def import_from_vfs(self, file_path: str, name: str) -> bool:
-        """
-        Import presentation from a specific VFS path.
-
-        Args:
-            file_path: Source path in VFS
-            name: Name for the imported presentation
-
-        Returns:
-            True if successful, False otherwise
-        """
-        try:
-            if not await self.vfs.exists(file_path):
-                logger.error(f"File not found in VFS: {file_path}")
-                return False
-
-            data = await self.vfs.read_file(file_path)
-            buffer = io.BytesIO(data)
-            prs = Presentation(buffer)
-            self._presentations[name] = prs
-            self._current_presentation = name
-
-            # Save to standard location
-            await self._save_to_vfs(name, prs)
-
-            return True
-        except Exception as e:
-            logger.error(f"Failed to import from VFS: {e}")
-            return False
+        # Note: This doesn't delete from artifact store, only clears memory
+        # Artifact store presentations persist based on session/scope

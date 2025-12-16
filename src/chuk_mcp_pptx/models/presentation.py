@@ -39,8 +39,9 @@ class PresentationMetadata(BaseModel):
         default_factory=datetime.now, description="Last modification time"
     )
     theme: str | None = Field(default=None, description="Applied theme name if any")
-    vfs_path: str | None = Field(default=None, description="VFS storage path")
-    is_saved: bool = Field(default=False, description="Whether saved to VFS")
+    vfs_path: str | None = Field(default=None, description="Artifact URI for storage")
+    namespace_id: str | None = Field(default=None, description="Namespace ID in artifact store")
+    is_saved: bool = Field(default=False, description="Whether saved to artifact store")
     slides: list[SlideMetadata] = Field(default_factory=list, description="Metadata for each slide")
 
     class Config:

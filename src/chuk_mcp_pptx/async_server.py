@@ -3,15 +3,16 @@
 Async PowerPoint MCP Server using chuk-mcp-server
 
 This server provides async MCP tools for creating and managing PowerPoint presentations
-using the python-pptx library. It supports multiple presentations with virtual filesystem
-integration for flexible storage (file, memory, sqlite, s3).
+using the python-pptx library. It supports multiple presentations with chuk-artifacts
+integration for flexible storage (memory, filesystem, sqlite, s3).
+
+Storage is managed through chuk-mcp-server's built-in artifact store context.
 """
 
 import asyncio
 import logging
 
 from chuk_mcp_server import ChukMCPServer
-from chuk_virtual_fs import AsyncVirtualFileSystem
 from .presentation_manager import PresentationManager
 from .models import (
     ErrorResponse,
@@ -43,22 +44,16 @@ from .tools.theme_tools import register_theme_tools
 from .tools.shape_tools import register_shape_tools
 from .themes.theme_manager import ThemeManager
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create the MCP server instance
 mcp = ChukMCPServer("chuk-mcp-pptx-async")
 
-# Initialize virtual filesystem with memory provider for fast in-memory storage
-# You can change provider to "sqlite" or "s3" as needed
-# Note: "file" provider requires additional configuration
-vfs = AsyncVirtualFileSystem(provider="memory")
-
-# VFS will be initialized on first use by PresentationManager
-# This avoids blocking during module import
-
-# Create presentation manager instance with virtual filesystem
-manager = PresentationManager(vfs=vfs, base_path="presentations")
+# Create presentation manager instance
+# Uses chuk-mcp-server's built-in artifact store context for persistence
+manager = PresentationManager(base_path="presentations")
 
 # Create theme manager instance
 theme_manager = ThemeManager()
@@ -320,33 +315,80 @@ async def pptx_add_slide(title: str, content: list[str], presentation: str | Non
 @mcp.tool  # type: ignore[arg-type]
 async def pptx_save(path: str, presentation: str | None = None) -> str:
     """
-    Save the presentation to a PowerPoint file.
+    Save the presentation to a PowerPoint file and artifact store.
 
-    Saves the current or specified presentation to a .pptx file on disk.
+    Saves the current or specified presentation to a .pptx file on disk
+    and to the artifact store (if configured). Returns the artifact URI
+    for cloud deployments.
 
     Args:
         path: File path where to save the .pptx file
         presentation: Name of presentation to save (uses current if not specified)
 
     Returns:
-        JSON string with ExportResponse model
+        JSON string with ExportResponse model including artifact_uri
 
     Example:
         await pptx_save(path="reports/quarterly_report.pptx")
     """
     try:
-        prs = manager.get_presentation(presentation)
+        pres_name = presentation or manager.get_current_name()
+        if not pres_name:
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        prs = manager.get_presentation(pres_name)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
+        # Save to local file
         await asyncio.to_thread(prs.save, path)
+
+        # Also save to artifact store to get artifact URI
+        await manager.save(pres_name)
 
         # Get file size
         from pathlib import Path
 
         size_bytes = Path(path).stat().st_size if Path(path).exists() else None
 
-        pres_name = presentation or manager.get_current_name() or "presentation"
+        # Get artifact URI and generate download URL if available
+        artifact_uri = manager.get_artifact_uri(pres_name)
+        namespace_id = manager.get_namespace_id(pres_name)
+        download_url = None
+
+        # Try to generate a presigned download URL by storing as artifact
+        try:
+            from chuk_mcp_server import get_artifact_store, has_artifact_store
+
+            if has_artifact_store():
+                store = get_artifact_store()
+                logger.info("Storing presentation as artifact for presigned URL")
+
+                # Read the saved file and store as artifact
+                from pathlib import Path
+
+                pptx_path = Path(path)
+                if pptx_path.exists():
+                    pptx_data = pptx_path.read_bytes()
+
+                    # Store as artifact to get presigned URL
+                    artifact_id = await store.store(
+                        data=pptx_data,
+                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        summary=f"{pres_name}.pptx",
+                        meta={"filename": f"{pres_name}.pptx", "presentation_name": pres_name},
+                    )
+                    logger.info(f"Stored as artifact: {artifact_id}")
+
+                    # Generate presigned URL
+                    download_url = await store.presign(artifact_id, expires=3600)
+                    logger.info(
+                        f"Generated presigned URL: {download_url[:80] if download_url else 'None'}..."
+                    )
+            else:
+                logger.warning("Artifact store not available for presigned URL generation")
+        except Exception as e:
+            logger.warning(f"Could not generate download URL: {e}", exc_info=True)
 
         from .models import ExportResponse
 
@@ -354,12 +396,92 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
             name=pres_name,
             format="file",
             path=path,
+            artifact_uri=artifact_uri,
+            namespace_id=namespace_id,
+            download_url=download_url,
             size_bytes=size_bytes,
             message=SuccessMessages.PRESENTATION_SAVED.format(path=path),
         ).model_dump_json()
     except Exception as e:
         logger.error(f"Failed to save presentation: {e}")
         return ErrorResponse(error=ErrorMessages.SAVE_FAILED.format(error=str(e))).model_dump_json()
+
+
+@mcp.tool  # type: ignore[arg-type]
+async def pptx_get_download_url(presentation: str | None = None, expires_in: int = 3600) -> str:
+    """
+    Get a presigned download URL for the presentation.
+
+    Generates a temporary URL that can be used to download the presentation
+    directly from cloud storage (S3/Tigris). The URL expires after the specified
+    duration.
+
+    Args:
+        presentation: Name of presentation (uses current if not specified)
+        expires_in: URL expiration time in seconds (default: 3600 = 1 hour)
+
+    Returns:
+        JSON string with download URL or error
+
+    Example:
+        result = await pptx_get_download_url()
+        # Returns: {"url": "https://...", "expires_in": 3600}
+    """
+    try:
+        import io
+        import json
+
+        from chuk_mcp_server import get_artifact_store, has_artifact_store
+
+        pres_name = presentation or manager.get_current_name()
+        if not pres_name:
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        # Make sure presentation exists
+        prs = manager.get_presentation(pres_name)
+        if not prs:
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        # Get artifact store
+        if not has_artifact_store():
+            return ErrorResponse(
+                error="No artifact store configured. Set up S3/Tigris storage."
+            ).model_dump_json()
+
+        store = get_artifact_store()
+
+        # Export presentation to bytes
+        buffer = io.BytesIO()
+        await asyncio.to_thread(prs.save, buffer)
+        buffer.seek(0)
+        pptx_data = buffer.read()
+
+        # Store as artifact to get presigned URL
+        artifact_id = await store.store(
+            data=pptx_data,
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            summary=f"{pres_name}.pptx",
+            meta={"filename": f"{pres_name}.pptx", "presentation_name": pres_name},
+        )
+        logger.info(f"Stored presentation as artifact: {artifact_id}")
+
+        # Generate presigned URL
+        url = await store.presign(artifact_id, expires=expires_in)
+        logger.info(f"Generated presigned URL for {pres_name}")
+
+        return json.dumps(
+            {
+                "success": True,
+                "url": url,
+                "presentation": pres_name,
+                "artifact_id": artifact_id,
+                "expires_in": expires_in,
+                "filename": f"{pres_name}.pptx",
+            }
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate download URL: {e}")
+        return ErrorResponse(error=f"Failed to generate download URL: {str(e)}").model_dump_json()
 
 
 @mcp.tool  # type: ignore[arg-type]
@@ -392,6 +514,9 @@ async def pptx_export_base64(presentation: str | None = None) -> str:
             name=pres_name,
             format="base64",
             path=None,
+            artifact_uri=manager.get_artifact_uri(pres_name),
+            namespace_id=manager.get_namespace_id(pres_name),
+            download_url=None,
             size_bytes=len(data),
             message=f"Exported presentation '{pres_name}' as base64 ({len(data)} bytes)",
         ).model_dump_json()
@@ -435,6 +560,8 @@ async def pptx_import_base64(data: str, name: str) -> str:
             name=name,
             source="base64",
             slide_count=slide_count,
+            artifact_uri=manager.get_artifact_uri(name),
+            namespace_id=manager.get_namespace_id(name),
             message=f"Imported presentation '{name}' with {slide_count} slides",
         ).model_dump_json()
     except Exception as e:
@@ -445,7 +572,7 @@ async def pptx_import_base64(data: str, name: str) -> str:
 @mcp.tool  # type: ignore[arg-type]
 async def pptx_list() -> str:
     """
-    List all presentations currently in memory and VFS.
+    List all presentations currently in memory.
 
     Returns a JSON array of presentation names with metadata.
 
@@ -559,11 +686,49 @@ async def pptx_get_info(presentation: str | None = None) -> str:
 # The function is registered via register_table_tools()
 
 
+@mcp.tool  # type: ignore[arg-type]
+async def pptx_status() -> str:
+    """
+    Get server status and configuration information.
+
+    Returns information about the server, storage configuration,
+    and loaded presentations. Useful for debugging and monitoring.
+
+    Returns:
+        JSON string with StatusResponse model
+
+    Example:
+        status = await pptx_status()
+    """
+    import os
+
+    from chuk_mcp_server import has_artifact_store
+
+    from .models import StatusResponse
+
+    try:
+        provider = os.environ.get("CHUK_ARTIFACTS_PROVIDER", "memory")
+        storage_path = manager.base_path
+
+        return StatusResponse(
+            server="chuk-mcp-pptx",
+            version="0.2.1",
+            storage_provider=provider,
+            storage_path=storage_path,
+            presentations_loaded=len(manager._presentations),
+            current_presentation=manager.get_current_name(),
+            artifact_store_available=has_artifact_store(),
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to get server status: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
+
+
 # Run the server
 if __name__ == "__main__":
     logger.info("Starting PowerPoint MCP Server...")
-    logger.info(f"VFS Provider: {vfs.provider}")
     logger.info(f"Base Path: {manager.base_path}")
+    logger.info("Storage: Using chuk-mcp-server artifact store context")
 
     # Run in stdio mode when executed directly
     mcp.run(stdio=True)
