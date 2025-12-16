@@ -112,6 +112,7 @@ class ExportResponse(BaseModel):
     path: str | None = Field(None, description="File path if applicable")
     artifact_uri: str | None = Field(None, description="Artifact URI if saved to artifact store")
     namespace_id: str | None = Field(None, description="Namespace ID in artifact store")
+    download_url: str | None = Field(None, description="Presigned download URL (valid for 1 hour)")
     mime_type: str = Field(
         default="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         description="MIME type of the exported presentation",

@@ -1,6 +1,6 @@
 [project]
 name = "chuk-mcp-pptx"
-version = "0.2"
+version = "0.2.1"
 description = "PowerPoint MCP Server - A shadcn-inspired design system for presentations"
 authors = [{ name = "Chris Hay" }]
 readme = "README.md"

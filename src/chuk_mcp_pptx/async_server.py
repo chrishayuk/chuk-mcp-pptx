@@ -315,33 +315,57 @@ async def pptx_add_slide(title: str, content: list[str], presentation: str | Non
 @mcp.tool  # type: ignore[arg-type]
 async def pptx_save(path: str, presentation: str | None = None) -> str:
     """
-    Save the presentation to a PowerPoint file.
+    Save the presentation to a PowerPoint file and artifact store.
 
-    Saves the current or specified presentation to a .pptx file on disk.
+    Saves the current or specified presentation to a .pptx file on disk
+    and to the artifact store (if configured). Returns the artifact URI
+    for cloud deployments.
 
     Args:
         path: File path where to save the .pptx file
         presentation: Name of presentation to save (uses current if not specified)
 
     Returns:
-        JSON string with ExportResponse model
+        JSON string with ExportResponse model including artifact_uri
 
     Example:
         await pptx_save(path="reports/quarterly_report.pptx")
     """
     try:
-        prs = manager.get_presentation(presentation)
+        pres_name = presentation or manager.get_current_name()
+        if not pres_name:
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        prs = manager.get_presentation(pres_name)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
+        # Save to local file
         await asyncio.to_thread(prs.save, path)
+
+        # Also save to artifact store to get artifact URI
+        await manager.save(pres_name)
 
         # Get file size
         from pathlib import Path
 
         size_bytes = Path(path).stat().st_size if Path(path).exists() else None
 
-        pres_name = presentation or manager.get_current_name() or "presentation"
+        # Get artifact URI and generate download URL if available
+        artifact_uri = manager.get_artifact_uri(pres_name)
+        namespace_id = manager.get_namespace_id(pres_name)
+        download_url = None
+
+        # Try to generate a presigned download URL
+        if namespace_id:
+            try:
+                from chuk_mcp_server import get_artifact_store, has_artifact_store
+
+                if has_artifact_store():
+                    store = get_artifact_store()
+                    download_url = await store.presign(namespace_id, expires=3600)
+            except Exception as e:
+                logger.debug(f"Could not generate download URL: {e}")
 
         from .models import ExportResponse
 
@@ -349,8 +373,9 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
             name=pres_name,
             format="file",
             path=path,
-            artifact_uri=manager.get_artifact_uri(pres_name),
-            namespace_id=manager.get_namespace_id(pres_name),
+            artifact_uri=artifact_uri,
+            namespace_id=namespace_id,
+            download_url=download_url,
             size_bytes=size_bytes,
             message=SuccessMessages.PRESENTATION_SAVED.format(path=path),
         ).model_dump_json()
@@ -467,6 +492,7 @@ async def pptx_export_base64(presentation: str | None = None) -> str:
             path=None,
             artifact_uri=manager.get_artifact_uri(pres_name),
             namespace_id=manager.get_namespace_id(pres_name),
+            download_url=None,
             size_bytes=len(data),
             message=f"Exported presentation '{pres_name}' as base64 ({len(data)} bytes)",
         ).model_dump_json()
