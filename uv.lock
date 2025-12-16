@@ -501,12 +501,14 @@ name = "chuk-mcp-pptx"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "aiobotocore" },
     { name = "aiofiles" },
     { name = "chuk-artifacts" },
     { name = "chuk-mcp-server" },
     { name = "mcp" },
     { name = "pillow" },
     { name = "python-pptx" },
+    { name = "redis" },
 ]
 
 [package.optional-dependencies]
@@ -527,6 +529,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiobotocore", specifier = ">=2.5.0" },
     { name = "aiofiles", specifier = ">=23.0.0" },
     { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.7.0" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=23.0.0" },
@@ -543,6 +546,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.10.0" },
     { name = "python-pptx", specifier = ">=1.0.2" },
+    { name = "redis", specifier = ">=5.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=4.0.0" },
 ]

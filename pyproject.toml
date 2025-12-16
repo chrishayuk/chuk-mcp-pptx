@@ -1,6 +1,6 @@
 [project]
 name = "chuk-mcp-pptx"
-version = "0.1.0"
+version = "0.2"
 description = "PowerPoint MCP Server - A shadcn-inspired design system for presentations"
 authors = [{ name = "Chris Hay" }]
 readme = "README.md"
@@ -12,6 +12,8 @@ dependencies = [
     "aiofiles>=23.0.0",
     "chuk-mcp-server>=0.15.1",
     "chuk-artifacts",
+    "aiobotocore>=2.5.0",
+    "redis>=5.0.0",
 ]
 
 [project.optional-dependencies]

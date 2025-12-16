@@ -1008,3 +1008,221 @@ class TestIntegration:
         assert manager.get_current_name() == "pres_1"
 
         manager.clear_all()
+
+
+class TestPptxGetDownloadUrl:
+    """Tests for pptx_get_download_url tool."""
+
+    @pytest.mark.asyncio
+    async def test_get_download_url_no_presentation(self) -> None:
+        """Test getting download URL when no presentation exists."""
+        from chuk_mcp_pptx.async_server import pptx_get_download_url, manager
+
+        manager.clear_all()
+
+        result = await pptx_get_download_url()
+        data = json.loads(result)
+
+        assert "error" in data
+
+    @pytest.mark.asyncio
+    async def test_get_download_url_no_namespace_id(self) -> None:
+        """Test getting download URL when presentation has no namespace ID."""
+        from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
+
+        manager.clear_all()
+        await pptx_create(name="no_namespace")
+
+        # Clear namespace IDs to simulate no artifact store
+        manager._namespace_ids.clear()
+
+        result = await pptx_get_download_url()
+        data = json.loads(result)
+
+        # Should return error since no namespace ID and no store to save
+        assert "error" in data
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_get_download_url_specific_presentation(self) -> None:
+        """Test getting download URL for specific presentation."""
+        from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
+
+        manager.clear_all()
+        await pptx_create(name="specific")
+
+        result = await pptx_get_download_url(presentation="specific")
+        data = json.loads(result)
+
+        # Should fail because no artifact store is configured in tests
+        assert "error" in data
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_get_download_url_nonexistent_presentation(self) -> None:
+        """Test getting download URL for nonexistent presentation."""
+        from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
+
+        manager.clear_all()
+        await pptx_create(name="exists")
+
+        result = await pptx_get_download_url(presentation="does_not_exist")
+        data = json.loads(result)
+
+        assert "error" in data
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_get_download_url_with_custom_expires_in(self) -> None:
+        """Test getting download URL with custom expiration."""
+        from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
+
+        manager.clear_all()
+        await pptx_create(name="custom_expires")
+
+        result = await pptx_get_download_url(expires_in=7200)
+        data = json.loads(result)
+
+        # Should fail because no artifact store in tests
+        assert "error" in data
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_get_download_url_no_artifact_store(self) -> None:
+        """Test getting download URL when no artifact store is configured."""
+        from unittest.mock import patch
+        from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
+
+        manager.clear_all()
+        await pptx_create(name="no_store")
+
+        # Force the namespace_id to be set so we get past that check
+        manager._namespace_ids["no_store"] = "test-namespace-id"
+
+        # Mock has_artifact_store to return False
+        with patch("chuk_mcp_server.has_artifact_store", return_value=False):
+            result = await pptx_get_download_url()
+            data = json.loads(result)
+
+            # Should fail because no artifact store configured
+            assert "error" in data
+            assert "artifact store" in data["error"].lower()
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_get_download_url_with_mocked_store(self) -> None:
+        """Test getting download URL with a mocked artifact store."""
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
+
+        manager.clear_all()
+        await pptx_create(name="mocked_store")
+
+        # Set up namespace ID
+        manager._namespace_ids["mocked_store"] = "test-namespace-id"
+
+        # Create mock store
+        mock_store = MagicMock()
+        mock_store.presign = AsyncMock(return_value="https://example.com/presigned-url")
+
+        with patch("chuk_mcp_server.has_artifact_store", return_value=True):
+            with patch("chuk_mcp_server.get_artifact_store", return_value=mock_store):
+                result = await pptx_get_download_url()
+                data = json.loads(result)
+
+                assert data["success"] is True
+                assert data["url"] == "https://example.com/presigned-url"
+                assert data["presentation"] == "mocked_store"
+                assert data["namespace_id"] == "test-namespace-id"
+                assert data["expires_in"] == 3600
+                assert data["filename"] == "mocked_store.pptx"
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_get_download_url_with_custom_expires_mocked(self) -> None:
+        """Test getting download URL with custom expiration using mocked store."""
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
+
+        manager.clear_all()
+        await pptx_create(name="custom_exp")
+
+        # Set up namespace ID
+        manager._namespace_ids["custom_exp"] = "test-ns-id"
+
+        # Create mock store
+        mock_store = MagicMock()
+        mock_store.presign = AsyncMock(return_value="https://example.com/custom-url")
+
+        with patch("chuk_mcp_server.has_artifact_store", return_value=True):
+            with patch("chuk_mcp_server.get_artifact_store", return_value=mock_store):
+                result = await pptx_get_download_url(expires_in=7200)
+                data = json.loads(result)
+
+                assert data["success"] is True
+                assert data["expires_in"] == 7200
+
+                # Verify presign was called with correct expires
+                mock_store.presign.assert_called_once_with("test-ns-id", expires=7200)
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_get_download_url_presign_exception(self) -> None:
+        """Test handling of presign exception."""
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
+
+        manager.clear_all()
+        await pptx_create(name="presign_error")
+
+        # Set up namespace ID
+        manager._namespace_ids["presign_error"] = "test-ns-id"
+
+        # Create mock store that raises exception
+        mock_store = MagicMock()
+        mock_store.presign = AsyncMock(side_effect=Exception("Presign failed"))
+
+        with patch("chuk_mcp_server.has_artifact_store", return_value=True):
+            with patch("chuk_mcp_server.get_artifact_store", return_value=mock_store):
+                result = await pptx_get_download_url()
+                data = json.loads(result)
+
+                assert "error" in data
+                assert "Presign failed" in data["error"]
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_get_download_url_uses_current_presentation(self) -> None:
+        """Test that download URL uses current presentation when not specified."""
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
+
+        manager.clear_all()
+        await pptx_create(name="first")
+        await pptx_create(name="second")  # This becomes current
+
+        # Set up namespace IDs
+        manager._namespace_ids["first"] = "ns-first"
+        manager._namespace_ids["second"] = "ns-second"
+
+        mock_store = MagicMock()
+        mock_store.presign = AsyncMock(return_value="https://example.com/url")
+
+        with patch("chuk_mcp_server.has_artifact_store", return_value=True):
+            with patch("chuk_mcp_server.get_artifact_store", return_value=mock_store):
+                result = await pptx_get_download_url()
+                data = json.loads(result)
+
+                # Should use "second" (current presentation)
+                assert data["presentation"] == "second"
+                mock_store.presign.assert_called_once_with("ns-second", expires=3600)
+
+        manager.clear_all()

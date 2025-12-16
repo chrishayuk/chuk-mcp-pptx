@@ -1,3 +1,7 @@
+# Git
+.git
+.gitignore
+
 # Python
 __pycache__/
 *.py[cod]
@@ -40,28 +44,37 @@ env/
 htmlcov/
 .tox/
 .hypothesis/
+tests/
 
-# Output files
+# Type checking
+.mypy_cache/
+.ruff_cache/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Examples and outputs
+examples/
 outputs/
+
+# Environment files - CRITICAL: DO NOT INCLUDE SECRETS IN DOCKER IMAGE
+.env
+.env.*
+*.env
 
 # Temporary files
 *.tmp
 *.bak
 *.log
 
-# Development
-*.pptx
-*.ppt
-~$*
+# Lock files (we install from pyproject.toml)
+uv.lock
 
-# Keep example outputs
-!examples/*.pptx
+# GitHub
+.github/
 
-# Environment
-.env
-.env.local
-
-# cache
-.mypy_cache/
-.ruff_cache/
-.claude
+# Fly deployment docs
+FLY_DEPLOYMENT.md
+fly.toml

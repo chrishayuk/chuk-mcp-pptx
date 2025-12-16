@@ -44,6 +44,7 @@ from .tools.theme_tools import register_theme_tools
 from .tools.shape_tools import register_shape_tools
 from .themes.theme_manager import ThemeManager
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -356,6 +357,82 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
     except Exception as e:
         logger.error(f"Failed to save presentation: {e}")
         return ErrorResponse(error=ErrorMessages.SAVE_FAILED.format(error=str(e))).model_dump_json()
+
+
+@mcp.tool  # type: ignore[arg-type]
+async def pptx_get_download_url(presentation: str | None = None, expires_in: int = 3600) -> str:
+    """
+    Get a presigned download URL for the presentation.
+
+    Generates a temporary URL that can be used to download the presentation
+    directly from cloud storage (S3/Tigris). The URL expires after the specified
+    duration.
+
+    Args:
+        presentation: Name of presentation (uses current if not specified)
+        expires_in: URL expiration time in seconds (default: 3600 = 1 hour)
+
+    Returns:
+        JSON string with download URL or error
+
+    Example:
+        result = await pptx_get_download_url()
+        # Returns: {"url": "https://...", "expires_in": 3600}
+    """
+    try:
+        from chuk_mcp_server import get_artifact_store, has_artifact_store
+
+        pres_name = presentation or manager.get_current_name()
+        if not pres_name:
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        # Make sure presentation exists and is saved to store
+        prs = manager.get_presentation(pres_name)
+        if not prs:
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        # Get namespace ID
+        namespace_id = manager.get_namespace_id(pres_name)
+        if not namespace_id:
+            # Try to save first
+            saved = await manager.save(pres_name)
+            if not saved:
+                return ErrorResponse(
+                    error="Presentation not saved to artifact store. Save it first."
+                ).model_dump_json()
+            namespace_id = manager.get_namespace_id(pres_name)
+
+        if not namespace_id:
+            return ErrorResponse(
+                error="Could not get namespace ID for presentation."
+            ).model_dump_json()
+
+        # Get artifact store
+        if not has_artifact_store():
+            return ErrorResponse(
+                error="No artifact store configured. Set up S3/Tigris storage."
+            ).model_dump_json()
+
+        store = get_artifact_store()
+
+        # Generate presigned URL
+        url = await store.presign(namespace_id, expires=expires_in)
+
+        import json
+
+        return json.dumps(
+            {
+                "success": True,
+                "url": url,
+                "presentation": pres_name,
+                "namespace_id": namespace_id,
+                "expires_in": expires_in,
+                "filename": f"{pres_name}.pptx",
+            }
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate download URL: {e}")
+        return ErrorResponse(error=f"Failed to generate download URL: {str(e)}").model_dump_json()
 
 
 @mcp.tool  # type: ignore[arg-type]
