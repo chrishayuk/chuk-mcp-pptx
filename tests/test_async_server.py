@@ -1026,21 +1026,23 @@ class TestPptxGetDownloadUrl:
         assert "error" in data
 
     @pytest.mark.asyncio
-    async def test_get_download_url_no_namespace_id(self) -> None:
-        """Test getting download URL when presentation has no namespace ID."""
+    async def test_get_download_url_works_without_namespace_id(self) -> None:
+        """Test getting download URL works even without prior namespace ID."""
         from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
 
         manager.clear_all()
         await pptx_create(name="no_namespace")
 
-        # Clear namespace IDs to simulate no artifact store
+        # Clear namespace IDs - the new implementation doesn't require it
         manager._namespace_ids.clear()
 
         result = await pptx_get_download_url()
         data = json.loads(result)
 
-        # Should return error since no namespace ID and no store to save
-        assert "error" in data
+        # Should succeed because the new implementation stores as artifact directly
+        assert data.get("success") is True
+        assert data.get("presentation") == "no_namespace"
+        assert "url" in data
 
         manager.clear_all()
 
@@ -1055,8 +1057,10 @@ class TestPptxGetDownloadUrl:
         result = await pptx_get_download_url(presentation="specific")
         data = json.loads(result)
 
-        # Should fail because no artifact store is configured in tests
-        assert "error" in data
+        # Should succeed with memory artifact store
+        assert data.get("success") is True
+        assert data.get("presentation") == "specific"
+        assert "url" in data
 
         manager.clear_all()
 
@@ -1086,8 +1090,9 @@ class TestPptxGetDownloadUrl:
         result = await pptx_get_download_url(expires_in=7200)
         data = json.loads(result)
 
-        # Should fail because no artifact store in tests
-        assert "error" in data
+        # Should succeed with memory artifact store
+        assert data.get("success") is True
+        assert data.get("expires_in") == 7200
 
         manager.clear_all()
 
@@ -1099,9 +1104,6 @@ class TestPptxGetDownloadUrl:
 
         manager.clear_all()
         await pptx_create(name="no_store")
-
-        # Force the namespace_id to be set so we get past that check
-        manager._namespace_ids["no_store"] = "test-namespace-id"
 
         # Mock has_artifact_store to return False
         with patch("chuk_mcp_server.has_artifact_store", return_value=False):
@@ -1123,11 +1125,9 @@ class TestPptxGetDownloadUrl:
         manager.clear_all()
         await pptx_create(name="mocked_store")
 
-        # Set up namespace ID
-        manager._namespace_ids["mocked_store"] = "test-namespace-id"
-
-        # Create mock store
+        # Create mock store with both store() and presign() methods
         mock_store = MagicMock()
+        mock_store.store = AsyncMock(return_value="artifact-123")
         mock_store.presign = AsyncMock(return_value="https://example.com/presigned-url")
 
         with patch("chuk_mcp_server.has_artifact_store", return_value=True):
@@ -1138,7 +1138,7 @@ class TestPptxGetDownloadUrl:
                 assert data["success"] is True
                 assert data["url"] == "https://example.com/presigned-url"
                 assert data["presentation"] == "mocked_store"
-                assert data["namespace_id"] == "test-namespace-id"
+                assert data["artifact_id"] == "artifact-123"
                 assert data["expires_in"] == 3600
                 assert data["filename"] == "mocked_store.pptx"
 
@@ -1153,11 +1153,9 @@ class TestPptxGetDownloadUrl:
         manager.clear_all()
         await pptx_create(name="custom_exp")
 
-        # Set up namespace ID
-        manager._namespace_ids["custom_exp"] = "test-ns-id"
-
         # Create mock store
         mock_store = MagicMock()
+        mock_store.store = AsyncMock(return_value="artifact-456")
         mock_store.presign = AsyncMock(return_value="https://example.com/custom-url")
 
         with patch("chuk_mcp_server.has_artifact_store", return_value=True):
@@ -1169,7 +1167,7 @@ class TestPptxGetDownloadUrl:
                 assert data["expires_in"] == 7200
 
                 # Verify presign was called with correct expires
-                mock_store.presign.assert_called_once_with("test-ns-id", expires=7200)
+                mock_store.presign.assert_called_once_with("artifact-456", expires=7200)
 
         manager.clear_all()
 
@@ -1182,11 +1180,9 @@ class TestPptxGetDownloadUrl:
         manager.clear_all()
         await pptx_create(name="presign_error")
 
-        # Set up namespace ID
-        manager._namespace_ids["presign_error"] = "test-ns-id"
-
-        # Create mock store that raises exception
+        # Create mock store that raises exception on presign
         mock_store = MagicMock()
+        mock_store.store = AsyncMock(return_value="artifact-789")
         mock_store.presign = AsyncMock(side_effect=Exception("Presign failed"))
 
         with patch("chuk_mcp_server.has_artifact_store", return_value=True):
@@ -1209,11 +1205,8 @@ class TestPptxGetDownloadUrl:
         await pptx_create(name="first")
         await pptx_create(name="second")  # This becomes current
 
-        # Set up namespace IDs
-        manager._namespace_ids["first"] = "ns-first"
-        manager._namespace_ids["second"] = "ns-second"
-
         mock_store = MagicMock()
+        mock_store.store = AsyncMock(return_value="artifact-second")
         mock_store.presign = AsyncMock(return_value="https://example.com/url")
 
         with patch("chuk_mcp_server.has_artifact_store", return_value=True):
@@ -1223,6 +1216,6 @@ class TestPptxGetDownloadUrl:
 
                 # Should use "second" (current presentation)
                 assert data["presentation"] == "second"
-                mock_store.presign.assert_called_once_with("ns-second", expires=3600)
+                mock_store.presign.assert_called_once_with("artifact-second", expires=3600)
 
         manager.clear_all()

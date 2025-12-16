@@ -356,16 +356,39 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
         namespace_id = manager.get_namespace_id(pres_name)
         download_url = None
 
-        # Try to generate a presigned download URL
-        if namespace_id:
-            try:
-                from chuk_mcp_server import get_artifact_store, has_artifact_store
+        # Try to generate a presigned download URL by storing as artifact
+        try:
+            from chuk_mcp_server import get_artifact_store, has_artifact_store
 
-                if has_artifact_store():
-                    store = get_artifact_store()
-                    download_url = await store.presign(namespace_id, expires=3600)
-            except Exception as e:
-                logger.debug(f"Could not generate download URL: {e}")
+            if has_artifact_store():
+                store = get_artifact_store()
+                logger.info("Storing presentation as artifact for presigned URL")
+
+                # Read the saved file and store as artifact
+                from pathlib import Path
+
+                pptx_path = Path(path)
+                if pptx_path.exists():
+                    pptx_data = pptx_path.read_bytes()
+
+                    # Store as artifact to get presigned URL
+                    artifact_id = await store.store(
+                        data=pptx_data,
+                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        summary=f"{pres_name}.pptx",
+                        meta={"filename": f"{pres_name}.pptx", "presentation_name": pres_name},
+                    )
+                    logger.info(f"Stored as artifact: {artifact_id}")
+
+                    # Generate presigned URL
+                    download_url = await store.presign(artifact_id, expires=3600)
+                    logger.info(
+                        f"Generated presigned URL: {download_url[:80] if download_url else 'None'}..."
+                    )
+            else:
+                logger.warning("Artifact store not available for presigned URL generation")
+        except Exception as e:
+            logger.warning(f"Could not generate download URL: {e}", exc_info=True)
 
         from .models import ExportResponse
 
@@ -405,32 +428,19 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
         # Returns: {"url": "https://...", "expires_in": 3600}
     """
     try:
+        import io
+        import json
+
         from chuk_mcp_server import get_artifact_store, has_artifact_store
 
         pres_name = presentation or manager.get_current_name()
         if not pres_name:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
-        # Make sure presentation exists and is saved to store
+        # Make sure presentation exists
         prs = manager.get_presentation(pres_name)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
-
-        # Get namespace ID
-        namespace_id = manager.get_namespace_id(pres_name)
-        if not namespace_id:
-            # Try to save first
-            saved = await manager.save(pres_name)
-            if not saved:
-                return ErrorResponse(
-                    error="Presentation not saved to artifact store. Save it first."
-                ).model_dump_json()
-            namespace_id = manager.get_namespace_id(pres_name)
-
-        if not namespace_id:
-            return ErrorResponse(
-                error="Could not get namespace ID for presentation."
-            ).model_dump_json()
 
         # Get artifact store
         if not has_artifact_store():
@@ -440,17 +450,31 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
 
         store = get_artifact_store()
 
-        # Generate presigned URL
-        url = await store.presign(namespace_id, expires=expires_in)
+        # Export presentation to bytes
+        buffer = io.BytesIO()
+        await asyncio.to_thread(prs.save, buffer)
+        buffer.seek(0)
+        pptx_data = buffer.read()
 
-        import json
+        # Store as artifact to get presigned URL
+        artifact_id = await store.store(
+            data=pptx_data,
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            summary=f"{pres_name}.pptx",
+            meta={"filename": f"{pres_name}.pptx", "presentation_name": pres_name},
+        )
+        logger.info(f"Stored presentation as artifact: {artifact_id}")
+
+        # Generate presigned URL
+        url = await store.presign(artifact_id, expires=expires_in)
+        logger.info(f"Generated presigned URL for {pres_name}")
 
         return json.dumps(
             {
                 "success": True,
                 "url": url,
                 "presentation": pres_name,
-                "namespace_id": namespace_id,
+                "artifact_id": artifact_id,
                 "expires_in": expires_in,
                 "filename": f"{pres_name}.pptx",
             }
@@ -660,6 +684,44 @@ async def pptx_get_info(presentation: str | None = None) -> str:
 
 # Note: pptx_add_data_table is now provided by table_tools.py with layout validation
 # The function is registered via register_table_tools()
+
+
+@mcp.tool  # type: ignore[arg-type]
+async def pptx_status() -> str:
+    """
+    Get server status and configuration information.
+
+    Returns information about the server, storage configuration,
+    and loaded presentations. Useful for debugging and monitoring.
+
+    Returns:
+        JSON string with StatusResponse model
+
+    Example:
+        status = await pptx_status()
+    """
+    import os
+
+    from chuk_mcp_server import has_artifact_store
+
+    from .models import StatusResponse
+
+    try:
+        provider = os.environ.get("CHUK_ARTIFACTS_PROVIDER", "memory")
+        storage_path = manager.base_path
+
+        return StatusResponse(
+            server="chuk-mcp-pptx",
+            version="0.2.1",
+            storage_provider=provider,
+            storage_path=storage_path,
+            presentations_loaded=len(manager._presentations),
+            current_presentation=manager.get_current_name(),
+            artifact_store_available=has_artifact_store(),
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to get server status: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
 
 
 # Run the server
