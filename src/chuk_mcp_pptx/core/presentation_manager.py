@@ -304,6 +304,22 @@ class PresentationManager:
             prs = Presentation()
             logger.info("Created blank presentation")
 
+        # If presentation already exists, delete the old one first to ensure clean overwrite
+        if name in self._presentations:
+            logger.info(f"Presentation '{name}' already exists, overwriting...")
+            # Delete old namespace if it exists
+            old_namespace_id = self._namespace_ids.get(name)
+            if old_namespace_id:
+                store = self._get_store()
+                if store:
+                    try:
+                        await store.delete_namespace(old_namespace_id)
+                        logger.info(f"Deleted old artifact for presentation '{name}' ({old_namespace_id})")
+                    except Exception as e:
+                        logger.warning(f"Could not delete old artifact: {e}")
+                # Remove from namespace tracking
+                del self._namespace_ids[name]
+
         self._presentations[name] = prs
         self._current_presentation = name
 

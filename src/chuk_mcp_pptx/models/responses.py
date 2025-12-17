@@ -276,8 +276,8 @@ class DownloadUrlResponse(BaseModel):
         extra = "forbid"
 
 
-class TemplateInfo(BaseModel):
-    """Information about a template."""
+class TemplateMetadataResponse(BaseModel):
+    """Information about a template (for listing templates)."""
 
     name: str = Field(..., description="Template name", min_length=1)
     description: str | None = Field(None, description="Template description")
@@ -292,7 +292,7 @@ class TemplateInfo(BaseModel):
 class TemplateListResponse(BaseModel):
     """Response model for listing templates."""
 
-    templates: list[TemplateInfo] = Field(..., description="List of available templates")
+    templates: list[TemplateMetadataResponse] = Field(..., description="List of available templates")
     total: int = Field(..., description="Total number of templates", ge=0)
     builtin_count: int = Field(..., description="Number of built-in templates", ge=0)
     custom_count: int = Field(..., description="Number of custom templates", ge=0)

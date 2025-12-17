@@ -123,10 +123,12 @@ async def pptx_create(
     Args:
         name: Unique name for the presentation (used for reference in other commands)
         theme: Optional theme to apply (e.g., "dark-violet", "tech-blue")
-        template_name: Optional template name. Can be:
-            - Built-in template (e.g., "brand_proposal", "corporate", "minimal")
-            - Custom template from artifact store
-            Use pptx_list_templates to see all available templates
+        template_name: Optional built-in template name to use as base. IMPORTANT:
+            - Use this to get professional layouts and designs
+            - Built-in templates: "brand_proposal" (55 layouts), "corporate", "minimal"
+            - Use pptx_list_templates() to see all available templates
+            - DO NOT use pptx_get_builtin_template first - just pass the name directly
+            - Example: pptx_create(name="my_deck", template_name="brand_proposal")
 
     Returns:
         JSON string with PresentationResponse model. When created from a template,
@@ -156,8 +158,10 @@ async def pptx_create(
         # Create blank presentation
         await pptx_create(name="quarterly_report", theme="tech-blue")
 
-        # Create from built-in brand_proposal template - FULL WORKFLOW
+        # Create from built-in template - RECOMMENDED WORKFLOW
+        # DO NOT call pptx_get_builtin_template first - just use template_name parameter
         result = await pptx_create(name="new_brand", template_name="brand_proposal")
+        # This creates presentation with ALL 55 layouts from brand_proposal template
 
         # Step 1: Analyze template to see all 55 layouts
         layouts = await pptx_analyze_template("brand_proposal")
