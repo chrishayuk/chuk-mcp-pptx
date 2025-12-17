@@ -65,8 +65,8 @@ def register_inspection_tools(mcp, manager):
             #  WARNING: Chart extends beyond safe content area"
         """
 
-        def _inspect_slide():
-            prs = manager.get_presentation(presentation)
+        async def _inspect_slide():
+            prs = await manager.get_presentation(presentation)
             if not prs:
                 return "Error: No presentation found"
 
@@ -351,7 +351,7 @@ def register_inspection_tools(mcp, manager):
 
             return issues
 
-        return await asyncio.get_event_loop().run_in_executor(None, _inspect_slide)
+        return await _inspect_slide()
 
     @mcp.tool
     async def pptx_fix_slide_layout(
@@ -391,8 +391,8 @@ def register_inspection_tools(mcp, manager):
             # Returns: "Fixed 3 overlapping elements, adjusted 2 out-of-bounds items"
         """
 
-        def _fix_layout():
-            prs = manager.get_presentation(presentation)
+        async def _fix_layout():
+            prs = await manager.get_presentation(presentation)
             if not prs:
                 return "Error: No presentation found"
 
@@ -618,7 +618,7 @@ def register_inspection_tools(mcp, manager):
 
             return aligned
 
-        return await asyncio.get_event_loop().run_in_executor(None, _fix_layout)
+        return await _fix_layout()
 
     @mcp.tool
     async def pptx_analyze_presentation_layout(presentation: str | None = None) -> str:
@@ -638,8 +638,8 @@ def register_inspection_tools(mcp, manager):
             Comprehensive layout analysis report
         """
 
-        def _analyze_presentation():
-            prs = manager.get_presentation(presentation)
+        async def _analyze_presentation():
+            prs = await manager.get_presentation(presentation)
             if not prs:
                 return "Error: No presentation found"
 
@@ -765,7 +765,7 @@ def register_inspection_tools(mcp, manager):
 
             return not (r1 <= l2 or r2 <= l1 or b1 <= t2 or b2 <= t1)
 
-        return await asyncio.get_event_loop().run_in_executor(None, _analyze_presentation)
+        return await _analyze_presentation()
 
     # Return the tools for external access
     return {

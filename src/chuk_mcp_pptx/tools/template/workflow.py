@@ -130,7 +130,7 @@ def register_workflow_tools(mcp, manager, template_manager):
             )
 
             # Update metadata
-            manager.update_slide_metadata(slide_index)
+            await manager.update_slide_metadata(slide_index)
             metadata.update_modified()
 
             # Save to artifact store

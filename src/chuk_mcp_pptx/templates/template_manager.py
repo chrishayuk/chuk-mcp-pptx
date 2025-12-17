@@ -41,10 +41,54 @@ class TemplateManager:
 
     def __init__(self):
         """Initialize the template manager."""
-        self.templates_dir = Path(__file__).parent / "builtin"
+        # Use multiple path resolution strategies for robustness
+        self.templates_dir = self._find_templates_dir()
         self._templates: dict[str, TemplateMetadata] = {}
         self._template_cache: dict[str, bytes] = {}
+
+        # Log template directory for debugging
+        logger.info(f"TemplateManager initialized with templates_dir: {self.templates_dir}")
+        logger.info(f"Templates directory exists: {self.templates_dir.exists()}")
+        logger.info(f"Templates directory absolute path: {self.templates_dir.absolute()}")
+        if self.templates_dir.exists():
+            template_files = list(self.templates_dir.glob("*.pptx"))
+            logger.info(f"Found {len(template_files)} template files: {[f.name for f in template_files]}")
+        else:
+            logger.error(f"Templates directory does not exist!")
+            logger.error(f"__file__ = {__file__}")
+            logger.error(f"Parent directory contents: {list(Path(__file__).parent.iterdir())}")
+
         self._initialize_builtin_templates()
+
+    def _find_templates_dir(self) -> Path:
+        """Find templates directory using multiple strategies."""
+        # Strategy 1: Relative to this file (works for editable installs)
+        templates_dir = Path(__file__).parent / "builtin"
+        if templates_dir.exists():
+            return templates_dir
+
+        # Strategy 2: Use importlib.resources (works for installed packages)
+        try:
+            import importlib.resources as resources
+            if hasattr(resources, 'files'):
+                # Python 3.9+
+                templates_ref = resources.files('chuk_mcp_pptx') / 'templates' / 'builtin'
+                if hasattr(templates_ref, 'as_posix'):
+                    templates_dir = Path(str(templates_ref))
+                    if templates_dir.exists():
+                        return templates_dir
+        except Exception as e:
+            logger.warning(f"Could not use importlib.resources: {e}")
+
+        # Strategy 3: Fallback to package location
+        import chuk_mcp_pptx
+        pkg_dir = Path(chuk_mcp_pptx.__file__).parent
+        templates_dir = pkg_dir / 'templates' / 'builtin'
+        if templates_dir.exists():
+            return templates_dir
+
+        # If all else fails, return the original path (will log error later)
+        return Path(__file__).parent / "builtin"
 
     def _initialize_builtin_templates(self) -> None:
         """Initialize registry of built-in templates."""
@@ -125,19 +169,27 @@ class TemplateManager:
 
         # Try to load from builtin directory
         template_path = self.templates_dir / f"{template_name}.pptx"
+        logger.info(f"Looking for template at: {template_path}")
+
         if template_path.exists():
             try:
                 data = await asyncio.to_thread(template_path.read_bytes)
                 self._template_cache[template_name] = data
+                logger.info(f"Successfully loaded template {template_name} ({len(data)} bytes)")
                 return data
             except Exception as e:
                 logger.error(f"Failed to load template {template_name}: {e}")
                 return None
 
-        # If template file doesn't exist yet, create a placeholder blank presentation
-        # This allows the system to work even without actual template files
-        logger.info(f"Template file not found, creating placeholder: {template_name}")
-        return await self._create_placeholder_template()
+        # Template file not found - this is an error condition
+        logger.error(f"Template file not found: {template_path}")
+        logger.error(f"Templates directory: {self.templates_dir}")
+        logger.error(f"Templates directory exists: {self.templates_dir.exists()}")
+        if self.templates_dir.exists():
+            logger.error(f"Files in templates directory: {list(self.templates_dir.iterdir())}")
+
+        # Return None to indicate error instead of silently creating blank presentation
+        return None
 
     async def _create_placeholder_template(self) -> bytes:
         """Create a blank placeholder template."""

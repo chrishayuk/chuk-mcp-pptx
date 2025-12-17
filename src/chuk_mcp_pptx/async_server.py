@@ -257,12 +257,12 @@ async def pptx_add_title_slide(
         )
     """
     try:
-        prs = manager.get_presentation(presentation)
+        prs = await manager.get_presentation(presentation)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
         # Check if presentation was created from a template
-        metadata = manager.get_metadata(presentation)
+        metadata = await manager.get_metadata(presentation)
         if metadata and metadata.template_path:
             return ErrorResponse(
                 error=f"This presentation was created from template '{metadata.template_path}'. "
@@ -279,7 +279,7 @@ async def pptx_add_title_slide(
             slide.placeholders[1].text = subtitle
 
         # Apply presentation theme to the slide
-        metadata = manager.get_metadata(presentation)
+        metadata = await manager.get_metadata(presentation)
         if metadata and metadata.theme:
             theme_obj = theme_manager.get_theme(metadata.theme)
             if theme_obj:
@@ -288,7 +288,7 @@ async def pptx_add_title_slide(
         slide_index = len(prs.slides) - 1
 
         # Update metadata
-        manager.update_slide_metadata(slide_index)
+        await manager.update_slide_metadata(slide_index)
 
         # Update in VFS
         await manager.update(presentation)
@@ -337,12 +337,12 @@ async def pptx_add_slide(title: str, content: list[str], presentation: str | Non
         )
     """
     try:
-        prs = manager.get_presentation(presentation)
+        prs = await manager.get_presentation(presentation)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
         # Check if presentation was created from a template
-        metadata = manager.get_metadata(presentation)
+        metadata = await manager.get_metadata(presentation)
         if metadata and metadata.template_path:
             return ErrorResponse(
                 error=f"This presentation was created from template '{metadata.template_path}'. "
@@ -367,7 +367,7 @@ async def pptx_add_slide(title: str, content: list[str], presentation: str | Non
                 p.level = 0  # First level bullet
 
         # Apply presentation theme to the slide
-        metadata = manager.get_metadata(presentation)
+        metadata = await manager.get_metadata(presentation)
         if metadata and metadata.theme:
             theme_obj = theme_manager.get_theme(metadata.theme)
             if theme_obj:
@@ -376,7 +376,7 @@ async def pptx_add_slide(title: str, content: list[str], presentation: str | Non
         slide_index = len(prs.slides) - 1
 
         # Update metadata
-        manager.update_slide_metadata(slide_index)
+        await manager.update_slide_metadata(slide_index)
 
         # Update in VFS
         await manager.update(presentation)
@@ -424,7 +424,7 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
         if not pres_name:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
-        prs = manager.get_presentation(pres_name)
+        prs = await manager.get_presentation(pres_name)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
@@ -526,7 +526,7 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
         # Make sure presentation exists
-        prs = manager.get_presentation(pres_name)
+        prs = await manager.get_presentation(pres_name)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
@@ -637,7 +637,7 @@ async def pptx_import_base64(data: str, name: str) -> str:
         if not success:
             return ErrorResponse(error="Failed to import presentation").model_dump_json()
 
-        prs = manager.get_presentation(name)
+        prs = await manager.get_presentation(name)
         slide_count = len(prs.slides) if prs else 0
 
         from .models import ImportResponse

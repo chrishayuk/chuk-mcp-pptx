@@ -149,7 +149,9 @@ class PresentationManager:
 
     async def _load_from_store(self, name: str) -> PresentationType | None:
         """
-        Load presentation from artifact store.
+        Load presentation from artifact store by name.
+
+        Uses list_namespaces() to find the presentation within the session context.
 
         Args:
             name: Presentation name
@@ -163,9 +165,25 @@ class PresentationManager:
             return None
 
         try:
-            namespace_id = self._namespace_ids.get(name)
+            # List all namespaces in current session to find our presentation
+            safe_name = self._sanitize_name(name)
+            expected_name = f"{self.base_path}/{safe_name}"
+
+            namespaces = await store.list_namespaces()
+            logger.debug(f"Looking for presentation '{expected_name}' in {len(namespaces)} namespaces")
+
+            # Find namespace matching our presentation name
+            namespace_id = None
+            for ns_info in namespaces:
+                if ns_info.name == expected_name:
+                    namespace_id = ns_info.namespace_id
+                    # Cache the namespace_id for future saves
+                    self._namespace_ids[name] = namespace_id
+                    logger.debug(f"Found namespace {namespace_id} for presentation '{name}'")
+                    break
+
             if not namespace_id:
-                logger.debug(f"Presentation not found in namespace mapping: {name}")
+                logger.debug(f"Presentation '{name}' not found in artifact store (expected name: {expected_name})")
                 return None
 
             # Read from artifact store
@@ -176,10 +194,10 @@ class PresentationManager:
 
             buffer = io.BytesIO(data)
             prs = Presentation(buffer)
-            logger.info(f"Loaded presentation from artifact store: {name} ({namespace_id})")
+            logger.info(f"Loaded presentation '{name}' from artifact store ({namespace_id})")
             return prs
         except Exception as e:
-            logger.error(f"Failed to load from artifact store: {e}")
+            logger.error(f"Failed to load presentation '{name}' from artifact store: {e}")
             return None
 
     async def _delete_from_store(self, name: str) -> bool:
@@ -393,9 +411,11 @@ class PresentationManager:
 
         return None
 
-    def get_presentation(self, name: str | None = None) -> PresentationType | None:
+    async def get_presentation(self, name: str | None = None) -> PresentationType | None:
         """
-        Get just the presentation object (synchronous).
+        Get just the presentation object (async).
+
+        This method attempts to load from artifact store if not found in memory.
 
         Args:
             name: Presentation name (uses current if not specified)
@@ -403,14 +423,17 @@ class PresentationManager:
         Returns:
             Presentation object or None if not found
         """
-        pres_name = name or self._current_presentation
-        if not pres_name:
-            return None
-        return self._presentations.get(pres_name)
+        result = await self.get(name)
+        if result:
+            prs, _ = result
+            return prs
+        return None
 
-    def get_metadata(self, name: str | None = None) -> PresentationMetadata | None:
+    async def get_metadata(self, name: str | None = None) -> PresentationMetadata | None:
         """
-        Get just the metadata (synchronous).
+        Get just the metadata (async).
+
+        This method attempts to load from artifact store if not found in memory.
 
         Args:
             name: Presentation name (uses current if not specified)
@@ -418,10 +441,11 @@ class PresentationManager:
         Returns:
             PresentationMetadata or None if not found
         """
-        pres_name = name or self._current_presentation
-        if not pres_name:
-            return None
-        return self._metadata.get(pres_name)
+        result = await self.get(name)
+        if result:
+            _, metadata = result
+            return metadata
+        return None
 
     async def save(self, name: str | None = None) -> bool:
         """
@@ -548,9 +572,9 @@ class PresentationManager:
         """Get the name of the current presentation."""
         return self._current_presentation
 
-    def update_slide_metadata(self, slide_index: int) -> None:
+    async def update_slide_metadata(self, slide_index: int) -> None:
         """
-        Update metadata for a slide after modifications.
+        Update metadata for a slide after modifications (async).
 
         Args:
             slide_index: Index of the slide to update
@@ -558,11 +582,12 @@ class PresentationManager:
         if not self._current_presentation:
             return
 
-        prs = self._presentations.get(self._current_presentation)
-        metadata = self._metadata.get(self._current_presentation)
-
-        if not prs or not metadata:
+        # Use async get to ensure we have the presentation loaded
+        result = await self.get(self._current_presentation)
+        if not result:
             return
+
+        prs, metadata = result
 
         # Ensure we have enough slide metadata entries
         while len(metadata.slides) <= slide_index:

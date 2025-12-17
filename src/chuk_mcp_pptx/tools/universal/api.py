@@ -618,7 +618,7 @@ def register_universal_component_api(mcp, manager):
                 logger.info(f"Component registered with ID: {component_id}")
 
             # Update metadata and save
-            manager.update_slide_metadata(slide_index)
+            await manager.update_slide_metadata(slide_index)
             await manager.update(presentation)
 
             pres_name = presentation or manager.get_current_name() or "presentation"
@@ -847,7 +847,7 @@ def register_universal_component_api(mcp, manager):
             )
 
             # Update metadata and save
-            manager.update_slide_metadata(slide_index)
+            await manager.update_slide_metadata(slide_index)
             await manager.update(presentation)
 
             pres_name = presentation or manager.get_current_name() or "presentation"

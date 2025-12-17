@@ -80,22 +80,20 @@ def register_theme_tools(mcp, manager):
             # Returns theme configuration with all colors and settings
         """
 
-        def _get_info():
-            theme_manager = ThemeManager()
-            info = theme_manager.get_theme_info(theme_name)
+        theme_manager = ThemeManager()
+        info = theme_manager.get_theme_info(theme_name)
 
-            if not info:
-                return json.dumps(
-                    {
-                        "error": f"Theme '{theme_name}' not found",
-                        "hint": "Use pptx_list_themes() to see available themes",
-                    },
-                    indent=2,
-                )
+        if not info:
+            return json.dumps(
+                {
+                    "error": f"Theme '{theme_name}' not found",
+                    "hint": "Use pptx_list_themes() to see available themes",
+                },
+                indent=2,
+            )
 
-            return json.dumps(info, indent=2)
+        return json.dumps(info, indent=2)
 
-        return await asyncio.get_event_loop().run_in_executor(None, _get_info)
 
     @mcp.tool
     async def pptx_create_custom_theme(
@@ -137,71 +135,69 @@ def register_theme_tools(mcp, manager):
             # await pptx_apply_theme(slide_index=0, theme="brand-theme")
         """
 
-        def _create_theme():
-            # Validate primary_hue
-            valid_hues = list(PALETTE.keys())
-            if primary_hue not in valid_hues:
-                return json.dumps(
-                    {
-                        "error": f"Invalid primary_hue '{primary_hue}'",
-                        "hint": f"Choose from: {', '.join(valid_hues)}",
-                    },
-                    indent=2,
-                )
+        # Validate primary_hue
+        valid_hues = list(PALETTE.keys())
+        if primary_hue not in valid_hues:
+            return json.dumps(
+                {
+                    "error": f"Invalid primary_hue '{primary_hue}'",
+                    "hint": f"Choose from: {', '.join(valid_hues)}",
+                },
+                indent=2,
+            )
 
-            # Validate mode
-            if mode not in ["dark", "light"]:
-                return json.dumps(
-                    {"error": f"Invalid mode '{mode}'", "hint": "Choose 'dark' or 'light'"},
-                    indent=2,
-                )
+        # Validate mode
+        if mode not in ["dark", "light"]:
+            return json.dumps(
+                {"error": f"Invalid mode '{mode}'", "hint": "Choose 'dark' or 'light'"},
+                indent=2,
+            )
 
-            # Validate font_family
-            valid_fonts = list(FONT_FAMILIES.values())
-            if font_family not in valid_fonts:
-                # Allow custom fonts but warn
-                font_warning = f"Font '{font_family}' not in standard families. Using anyway."
-            else:
-                font_warning = None
+        # Validate font_family
+        valid_fonts = list(FONT_FAMILIES.values())
+        if font_family not in valid_fonts:
+            # Allow custom fonts but warn
+            font_warning = f"Font '{font_family}' not in standard families. Using anyway."
+        else:
+            font_warning = None
 
-            # Generate semantic tokens
-            try:
-                semantic_colors = get_semantic_tokens(primary_hue, mode)
-            except Exception as e:
-                return json.dumps({"error": f"Failed to generate theme: {str(e)}"}, indent=2)
+        # Generate semantic tokens
+        try:
+            semantic_colors = get_semantic_tokens(primary_hue, mode)
+        except Exception as e:
+            return json.dumps({"error": f"Failed to generate theme: {str(e)}"}, indent=2)
 
-            # Build complete theme configuration
-            theme_config = {
-                "name": name,
-                "primary_hue": primary_hue,
-                "mode": mode,
+        # Build complete theme configuration
+        theme_config = {
+            "name": name,
+            "primary_hue": primary_hue,
+            "mode": mode,
+            "font_family": font_family,
+            "colors": semantic_colors,
+            "typography": {
                 "font_family": font_family,
-                "colors": semantic_colors,
-                "typography": {
-                    "font_family": font_family,
-                    "headings": {
-                        "h1": get_text_style("h1"),
-                        "h2": get_text_style("h2"),
-                        "h3": get_text_style("h3"),
-                        "h4": get_text_style("h4"),
-                    },
-                    "body": get_text_style("body"),
-                    "small": get_text_style("small"),
+                "headings": {
+                    "h1": get_text_style("h1"),
+                    "h2": get_text_style("h2"),
+                    "h3": get_text_style("h3"),
+                    "h4": get_text_style("h4"),
                 },
-                "spacing": {"padding": PADDING, "radius": RADIUS},
-                "usage": {
-                    "description": f"Custom {mode} theme with {primary_hue} as primary color",
-                    "apply": "Use pptx_apply_theme() to apply this theme to slides",
-                    "components": "Components will automatically use these colors when theme is active",
-                },
-            }
+                "body": get_text_style("body"),
+                "small": get_text_style("small"),
+            },
+            "spacing": {"padding": PADDING, "radius": RADIUS},
+            "usage": {
+                "description": f"Custom {mode} theme with {primary_hue} as primary color",
+                "apply": "Use pptx_apply_theme() to apply this theme to slides",
+                "components": "Components will automatically use these colors when theme is active",
+            },
+        }
 
-            if font_warning:
-                theme_config["warning"] = font_warning
+        if font_warning:
+            theme_config["warning"] = font_warning
 
-            return json.dumps(theme_config, indent=2)
+        return json.dumps(theme_config, indent=2)
 
-        return await asyncio.get_event_loop().run_in_executor(None, _create_theme)
 
     @mcp.tool
     async def pptx_apply_theme(
@@ -376,10 +372,8 @@ def register_theme_tools(mcp, manager):
             # Use these colors in components or custom themes
         """
 
-        def _get_palette():
-            return json.dumps(PALETTE, indent=2)
+        return json.dumps(PALETTE, indent=2)
 
-        return await asyncio.get_event_loop().run_in_executor(None, _get_palette)
 
     @mcp.tool
     async def pptx_get_semantic_colors(primary_hue: str = "blue", mode: str = "dark") -> str:
@@ -401,14 +395,12 @@ def register_theme_tools(mcp, manager):
             # Returns primary, secondary, accent, background, text colors, etc.
         """
 
-        def _get_semantic():
-            try:
-                tokens = get_semantic_tokens(primary_hue, mode)
-                return json.dumps(tokens, indent=2)
-            except Exception as e:
-                return json.dumps({"error": str(e)}, indent=2)
+        try:
+            tokens = get_semantic_tokens(primary_hue, mode)
+            return json.dumps(tokens, indent=2)
+        except Exception as e:
+            return json.dumps({"error": str(e)}, indent=2)
 
-        return await asyncio.get_event_loop().run_in_executor(None, _get_semantic)
 
     @mcp.tool
     async def pptx_get_typography_tokens() -> str:
@@ -426,16 +418,14 @@ def register_theme_tools(mcp, manager):
             # Returns font families, sizes, weights, line heights
         """
 
-        def _get_typography():
-            tokens = {
-                "font_families": FONT_FAMILIES,
-                "font_sizes": FONT_SIZES,
-                "font_weights": FONT_WEIGHTS,
-                "line_heights": LINE_HEIGHTS,
-            }
-            return json.dumps(tokens, indent=2)
+        tokens = {
+            "font_families": FONT_FAMILIES,
+            "font_sizes": FONT_SIZES,
+            "font_weights": FONT_WEIGHTS,
+            "line_heights": LINE_HEIGHTS,
+        }
+        return json.dumps(tokens, indent=2)
 
-        return await asyncio.get_event_loop().run_in_executor(None, _get_typography)
 
     @mcp.tool
     async def pptx_get_text_style(variant: str = "body") -> str:
@@ -457,14 +447,12 @@ def register_theme_tools(mcp, manager):
             # Returns: {"size": 36, "weight": 700, "line_height": 1.2}
         """
 
-        def _get_style():
-            try:
-                style = get_text_style(variant)
-                return json.dumps(style, indent=2)
-            except ValueError as e:
-                return json.dumps({"error": str(e)}, indent=2)
+        try:
+            style = get_text_style(variant)
+            return json.dumps(style, indent=2)
+        except ValueError as e:
+            return json.dumps({"error": str(e)}, indent=2)
 
-        return await asyncio.get_event_loop().run_in_executor(None, _get_style)
 
     @mcp.tool
     async def pptx_get_spacing_tokens() -> str:
@@ -482,16 +470,14 @@ def register_theme_tools(mcp, manager):
             # Returns spacing scale, padding, margins, radius values
         """
 
-        def _get_spacing():
-            tokens = {
-                "spacing": SPACING,
-                "padding": PADDING,
-                "margins": MARGINS,
-                "radius": RADIUS,
-            }
-            return json.dumps(tokens, indent=2)
+        tokens = {
+            "spacing": SPACING,
+            "padding": PADDING,
+            "margins": MARGINS,
+            "radius": RADIUS,
+        }
+        return json.dumps(tokens, indent=2)
 
-        return await asyncio.get_event_loop().run_in_executor(None, _get_spacing)
 
     @mcp.tool
     async def pptx_get_all_tokens() -> str:
@@ -509,25 +495,23 @@ def register_theme_tools(mcp, manager):
             # Returns comprehensive object with all design tokens
         """
 
-        def _get_all():
-            tokens = {
-                "colors": PALETTE,
-                "typography": {
-                    "font_families": FONT_FAMILIES,
-                    "font_sizes": FONT_SIZES,
-                    "font_weights": FONT_WEIGHTS,
-                    "line_heights": LINE_HEIGHTS,
-                },
-                "spacing": {
-                    "spacing": SPACING,
-                    "padding": PADDING,
-                    "margins": MARGINS,
-                    "radius": RADIUS,
-                },
-            }
-            return json.dumps(tokens, indent=2)
+        tokens = {
+            "colors": PALETTE,
+            "typography": {
+                "font_families": FONT_FAMILIES,
+                "font_sizes": FONT_SIZES,
+                "font_weights": FONT_WEIGHTS,
+                "line_heights": LINE_HEIGHTS,
+            },
+            "spacing": {
+                "spacing": SPACING,
+                "padding": PADDING,
+                "margins": MARGINS,
+                "radius": RADIUS,
+            },
+        }
+        return json.dumps(tokens, indent=2)
 
-        return await asyncio.get_event_loop().run_in_executor(None, _get_all)
 
     # Return all tools
     return {

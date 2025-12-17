@@ -89,7 +89,7 @@ def register_placeholder_tools(mcp, manager):
             from ...constants import ErrorMessages
 
             # Get presentation
-            prs = manager.get_presentation(presentation)
+            prs = await manager.get_presentation(presentation)
             if not prs:
                 return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
