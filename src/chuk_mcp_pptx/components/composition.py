@@ -11,7 +11,7 @@ from pptx.util import Pt
 from pptx.enum.text import PP_ALIGN
 from abc import ABC, abstractmethod
 
-from .components.base import Component
+from .base import Component
 
 
 T = TypeVar("T", bound="ComposableComponent")

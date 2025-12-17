@@ -7,7 +7,7 @@ Tests all component registry and discovery MCP tools for >90% coverage.
 import pytest
 import json
 from unittest.mock import MagicMock, patch
-from chuk_mcp_pptx.tools.registry_tools import register_registry_tools
+from chuk_mcp_pptx.tools.universal.registry import register_registry_tools
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ async def registry_tools(mock_mcp_server, mock_presentation_manager):
 @pytest.fixture
 def mock_registry():
     """Create a mock component registry."""
-    with patch("chuk_mcp_pptx.tools.registry_tools.registry") as mock_reg:
+    with patch("chuk_mcp_pptx.tools.universal.registry.registry") as mock_reg:
         # Mock registry methods
         mock_reg.list_components.return_value = ["Button", "Card", "Alert"]
         mock_reg.list_by_category.return_value = ["Button"]

@@ -8,7 +8,7 @@ from pptx.enum.chart import XL_CHART_TYPE
 from pptx.util import Inches
 from pptx.dml.color import RGBColor
 
-from ...composition import ComposableComponent
+from .composition import ComposableComponent
 from ...variants import CHART_VARIANTS
 from ...layout.helpers import (
     validate_position,

@@ -25,7 +25,7 @@ from chuk_mcp_pptx.models import (
     ChartResponse,
     ListPresentationsResponse,
 )
-from chuk_mcp_pptx.presentation_manager import PresentationManager
+from chuk_mcp_pptx.core.presentation_manager import PresentationManager
 
 
 @pytest.fixture

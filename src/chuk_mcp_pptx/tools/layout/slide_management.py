@@ -13,8 +13,8 @@ Note: Grid-based component positioning is handled by component_tools.py.
 Slide templates (dashboard, comparison, etc.) are in slide_templates/.
 """
 
-from ..models import ErrorResponse, SuccessResponse
-from ..constants import (
+from ...models import ErrorResponse, SuccessResponse
+from ...constants import (
     ErrorMessages,
 )
 
@@ -23,7 +23,7 @@ from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 # Import design system typography tokens
-from ..tokens.typography import FONT_SIZES
+from ...tokens.typography import FONT_SIZES
 
 
 def register_layout_tools(mcp, manager):
@@ -208,7 +208,7 @@ def register_layout_tools(mcp, manager):
 
             # Apply presentation theme to the slide
             if metadata and metadata.theme:
-                from ..themes.theme_manager import ThemeManager
+                from ...themes.theme_manager import ThemeManager
 
                 theme_manager = ThemeManager()
                 theme_obj = theme_manager.get_theme(metadata.theme)

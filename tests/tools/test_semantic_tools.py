@@ -5,7 +5,7 @@ Tests all high-level semantic slide creation MCP tools for >90% coverage.
 """
 
 import pytest
-from chuk_mcp_pptx.tools.semantic_tools import register_semantic_tools
+from chuk_mcp_pptx.tools.universal.semantic import register_semantic_tools
 
 
 @pytest.fixture

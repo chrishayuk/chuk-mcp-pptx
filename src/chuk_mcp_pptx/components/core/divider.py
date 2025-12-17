@@ -9,7 +9,7 @@ from pptx.enum.shapes import MSO_SHAPE
 
 from ..base import Component
 from ...layout.helpers import CONTENT_WIDTH, CONTENT_HEIGHT
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(

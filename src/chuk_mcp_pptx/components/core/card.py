@@ -9,7 +9,7 @@ from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 
-from ...composition import (
+from ..composition import (
     ComposableComponent,
     CardHeader,
     CardContent,
@@ -17,8 +17,8 @@ from ...composition import (
     CardTitle,
     CardDescription,
 )
-from ...variants import CARD_VARIANTS
-from ...registry import component, ComponentCategory, prop, example
+from ..variants import CARD_VARIANTS
+from ..registry import component, ComponentCategory, prop, example
 from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING
 
 

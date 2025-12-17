@@ -10,7 +10,7 @@ from pptx.dml.color import RGBColor
 
 from .base import ChartComponent
 from ...variants import COLUMN_CHART_VARIANTS
-from ...registry import component, ComponentCategory, prop, example
+from ...components.registry import component, ComponentCategory, prop, example
 
 
 @component(

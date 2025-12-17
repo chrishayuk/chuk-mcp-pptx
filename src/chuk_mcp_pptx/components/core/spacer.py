@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any, Literal
 
 from ..base import Component
 from ...tokens.spacing import SPACING
-from ...registry import component, ComponentCategory, prop
+from ..registry import component, ComponentCategory, prop
 
 
 @component(

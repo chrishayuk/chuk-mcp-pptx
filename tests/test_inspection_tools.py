@@ -17,7 +17,7 @@ class TestRegisterInspectionTools:
 
     def test_register_returns_dict(self) -> None:
         """Test that register_inspection_tools returns a dictionary of tools."""
-        from chuk_mcp_pptx.inspection_tools import register_inspection_tools
+        from chuk_mcp_pptx.tools.inspection.analysis import register_inspection_tools
 
         mock_mcp = MagicMock()
         mock_manager = MagicMock()
@@ -31,7 +31,7 @@ class TestRegisterInspectionTools:
 
     def test_tools_are_registered_with_mcp(self) -> None:
         """Test that tools are registered with the MCP server."""
-        from chuk_mcp_pptx.inspection_tools import register_inspection_tools
+        from chuk_mcp_pptx.tools.inspection.analysis import register_inspection_tools
 
         mock_mcp = MagicMock()
         mock_manager = MagicMock()

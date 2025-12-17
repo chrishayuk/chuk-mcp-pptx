@@ -11,7 +11,7 @@ from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 from pptx.dml.color import RGBColor
 
 from ..base import Component
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(
@@ -125,9 +125,9 @@ class TextBox(Component):
         self.alignment = alignment
         self.auto_fit = auto_fit
 
-    def render(self, slide, left: float, top: float, width: float, height: float) -> Any:
+    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> Any:
         """
-        Render text box to slide.
+        Render text box to slide or populate a placeholder.
 
         Args:
             slide: PowerPoint slide object
@@ -135,13 +135,20 @@ class TextBox(Component):
             top: Top position in inches
             width: Width in inches
             height: Height in inches
+            placeholder: Optional placeholder shape to populate
 
         Returns:
             Text box shape object
         """
-        text_box = slide.shapes.add_textbox(
-            Inches(left), Inches(top), Inches(width), Inches(height)
-        )
+        # Use placeholder if provided, otherwise create new textbox
+        if placeholder is not None and hasattr(placeholder, 'text_frame'):
+            text_box = placeholder
+        else:
+            # Delete placeholder if it exists but doesn't have text_frame
+            self._delete_placeholder_if_needed(placeholder)
+            text_box = slide.shapes.add_textbox(
+                Inches(left), Inches(top), Inches(width), Inches(height)
+            )
 
         text_frame = text_box.text_frame
         text_frame.text = self.text
@@ -304,9 +311,9 @@ class BulletList(Component):
         self.bullet_char = bullet_char
         self.spacing = spacing
 
-    def render(self, slide, left: float, top: float, width: float, height: float) -> Any:
+    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> Any:
         """
-        Render bullet list to slide.
+        Render bullet list to slide or populate a placeholder.
 
         Args:
             slide: PowerPoint slide object
@@ -314,13 +321,20 @@ class BulletList(Component):
             top: Top position in inches
             width: Width in inches
             height: Height in inches
+            placeholder: Optional placeholder shape to populate
 
         Returns:
             Text box shape object
         """
-        text_box = slide.shapes.add_textbox(
-            Inches(left), Inches(top), Inches(width), Inches(height)
-        )
+        # Use placeholder if provided, otherwise create new textbox
+        if placeholder is not None and hasattr(placeholder, 'text_frame'):
+            text_box = placeholder
+        else:
+            # Delete placeholder if it exists but doesn't have text_frame
+            self._delete_placeholder_if_needed(placeholder)
+            text_box = slide.shapes.add_textbox(
+                Inches(left), Inches(top), Inches(width), Inches(height)
+            )
 
         text_frame = text_box.text_frame
         text_frame.word_wrap = True

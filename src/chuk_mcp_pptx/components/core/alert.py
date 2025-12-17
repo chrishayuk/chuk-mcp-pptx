@@ -9,9 +9,9 @@ from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
 
-from ...composition import ComposableComponent, SubComponent, CardTitle, CardDescription
-from ...variants import create_variants
-from ...registry import component, ComponentCategory, prop, example
+from ..composition import ComposableComponent, SubComponent, CardTitle, CardDescription
+from ..variants import create_variants
+from ..registry import component, ComponentCategory, prop, example
 from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING
 
 

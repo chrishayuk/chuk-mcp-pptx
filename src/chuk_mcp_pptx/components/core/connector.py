@@ -12,7 +12,7 @@ from pptx.dml.color import RGBColor
 from pptx.oxml import parse_xml
 
 from ..base import Component
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 
 
 CONNECTOR_TYPES = {

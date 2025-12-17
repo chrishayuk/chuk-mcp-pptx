@@ -36,12 +36,15 @@ class Component:
             # Theme object from new theme system
             mode = self._internal_theme.mode
             primary_hue = "blue"  # Default for new themes
+            self.tokens = get_semantic_tokens(primary_hue, mode)
+        elif isinstance(self._internal_theme, dict) and 'colors' in self._internal_theme:
+            # Design system theme with explicit colors - use them directly
+            self.tokens = self._build_tokens_from_colors(self._internal_theme['colors'])
         else:
             # Legacy dict theme
-            mode = self._internal_theme.get("mode", "dark")
+            mode = self._internal_theme.get("mode", "light")
             primary_hue = self._internal_theme.get("primary_hue", "blue")
-
-        self.tokens = get_semantic_tokens(primary_hue, mode)
+            self.tokens = get_semantic_tokens(primary_hue, mode)
 
     @property
     def theme(self) -> Union["Theme", Dict[str, Any], None]:
@@ -66,16 +69,52 @@ class Component:
         # Update tokens when theme changes
         self.tokens = get_semantic_tokens(primary_hue, mode)
 
+    def _build_tokens_from_colors(self, colors: Dict[str, str]) -> Dict[str, Any]:
+        """
+        Build tokens dict from explicit design system colors.
+
+        Args:
+            colors: Dict with 'primary', 'secondary', 'background', 'text' keys
+
+        Returns:
+            Tokens dict compatible with get_color() method
+        """
+        primary = colors.get('primary', '#4F46E5')
+        secondary = colors.get('secondary', '#818CF8')
+        background = colors.get('background', '#FFFFFF')
+        text = colors.get('text', '#000000')
+
+        return {
+            'primary': {'DEFAULT': primary},
+            'secondary': {'DEFAULT': secondary},
+            'background': {'DEFAULT': background},
+            'foreground': {'DEFAULT': text},
+            'text': text,
+            'card': {
+                'DEFAULT': background,
+                'foreground': text,
+            },
+            'muted': {
+                'DEFAULT': '#F3F4F6',  # Light gray for alternating rows
+                'foreground': text,
+            },
+            'border': {
+                'DEFAULT': '#E5E7EB',
+                'secondary': '#D1D5DB',
+            },
+        }
+
     @staticmethod
     def get_default_theme() -> Dict[str, Any]:
         """Get default theme configuration."""
         return {
             "name": "default",
-            "mode": "dark",
+            "mode": "light",  # Changed from "dark" to "light" for better template compatibility
             "primary_hue": "blue",
-            "font_family": "Inter",
+            "font_family": "Calibri",  # PowerPoint default
             "radius": "md",
             "spacing": "default",
+            "template_aware": True,  # Signal that components should respect template styling
         }
 
     def hex_to_rgb(self, hex_color: str) -> Tuple[int, int, int]:
@@ -268,13 +307,32 @@ class Component:
                 for run in paragraph.runs:
                     run.font.color.rgb = self.get_color(fg_path)
 
+    def _delete_placeholder_if_needed(self, placeholder):
+        """
+        Delete a placeholder shape from the slide.
+
+        Used when components need to replace placeholders (most components
+        except Image which can use insert_picture()).
+
+        Args:
+            placeholder: Placeholder shape to delete
+        """
+        if placeholder is not None:
+            try:
+                shape_elem = placeholder.element
+                shape_elem.getparent().remove(shape_elem)
+            except Exception as e:
+                # Log but don't fail - just overlay if deletion fails
+                import logging
+                logging.warning(f"Could not delete placeholder: {e}")
+
     async def render(self, slide, **kwargs):
         """
         Render component to slide (to be implemented by subclasses).
 
         Args:
             slide: PowerPoint slide object
-            **kwargs: Component-specific parameters
+            **kwargs: Component-specific parameters (may include 'placeholder')
         """
         raise NotImplementedError("Subclasses must implement render method")
 

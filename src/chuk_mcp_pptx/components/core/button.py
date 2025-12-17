@@ -9,9 +9,9 @@ from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
 
-from ...composition import ComposableComponent
-from ...variants import BUTTON_VARIANTS
-from ...registry import component, ComponentCategory, prop, example
+from ..composition import ComposableComponent
+from ..variants import BUTTON_VARIANTS
+from ..registry import component, ComponentCategory, prop, example
 from ...constants import ComponentSizing
 
 

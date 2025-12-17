@@ -285,6 +285,24 @@ class ComponentRegistry:
 registry = ComponentRegistry()
 
 
+# Helper functions for universal component API
+
+def get_component_class(name: str) -> Type | None:
+    """
+    Get component class by name from the registry.
+
+    This is a convenience function for the universal component API.
+
+    Args:
+        name: Component name (e.g., "metric_card", "badge", "button")
+
+    Returns:
+        Component class if found, None otherwise
+    """
+    metadata = registry.get(name)
+    return metadata.component_class if metadata else None
+
+
 # Registration helper decorators
 
 

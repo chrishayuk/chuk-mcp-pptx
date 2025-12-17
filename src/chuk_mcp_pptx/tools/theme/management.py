@@ -1,18 +1,18 @@
-# src/chuk_mcp_pptx/tools/theme_tools.py
+# src/chuk_mcp_pptx/tools/theme/management.py
 """
-Theme Tools for PowerPoint MCP Server
+Theme Management Tools for PowerPoint MCP Server
 
 Provides async MCP tools for managing and applying themes to presentations.
-Consolidates all theme-related functionality in one place.
+Consolidates all theme-related functionality including design tokens.
 """
 
 import asyncio
 import json
-from ..tokens.colors import PALETTE, get_semantic_tokens
-from ..tokens.typography import FONT_FAMILIES, get_text_style
-from ..tokens.spacing import PADDING, RADIUS
+from ...tokens.colors import PALETTE, get_semantic_tokens
+from ...tokens.typography import FONT_FAMILIES, FONT_SIZES, FONT_WEIGHTS, LINE_HEIGHTS, get_text_style
+from ...tokens.spacing import SPACING, PADDING, MARGINS, RADIUS
 
-from ..constants import (
+from ...constants import (
     ErrorMessages,
 )
 
@@ -20,7 +20,7 @@ from ..constants import (
 def register_theme_tools(mcp, manager):
     """Register all theme-related tools with the MCP server."""
 
-    from ..themes.theme_manager import ThemeManager
+    from ...themes.theme_manager import ThemeManager
 
     @mcp.tool
     async def pptx_list_themes() -> str:
@@ -358,6 +358,177 @@ def register_theme_tools(mcp, manager):
         style_list = [f"• {name}: {desc}" for name, desc in styles.items()]
         return "Available component theme styles:\n" + "\n".join(style_list)
 
+    # Design Token Tools
+    @mcp.tool
+    async def pptx_get_color_palette() -> str:
+        """
+        Get the complete color palette with all hues and shades.
+
+        Returns all available colors in the design token system, organized by hue
+        (blue, violet, green, etc.) with their shade variations (50-900).
+
+        Returns:
+            JSON object with complete color palette
+
+        Example:
+            palette = await pptx_get_color_palette()
+            # Returns all color hues with their shade variations
+            # Use these colors in components or custom themes
+        """
+
+        def _get_palette():
+            return json.dumps(PALETTE, indent=2)
+
+        return await asyncio.get_event_loop().run_in_executor(None, _get_palette)
+
+    @mcp.tool
+    async def pptx_get_semantic_colors(primary_hue: str = "blue", mode: str = "dark") -> str:
+        """
+        Get semantic color tokens for a specific primary hue and mode.
+
+        Generates the complete set of semantic tokens (primary, secondary, accent,
+        background, etc.) based on a primary color hue and mode (dark/light).
+
+        Args:
+            primary_hue: Primary color hue from palette (blue, violet, green, etc.)
+            mode: Color mode - "dark" or "light"
+
+        Returns:
+            JSON object with all semantic color tokens
+
+        Example:
+            colors = await pptx_get_semantic_colors(primary_hue="emerald", mode="dark")
+            # Returns primary, secondary, accent, background, text colors, etc.
+        """
+
+        def _get_semantic():
+            try:
+                tokens = get_semantic_tokens(primary_hue, mode)
+                return json.dumps(tokens, indent=2)
+            except Exception as e:
+                return json.dumps({"error": str(e)}, indent=2)
+
+        return await asyncio.get_event_loop().run_in_executor(None, _get_semantic)
+
+    @mcp.tool
+    async def pptx_get_typography_tokens() -> str:
+        """
+        Get all typography design tokens.
+
+        Returns font families, sizes, weights, and line heights used throughout
+        the design system.
+
+        Returns:
+            JSON object with typography tokens
+
+        Example:
+            typography = await pptx_get_typography_tokens()
+            # Returns font families, sizes, weights, line heights
+        """
+
+        def _get_typography():
+            tokens = {
+                "font_families": FONT_FAMILIES,
+                "font_sizes": FONT_SIZES,
+                "font_weights": FONT_WEIGHTS,
+                "line_heights": LINE_HEIGHTS,
+            }
+            return json.dumps(tokens, indent=2)
+
+        return await asyncio.get_event_loop().run_in_executor(None, _get_typography)
+
+    @mcp.tool
+    async def pptx_get_text_style(variant: str = "body") -> str:
+        """
+        Get text style configuration for a specific variant.
+
+        Returns complete text style config (font size, weight, line height)
+        for a specific text variant.
+
+        Args:
+            variant: Text style variant - "h1", "h2", "h3", "h4", "h5", "h6",
+                    "body", "small", "tiny"
+
+        Returns:
+            JSON object with text style configuration
+
+        Example:
+            style = await pptx_get_text_style(variant="h1")
+            # Returns: {"size": 36, "weight": 700, "line_height": 1.2}
+        """
+
+        def _get_style():
+            try:
+                style = get_text_style(variant)
+                return json.dumps(style, indent=2)
+            except ValueError as e:
+                return json.dumps({"error": str(e)}, indent=2)
+
+        return await asyncio.get_event_loop().run_in_executor(None, _get_style)
+
+    @mcp.tool
+    async def pptx_get_spacing_tokens() -> str:
+        """
+        Get all spacing design tokens.
+
+        Returns spacing scale, padding values, margin values, and border radius
+        values used throughout the design system.
+
+        Returns:
+            JSON object with spacing tokens
+
+        Example:
+            spacing = await pptx_get_spacing_tokens()
+            # Returns spacing scale, padding, margins, radius values
+        """
+
+        def _get_spacing():
+            tokens = {
+                "spacing": SPACING,
+                "padding": PADDING,
+                "margins": MARGINS,
+                "radius": RADIUS,
+            }
+            return json.dumps(tokens, indent=2)
+
+        return await asyncio.get_event_loop().run_in_executor(None, _get_spacing)
+
+    @mcp.tool
+    async def pptx_get_all_tokens() -> str:
+        """
+        Get all design tokens in a single call.
+
+        Returns the complete design token system including colors, typography,
+        spacing, padding, margins, and radius values.
+
+        Returns:
+            JSON object with all design tokens
+
+        Example:
+            tokens = await pptx_get_all_tokens()
+            # Returns comprehensive object with all design tokens
+        """
+
+        def _get_all():
+            tokens = {
+                "colors": PALETTE,
+                "typography": {
+                    "font_families": FONT_FAMILIES,
+                    "font_sizes": FONT_SIZES,
+                    "font_weights": FONT_WEIGHTS,
+                    "line_heights": LINE_HEIGHTS,
+                },
+                "spacing": {
+                    "spacing": SPACING,
+                    "padding": PADDING,
+                    "margins": MARGINS,
+                    "radius": RADIUS,
+                },
+            }
+            return json.dumps(tokens, indent=2)
+
+        return await asyncio.get_event_loop().run_in_executor(None, _get_all)
+
     # Return all tools
     return {
         "pptx_list_themes": pptx_list_themes,
@@ -366,4 +537,10 @@ def register_theme_tools(mcp, manager):
         "pptx_apply_theme": pptx_apply_theme,
         "pptx_apply_component_theme": pptx_apply_component_theme,
         "pptx_list_component_themes": pptx_list_component_themes,
+        "pptx_get_color_palette": pptx_get_color_palette,
+        "pptx_get_semantic_colors": pptx_get_semantic_colors,
+        "pptx_get_typography_tokens": pptx_get_typography_tokens,
+        "pptx_get_text_style": pptx_get_text_style,
+        "pptx_get_spacing_tokens": pptx_get_spacing_tokens,
+        "pptx_get_all_tokens": pptx_get_all_tokens,
     }

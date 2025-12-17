@@ -7,9 +7,9 @@ from typing import Optional, Any, List
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
 
-from ...composition import ComposableComponent
-from ...variants import create_variants
-from ...registry import component, ComponentCategory, prop, example
+from ..composition import ComposableComponent
+from ..variants import create_variants
+from ..registry import component, ComponentCategory, prop, example
 
 
 # Table variants configuration
@@ -211,9 +211,9 @@ class Table(ComposableComponent):
         # Get variant props
         self.variant_props = TABLE_VARIANTS.build(variant=variant, size=size)
 
-    def render(self, slide, left: float, top: float, width: float, height: float) -> Any:
+    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> Any:
         """
-        Render table to slide.
+        Render table to slide or replace a placeholder.
 
         Args:
             slide: PowerPoint slide object
@@ -221,10 +221,13 @@ class Table(ComposableComponent):
             top: Top position in inches
             width: Width in inches
             height: Height in inches
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             Table shape object
         """
+        # If placeholder provided, delete it first (tables can't populate placeholders directly)
+        self._delete_placeholder_if_needed(placeholder)
         rows = len(self.data) + 1  # +1 for header
         cols = len(self.headers)
 

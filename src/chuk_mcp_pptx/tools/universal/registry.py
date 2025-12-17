@@ -1,4 +1,3 @@
-# src/chuk_mcp_pptx/tools/registry_tools.py
 """
 MCP tools for component registry discovery and schema access.
 Enables LLMs to discover and understand available components.
@@ -7,7 +6,7 @@ Enables LLMs to discover and understand available components.
 import asyncio
 import json
 
-from ..registry import registry
+from ...components.registry import registry
 
 
 def register_registry_tools(mcp, manager):
@@ -47,7 +46,7 @@ def register_registry_tools(mcp, manager):
         """
 
         def _list_components():
-            from ..registry import ComponentCategory
+            from ...components.registry import ComponentCategory
 
             if category:
                 try:

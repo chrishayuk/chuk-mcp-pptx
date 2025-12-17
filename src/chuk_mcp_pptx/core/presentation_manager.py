@@ -18,7 +18,7 @@ from datetime import datetime
 from pptx import Presentation
 from pptx.presentation import Presentation as PresentationType
 
-from .models import (
+from ..models import (
     PresentationMetadata,
     SlideMetadata,
     PresentationInfo,
@@ -211,18 +211,99 @@ class PresentationManager:
             logger.error(f"Failed to delete from artifact store: {e}")  # nosec B608
             return False
 
-    async def create(self, name: str, theme: str | None = None) -> PresentationMetadata:
+    async def _load_template_from_store(self, template_name: str) -> bytes | None:
         """
-        Create a new presentation.
+        Load a template from artifact store by name.
+
+        Args:
+            template_name: Name of the template presentation in artifact store
+
+        Returns:
+            Template data as bytes or None if not found
+        """
+        store = self._get_store()
+        if not store:
+            logger.error("No artifact store available for template loading")
+            return None
+
+        try:
+            # Check if template exists in our namespace mapping
+            namespace_id = self._namespace_ids.get(template_name)
+            if namespace_id:
+                data = await store.read_namespace(namespace_id)
+                if data:
+                    logger.info(f"Loaded template from artifact store: {template_name}")
+                    return data
+
+            # Try to find template by searching for it
+            logger.warning(f"Template not found in namespace mapping: {template_name}")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to load template from artifact store: {e}")
+            return None
+
+    async def create(
+        self,
+        name: str,
+        theme: str | None = None,
+        template_name: str | None = None,
+    ) -> PresentationMetadata:
+        """
+        Create a new presentation, optionally from a template.
 
         Args:
             name: Presentation name
             theme: Optional theme to apply
+            template_name: Optional name of a template presentation in artifact store to use as base
 
         Returns:
             PresentationMetadata for the new presentation
         """
-        prs = Presentation()
+        if template_name:
+            # First check builtin templates via TemplateManager
+            from ..templates import TemplateManager
+            template_manager = TemplateManager()
+            template_data = await template_manager.get_template_data(template_name)
+
+            if template_data:
+                # Create presentation from builtin template
+                buffer = io.BytesIO(template_data)
+                prs = await asyncio.to_thread(Presentation, buffer)
+                logger.info(f"Created presentation from builtin template: {template_name}")
+
+                # Remove all existing slides from the template - we only want the layouts/master
+                # Users will add slides using pptx_add_slide_from_template
+                slide_ids_to_remove = list(range(len(prs.slides) - 1, -1, -1))
+                for slide_idx in slide_ids_to_remove:
+                    rId = prs.slides._sldIdLst[slide_idx].rId
+                    prs.part.drop_rel(rId)
+                    del prs.slides._sldIdLst[slide_idx]
+                logger.info(f"Removed {len(slide_ids_to_remove)} template slides, keeping only layouts")
+            else:
+                # Fallback to artifact store template
+                template_data = await self._load_template_from_store(template_name)
+                if template_data:
+                    # Create presentation from template bytes
+                    buffer = io.BytesIO(template_data)
+                    prs = await asyncio.to_thread(Presentation, buffer)
+                    logger.info(f"Created presentation from artifact store template: {template_name}")
+
+                    # Remove all existing slides from the template - we only want the layouts/master
+                    slide_ids_to_remove = list(range(len(prs.slides) - 1, -1, -1))
+                    for slide_idx in slide_ids_to_remove:
+                        rId = prs.slides._sldIdLst[slide_idx].rId
+                        prs.part.drop_rel(rId)
+                        del prs.slides._sldIdLst[slide_idx]
+                    logger.info(f"Removed {len(slide_ids_to_remove)} template slides, keeping only layouts")
+                else:
+                    # Fallback to blank presentation if template not found
+                    logger.warning(f"Template {template_name} not found in builtin or artifact store, creating blank presentation")
+                    prs = Presentation()
+        else:
+            # Create blank presentation
+            prs = Presentation()
+            logger.info("Created blank presentation")
+
         self._presentations[name] = prs
         self._current_presentation = name
 
@@ -237,6 +318,7 @@ class PresentationManager:
             vfs_path=self.get_artifact_uri(name),
             namespace_id=self.get_namespace_id(name),
             is_saved=saved,
+            template_path=template_name,
         )
         self._metadata[name] = metadata
 
@@ -516,22 +598,25 @@ class PresentationManager:
             logger.error(f"Failed to export as base64: {e}")
             return None
 
-    async def import_base64(self, data: str, name: str) -> bool:
+    async def import_base64(self, data: str, name: str, as_template: bool = False) -> bool:
         """
         Import presentation from base64.
 
         Args:
             data: Base64-encoded presentation data
             name: Name for the imported presentation
+            as_template: If True, saves as a template (doesn't set as current)
 
         Returns:
             True if successful, False otherwise
         """
         try:
             buffer = io.BytesIO(base64.b64decode(data))
-            prs = Presentation(buffer)
+            prs = await asyncio.to_thread(Presentation, buffer)
             self._presentations[name] = prs
-            self._current_presentation = name
+
+            if not as_template:
+                self._current_presentation = name
 
             # Auto-save to artifact store
             await self._save_to_store(name, prs)
@@ -546,9 +631,76 @@ class PresentationManager:
             )
             self._metadata[name] = metadata
 
+            logger.info(f"Imported presentation: {name}" + (" (as template)" if as_template else ""))
             return True
         except Exception as e:
             logger.error(f"Failed to import from base64: {e}")
+            return False
+
+    async def import_template(self, file_path: str, template_name: str) -> bool:
+        """
+        Import a PowerPoint file as a template into the artifact store.
+
+        Args:
+            file_path: Path to the PowerPoint file
+            template_name: Name to save the template as
+
+        Returns:
+            True if successful, False otherwise
+        """
+        store = self._get_store()
+        if not store:
+            logger.error("No artifact store available for template import")
+            return False
+
+        from chuk_mcp_server import NamespaceType, StorageScope
+
+        try:
+            # Read the PowerPoint file
+            with open(file_path, "rb") as f:
+                data = await asyncio.to_thread(f.read)
+
+            # Verify it's a valid presentation
+            buffer = io.BytesIO(data)
+            prs = await asyncio.to_thread(Presentation, buffer)
+            logger.info(f"Validated template file: {file_path} ({len(prs.slides)} slides)")
+
+            # Create namespace for template
+            safe_name = self._sanitize_name(template_name)
+            namespace_info = await store.create_namespace(
+                type=NamespaceType.BLOB,
+                scope=StorageScope.SESSION,
+                name=f"{self.base_path}/templates/{safe_name}",
+                metadata={
+                    "mime_type": self.PPTX_MIME_TYPE,
+                    "template_name": template_name,
+                    "file_extension": ".pptx",
+                    "is_template": True,
+                    "slide_count": len(prs.slides),
+                },
+            )
+            self._namespace_ids[template_name] = namespace_info.namespace_id
+
+            # Write template data
+            await store.write_namespace(namespace_info.namespace_id, data=data)
+
+            # Store in memory for immediate use
+            self._presentations[template_name] = prs
+
+            # Create metadata
+            metadata = PresentationMetadata(
+                name=template_name,
+                slide_count=len(prs.slides),
+                vfs_path=self.get_artifact_uri(template_name),
+                namespace_id=namespace_info.namespace_id,
+                is_saved=True,
+            )
+            self._metadata[template_name] = metadata
+
+            logger.info(f"Imported template: {template_name} ({namespace_info.namespace_id})")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to import template: {e}")
             return False
 
     def clear_all(self) -> None:

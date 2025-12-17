@@ -1,0 +1,12 @@
+# Include templates in the package
+recursive-include src/chuk_mcp_pptx/templates *.pptx
+recursive-include src/chuk_mcp_pptx/templates *.json
+
+# Include README
+include README.md
+include LICENSE
+
+# Exclude test files
+recursive-exclude tests *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]

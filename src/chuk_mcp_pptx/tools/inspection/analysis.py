@@ -15,7 +15,7 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 def register_inspection_tools(mcp, manager):
     """Register slide inspection and layout adjustment tools."""
 
-    from .layout.helpers import (
+    from ...layout.helpers import (
         validate_position,
         get_safe_content_area,
         SLIDE_WIDTH,

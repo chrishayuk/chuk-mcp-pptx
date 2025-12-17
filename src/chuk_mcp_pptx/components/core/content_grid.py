@@ -6,7 +6,7 @@ Content grid component for arranging items in a grid layout.
 from typing import List, Dict, Any, Optional, Literal
 
 from ..base import Component
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(

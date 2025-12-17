@@ -9,7 +9,7 @@ from typing import List, Optional, Dict, Any
 import math
 
 from ..base import Component
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 from .shape import Shape
 from .connector import Connector
 

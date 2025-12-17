@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any, List, Literal
 from ..base import Component
 from ...tokens.spacing import GAPS
 from ...layout.helpers import CONTENT_WIDTH, CONTENT_HEIGHT
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(

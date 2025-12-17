@@ -56,11 +56,11 @@ class TestToolsRegistration:
 
         assert image_tools is not None
 
-    def test_text_tools_registered(self) -> None:
-        """Test that text tools are registered."""
-        from chuk_mcp_pptx.async_server import text_tools
+    def test_placeholder_tools_registered(self) -> None:
+        """Test that placeholder tools are registered."""
+        from chuk_mcp_pptx.async_server import placeholder_tools
 
-        assert text_tools is not None
+        assert placeholder_tools is not None
 
     def test_inspection_tools_registered(self) -> None:
         """Test that inspection tools are registered."""
@@ -80,23 +80,17 @@ class TestToolsRegistration:
 
         assert layout_tools is not None
 
-    def test_shape_tools_registered(self) -> None:
-        """Test that shape tools are registered."""
-        from chuk_mcp_pptx.async_server import shape_tools
+    def test_universal_component_api_registered(self) -> None:
+        """Test that universal component API is registered."""
+        from chuk_mcp_pptx.async_server import universal_component_api
 
-        assert shape_tools is not None
+        assert universal_component_api is not None
 
-    def test_component_tools_registered(self) -> None:
-        """Test that component tools are registered."""
-        from chuk_mcp_pptx.async_server import component_tools
+    def test_registry_tools_registered(self) -> None:
+        """Test that registry tools are registered."""
+        from chuk_mcp_pptx.async_server import registry_tools
 
-        assert component_tools is not None
-
-    def test_token_tools_registered(self) -> None:
-        """Test that token tools are registered."""
-        from chuk_mcp_pptx.async_server import token_tools
-
-        assert token_tools is not None
+        assert registry_tools is not None
 
     def test_theme_tools_registered(self) -> None:
         """Test that theme tools are registered."""
@@ -708,14 +702,12 @@ class TestToolExportsConditional:
             assert hasattr(async_server, "pptx_duplicate_slide")
             assert hasattr(async_server, "pptx_reorder_slides")
 
-    def test_shape_tools_exports(self) -> None:
-        """Test shape tool functions are exported."""
+    def test_universal_component_api_exports(self) -> None:
+        """Test universal component API functions are exported."""
         from chuk_mcp_pptx import async_server
 
-        if async_server.shape_tools:
-            assert hasattr(async_server, "pptx_add_arrow")
-            assert hasattr(async_server, "pptx_add_smart_art")
-            assert hasattr(async_server, "pptx_add_code_block")
+        if async_server.universal_component_api:
+            assert hasattr(async_server, "pptx_add_component")
 
     def test_theme_tools_exports(self) -> None:
         """Test theme tool functions are exported."""

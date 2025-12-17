@@ -11,8 +11,8 @@ from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 
 from ..base import Component
 from ...constants import ComponentSizing
-from ...variants import BADGE_VARIANTS
-from ...registry import component, ComponentCategory, prop, example
+from ..variants import BADGE_VARIANTS
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(

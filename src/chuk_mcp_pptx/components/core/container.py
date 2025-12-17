@@ -8,7 +8,7 @@ from typing import Optional, Dict, Any, Literal
 from ..base import Component
 from ...tokens.spacing import PADDING, CONTAINERS
 from ...layout.helpers import SLIDE_WIDTH, SLIDE_HEIGHT
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(

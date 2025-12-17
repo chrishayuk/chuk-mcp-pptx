@@ -8,7 +8,7 @@ from typing import Optional, Dict, Any, List, Literal
 from ..base import Component
 from ...tokens.spacing import GAPS
 from ...layout.helpers import SLIDE_WIDTH, SLIDE_HEIGHT, CONTENT_WIDTH
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(
@@ -79,6 +79,44 @@ class Stack(Component):
         self.direction = direction
         self.gap = GAPS.get(gap, GAPS["md"])
         self.align = align
+        # Store bounds for composition
+        self.bounds = None
+
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> Dict[str, float]:
+        """
+        Render stack (initializes bounds for child positioning).
+
+        Args:
+            slide: PowerPoint slide object
+            left: Left position in inches
+            top: Top position in inches
+            width: Width in inches
+            height: Height in inches
+            placeholder: Optional placeholder to replace
+
+        Returns:
+            Bounds dict for composition
+        """
+        # Delete placeholder if provided
+        self._delete_placeholder_if_needed(placeholder)
+
+        # Store bounds for composition
+        self.bounds = {
+            "left": left,
+            "top": top,
+            "width": width,
+            "height": height,
+        }
+
+        return self.bounds
 
     def distribute(
         self,

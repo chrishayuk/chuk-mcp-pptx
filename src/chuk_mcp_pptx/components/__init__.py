@@ -6,6 +6,10 @@ Provides reusable, theme-aware components for presentations.
 from .base import Component, AsyncComponent
 from .code import CodeBlock, InlineCode, Terminal
 
+# Component infrastructure
+from .registry import ComponentRegistry, registry, get_component_class
+from .tracking import ComponentTracker, component_tracker, ComponentInstance
+
 # Core UI components
 from .core import (
     Alert,
@@ -63,6 +67,13 @@ __all__ = [
     # Base
     "Component",
     "AsyncComponent",
+    # Infrastructure
+    "ComponentRegistry",
+    "registry",
+    "get_component_class",
+    "ComponentTracker",
+    "component_tracker",
+    "ComponentInstance",
     # Buttons
     "Button",
     "IconButton",
