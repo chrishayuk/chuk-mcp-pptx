@@ -6,6 +6,12 @@ Each presentation is stored as a BLOB namespace for persistence and multi-server
 
 Uses chuk-mcp-server's built-in artifact store context for storage.
 Uses Pydantic models throughout for type safety and validation.
+
+MULTI-INSTANCE SUPPORT:
+- Uses artifact store as the source of truth for all presentation data
+- Instance-level dictionaries are used only as a short-lived cache (TTL: 60s)
+- All operations query the artifact store to find presentations by session
+- No shared state required between server instances
 """
 
 from __future__ import annotations
@@ -14,6 +20,7 @@ import asyncio
 import base64
 import io
 import logging
+import time
 from datetime import datetime
 from pptx import Presentation
 from pptx.presentation import Presentation as PresentationType
@@ -36,10 +43,18 @@ class PresentationManager:
     (memory, filesystem, sqlite, s3). Each presentation is stored as a BLOB
     namespace with automatic session management.
     Presentations and metadata are Pydantic models for type safety.
+
+    MULTI-INSTANCE SAFE:
+    - Artifact store is the source of truth
+    - Local caches have 60s TTL and are refreshed from artifact store
+    - Supports multiple concurrent server instances accessing same session
     """
 
     # MIME type for PowerPoint presentations
     PPTX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+
+    # Cache TTL in seconds (how long to trust local cache before refreshing)
+    CACHE_TTL = 60
 
     def __init__(self, base_path: str = "presentations") -> None:
         """
@@ -49,11 +64,13 @@ class PresentationManager:
             base_path: Base path prefix for presentation names
         """
         self.base_path = base_path
+        # Local caches with TTL - NOT the source of truth
         self._presentations: dict[str, PresentationType] = {}
         self._metadata: dict[str, PresentationMetadata] = {}
         self._namespace_ids: dict[str, str] = {}  # name -> namespace_id mapping
+        self._cache_timestamps: dict[str, float] = {}  # name -> last_loaded_time
         self._current_presentation: str | None = None
-        logger.info(f"PresentationManager initialized, base path: {base_path}")
+        logger.info(f"PresentationManager initialized (multi-instance safe), base path: {base_path}")
 
     def _get_store(self):
         """Get the artifact store from context."""
@@ -70,8 +87,60 @@ class PresentationManager:
             safe_name = "presentation"
         return safe_name
 
+    def _is_cache_valid(self, name: str) -> bool:
+        """Check if cached presentation is still valid (within TTL)."""
+        if name not in self._cache_timestamps:
+            return False
+        age = time.time() - self._cache_timestamps[name]
+        return age < self.CACHE_TTL
+
+    def _update_cache_timestamp(self, name: str) -> None:
+        """Update the cache timestamp for a presentation."""
+        self._cache_timestamps[name] = time.time()
+
+    async def _find_namespace_in_store(self, name: str) -> str | None:
+        """
+        Find a presentation's namespace_id in the artifact store by querying the session.
+
+        This is the key method for multi-instance support - it always queries the
+        artifact store to find presentations, regardless of local cache state.
+
+        Args:
+            name: Presentation name to search for
+
+        Returns:
+            namespace_id if found, None otherwise
+        """
+        store = self._get_store()
+        if not store:
+            return None
+
+        try:
+            safe_name = self._sanitize_name(name)
+            expected_name = f"{self.base_path}/{safe_name}"
+
+            # Always query the artifact store for the current session state
+            namespaces = await store.list_namespaces()
+            logger.debug(f"Searching for '{expected_name}' in {len(namespaces)} namespaces")
+
+            for ns_info in namespaces:
+                if ns_info.name == expected_name:
+                    logger.debug(f"Found namespace {ns_info.namespace_id} for presentation '{name}'")
+                    return ns_info.namespace_id
+
+            logger.debug(f"Presentation '{name}' not found in artifact store")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to search for presentation in artifact store: {e}")
+            return None
+
     def get_namespace_id(self, name: str) -> str | None:
-        """Get the namespace ID for a presentation by name."""
+        """
+        Get the namespace ID for a presentation by name (from cache only).
+
+        Note: This returns cached value. For multi-instance safety, use
+        _find_namespace_in_store() to query the artifact store directly.
+        """
         return self._namespace_ids.get(name)
 
     def get_artifact_uri(self, name: str) -> str | None:
@@ -147,14 +216,16 @@ class PresentationManager:
             logger.error(f"Failed to save to artifact store: {e}")
             return False
 
-    async def _load_from_store(self, name: str) -> PresentationType | None:
+    async def _load_from_store(self, name: str, force_refresh: bool = False) -> PresentationType | None:
         """
         Load presentation from artifact store by name.
 
-        Uses list_namespaces() to find the presentation within the session context.
+        Uses _find_namespace_in_store() to query the session for the presentation.
+        This ensures multi-instance compatibility by always checking the artifact store.
 
         Args:
             name: Presentation name
+            force_refresh: If True, bypass cache even if valid
 
         Returns:
             Presentation object or None if not found
@@ -165,26 +236,19 @@ class PresentationManager:
             return None
 
         try:
-            # List all namespaces in current session to find our presentation
-            safe_name = self._sanitize_name(name)
-            expected_name = f"{self.base_path}/{safe_name}"
+            # Check cache first (if not forcing refresh)
+            if not force_refresh and self._is_cache_valid(name) and name in self._presentations:
+                logger.debug(f"Using cached presentation '{name}' (age: {time.time() - self._cache_timestamps[name]:.1f}s)")
+                return self._presentations[name]
 
-            namespaces = await store.list_namespaces()
-            logger.debug(f"Looking for presentation '{expected_name}' in {len(namespaces)} namespaces")
-
-            # Find namespace matching our presentation name
-            namespace_id = None
-            for ns_info in namespaces:
-                if ns_info.name == expected_name:
-                    namespace_id = ns_info.namespace_id
-                    # Cache the namespace_id for future saves
-                    self._namespace_ids[name] = namespace_id
-                    logger.debug(f"Found namespace {namespace_id} for presentation '{name}'")
-                    break
-
+            # Find namespace in artifact store (multi-instance safe)
+            namespace_id = await self._find_namespace_in_store(name)
             if not namespace_id:
-                logger.debug(f"Presentation '{name}' not found in artifact store (expected name: {expected_name})")
+                logger.debug(f"Presentation '{name}' not found in artifact store")
                 return None
+
+            # Cache the namespace_id
+            self._namespace_ids[name] = namespace_id
 
             # Read from artifact store
             data = await store.read_namespace(namespace_id)
@@ -194,6 +258,11 @@ class PresentationManager:
 
             buffer = io.BytesIO(data)
             prs = Presentation(buffer)
+
+            # Update cache
+            self._presentations[name] = prs
+            self._update_cache_timestamp(name)
+
             logger.info(f"Loaded presentation '{name}' from artifact store ({namespace_id})")
             return prs
         except Exception as e:
@@ -340,6 +409,7 @@ class PresentationManager:
 
         self._presentations[name] = prs
         self._current_presentation = name
+        self._update_cache_timestamp(name)  # Mark as freshly cached
 
         # Auto-save to artifact store (creates namespace)
         saved = await self._save_to_store(name, prs)
@@ -359,13 +429,16 @@ class PresentationManager:
         return metadata
 
     async def get(
-        self, name: str | None = None
+        self, name: str | None = None, force_refresh: bool = False
     ) -> tuple[PresentationType, PresentationMetadata] | None:
         """
         Get a presentation and its metadata by name.
 
+        MULTI-INSTANCE SAFE: Always checks artifact store if cache is stale or forced.
+
         Args:
             name: Presentation name (uses current if not specified)
+            force_refresh: If True, bypass cache and reload from artifact store
 
         Returns:
             Tuple of (Presentation, PresentationMetadata) or None if not found
@@ -374,8 +447,11 @@ class PresentationManager:
         if not pres_name:
             return None
 
-        # Check memory first
-        if pres_name in self._presentations:
+        # Check if cache is valid (TTL-based)
+        cache_valid = self._is_cache_valid(pres_name) and not force_refresh
+
+        # If cache is valid, use it
+        if cache_valid and pres_name in self._presentations:
             prs = self._presentations[pres_name]
             metadata = self._metadata.get(pres_name)
 
@@ -390,14 +466,15 @@ class PresentationManager:
                 )
                 self._metadata[pres_name] = metadata
 
+            logger.debug(f"Using cached presentation '{pres_name}'")
             return (prs, metadata)
 
-        # Try loading from artifact store
-        loaded_prs = await self._load_from_store(pres_name)
+        # Cache is stale or missing - load from artifact store
+        logger.debug(f"Cache miss or stale for '{pres_name}', loading from artifact store")
+        loaded_prs = await self._load_from_store(pres_name, force_refresh=force_refresh)
         if loaded_prs is not None:
-            self._presentations[pres_name] = loaded_prs
-
-            # Create metadata
+            # _load_from_store already updated cache
+            # Create/update metadata
             metadata = PresentationMetadata(
                 name=pres_name,
                 slide_count=len(loaded_prs.slides),
@@ -469,6 +546,7 @@ class PresentationManager:
 
         This should be called after any modification to ensure persistence.
         Also updates metadata (slide count, modified time, etc.).
+        Updates cache timestamp to keep cache fresh.
 
         Args:
             name: Presentation name (uses current if not specified)
@@ -487,7 +565,14 @@ class PresentationManager:
             metadata.slide_count = len(prs.slides)
             metadata.modified_at = datetime.now()
 
-        return await self._save_to_store(pres_name, prs)
+        # Save to artifact store
+        result = await self._save_to_store(pres_name, prs)
+
+        # Update cache timestamp after successful save
+        if result:
+            self._update_cache_timestamp(pres_name)
+
+        return result
 
     async def delete(self, name: str) -> bool:
         """
@@ -502,9 +587,14 @@ class PresentationManager:
         if name not in self._presentations:
             return False
 
+        # Clean up all cache data
         del self._presentations[name]
         if name in self._metadata:
             del self._metadata[name]
+        if name in self._cache_timestamps:
+            del self._cache_timestamps[name]
+        if name in self._namespace_ids:
+            del self._namespace_ids[name]
 
         # Update current if we deleted it
         if self._current_presentation == name:
@@ -521,25 +611,79 @@ class PresentationManager:
         """
         List all presentations with metadata.
 
+        MULTI-INSTANCE SAFE: Queries artifact store to list all presentations in the session.
+
         Returns:
             ListPresentationsResponse with presentation info
         """
         presentations: list[PresentationInfo] = []
+        store = self._get_store()
 
-        # List from memory (artifact store presentations are tracked via _namespace_ids)
-        for name, prs in self._presentations.items():
-            metadata = self._metadata.get(name)
-            presentations.append(
-                PresentationInfo(
-                    name=name,
-                    slide_count=len(prs.slides),
-                    is_current=(name == self._current_presentation),
-                    file_path=self.get_artifact_uri(name)
-                    if metadata and metadata.is_saved
-                    else None,
-                    namespace_id=self.get_namespace_id(name),
+        if store:
+            # Query artifact store for all presentations in this session
+            try:
+                namespaces = await store.list_namespaces()
+                logger.debug(f"Found {len(namespaces)} namespaces in artifact store")
+
+                for ns_info in namespaces:
+                    # Filter for presentations (not templates)
+                    if ns_info.name.startswith(f"{self.base_path}/") and "/templates/" not in ns_info.name:
+                        # Extract presentation name from namespace
+                        name_parts = ns_info.name.split("/")
+                        if len(name_parts) >= 2:
+                            raw_name = name_parts[-1]
+                            # Check if we have it in cache
+                            prs = None
+                            if raw_name in self._presentations and self._is_cache_valid(raw_name):
+                                prs = self._presentations[raw_name]
+                            else:
+                                # Load to get accurate slide count
+                                prs = await self._load_from_store(raw_name)
+
+                            slide_count = len(prs.slides) if prs else 0
+
+                            presentations.append(
+                                PresentationInfo(
+                                    name=raw_name,
+                                    slide_count=slide_count,
+                                    is_current=(raw_name == self._current_presentation),
+                                    file_path=f"artifact://chuk-mcp-pptx/{ns_info.name}",
+                                    namespace_id=ns_info.namespace_id,
+                                )
+                            )
+                            logger.debug(f"Listed presentation: {raw_name} ({ns_info.namespace_id})")
+            except Exception as e:
+                logger.error(f"Failed to list presentations from artifact store: {e}")
+                # Fallback to memory-only listing
+                for name, prs in self._presentations.items():
+                    metadata = self._metadata.get(name)
+                    presentations.append(
+                        PresentationInfo(
+                            name=name,
+                            slide_count=len(prs.slides),
+                            is_current=(name == self._current_presentation),
+                            file_path=self.get_artifact_uri(name)
+                            if metadata and metadata.is_saved
+                            else None,
+                            namespace_id=self.get_namespace_id(name),
+                        )
+                    )
+        else:
+            # No artifact store - list from memory only
+            logger.debug("No artifact store available, listing from memory only")
+            for name, prs in self._presentations.items():
+                metadata = self._metadata.get(name)
+                presentations.append(
+                    PresentationInfo(
+                        name=name,
+                        slide_count=len(prs.slides),
+                        is_current=(name == self._current_presentation),
+                        file_path=self.get_artifact_uri(name)
+                        if metadata and metadata.is_saved
+                        else None,
+                        namespace_id=self.get_namespace_id(name),
+                    )
                 )
-            )
 
         return ListPresentationsResponse(
             presentations=presentations,
@@ -666,6 +810,7 @@ class PresentationManager:
             buffer = io.BytesIO(base64.b64decode(data))
             prs = await asyncio.to_thread(Presentation, buffer)
             self._presentations[name] = prs
+            self._update_cache_timestamp(name)  # Mark as freshly cached
 
             if not as_template:
                 self._current_presentation = name
@@ -738,6 +883,7 @@ class PresentationManager:
 
             # Store in memory for immediate use
             self._presentations[template_name] = prs
+            self._update_cache_timestamp(template_name)  # Mark as freshly cached
 
             # Create metadata
             metadata = PresentationMetadata(
@@ -756,11 +902,13 @@ class PresentationManager:
             return False
 
     def clear_all(self) -> None:
-        """Clear all presentations from memory."""
+        """Clear all presentations from memory cache."""
         self._presentations.clear()
         self._metadata.clear()
         self._namespace_ids.clear()
+        self._cache_timestamps.clear()
         self._current_presentation = None
 
-        # Note: This doesn't delete from artifact store, only clears memory
+        # Note: This doesn't delete from artifact store, only clears memory cache
         # Artifact store presentations persist based on session/scope
+        # They will be reloaded on next access

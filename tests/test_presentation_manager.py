@@ -21,7 +21,7 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from datetime import datetime
 
-from chuk_mcp_pptx.presentation_manager import PresentationManager
+from chuk_mcp_pptx.core.presentation_manager import PresentationManager
 from chuk_mcp_pptx.models import (
     PresentationMetadata,
     PresentationInfo,
