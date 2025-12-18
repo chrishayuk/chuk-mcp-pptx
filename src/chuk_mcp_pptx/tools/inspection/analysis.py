@@ -70,14 +70,17 @@ def register_inspection_tools(mcp, manager):
             if not prs:
                 return "Error: No presentation found"
 
-            if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
+            # Ensure slide_index is an integer
+            idx = int(slide_index) if isinstance(slide_index, str) else slide_index
 
-            slide = prs.slides[slide_index]
+            if idx >= len(prs.slides):
+                return f"Error: Slide index {idx} out of range"
+
+            slide = prs.slides[idx]
 
             # Build description
             description = []
-            description.append(f"=== SLIDE {slide_index} INSPECTION ===\n")
+            description.append(f"=== SLIDE {idx} INSPECTION ===\n")
 
             # Get slide title if exists
             if slide.shapes.title:
@@ -396,10 +399,13 @@ def register_inspection_tools(mcp, manager):
             if not prs:
                 return "Error: No presentation found"
 
-            if slide_index >= len(prs.slides):
-                return f"Error: Slide index {slide_index} out of range"
+            # Ensure slide_index is an integer
+            idx = int(slide_index) if isinstance(slide_index, str) else slide_index
 
-            slide = prs.slides[slide_index]
+            if idx >= len(prs.slides):
+                return f"Error: Slide index {idx} out of range"
+
+            slide = prs.slides[idx]
             fixes_applied = []
 
             # Get safe content area

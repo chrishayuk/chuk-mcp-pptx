@@ -71,21 +71,39 @@ class Container(Component):
         self.padding = padding
         self.center = center
 
-    def render(self, slide, top: float = 0, height: Optional[float] = None):
+    def render(self, slide, top: float = 0, height: Optional[float] = None, placeholder: Optional[Any] = None):
         """
         Render container and return its bounds.
+
+        Args:
+            slide: PowerPoint slide object
+            top: Top position in inches
+            height: Optional height in inches
+            placeholder: Optional placeholder to replace
 
         Returns:
             Dict with container dimensions for child rendering
         """
-        container_width = CONTAINERS.get(self.size, CONTAINERS["lg"])
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+        else:
+            left = None
+            width = None
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
+        container_width = width if width is not None else CONTAINERS.get(self.size, CONTAINERS["lg"])
         padding_value = PADDING.get(self.padding, PADDING["md"])
 
-        # Center horizontally if requested
-        if self.center:
-            left = (SLIDE_WIDTH - container_width) / 2
-        else:
-            left = 0.5
+        # Center horizontally if requested (only if not using placeholder bounds)
+        if left is None:
+            if self.center:
+                left = (SLIDE_WIDTH - container_width) / 2
+            else:
+                left = 0.5
 
         # Container doesn't render a visual element, just returns bounds
         return {

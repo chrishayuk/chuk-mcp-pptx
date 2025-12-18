@@ -108,7 +108,11 @@ class Timeline(Component):
         """Get highlight color for special events."""
         return self.get_color("primary.DEFAULT")
 
-    def render(self, slide, left: float, top: float, width: float = 8.0) -> list:
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
+    def render(self, slide, left: float, top: float, width: float = 8.0, placeholder: Optional[Any] = None) -> list:
         """
         Render timeline to slide.
 
@@ -117,10 +121,19 @@ class Timeline(Component):
             left: Left position in inches
             top: Top position in inches
             width: Timeline width in inches
+            placeholder: Optional placeholder to replace
 
         Returns:
             List of rendered shapes
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         shapes = []
 
         if not self.events:
@@ -221,6 +234,7 @@ class Timeline(Component):
 
     def _render_date(self, slide, left: float, top: float, date_text: str) -> Any:
         """Render event date."""
+        font_family = self._get_font_family()
         date_box = slide.shapes.add_textbox(
             Inches(left - 0.75), Inches(top), Inches(1.5), Inches(0.3)
         )
@@ -233,6 +247,7 @@ class Timeline(Component):
         p = text_frame.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         style = get_text_style("small")
+        p.font.name = font_family
         p.font.size = Pt(style["font_size"])
         p.font.color.rgb = self.get_color("muted.foreground")
         p.font.bold = True
@@ -243,6 +258,7 @@ class Timeline(Component):
         self, slide, left: float, top: float, title_text: str, is_highlighted: bool
     ) -> Any:
         """Render event title."""
+        font_family = self._get_font_family()
         title_box = slide.shapes.add_textbox(
             Inches(left - 1.0), Inches(top), Inches(2.0), Inches(0.3)
         )
@@ -255,6 +271,7 @@ class Timeline(Component):
         p = text_frame.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         style = get_text_style("small")
+        p.font.name = font_family
         p.font.size = Pt(style["font_size"])
 
         if is_highlighted:
@@ -267,6 +284,7 @@ class Timeline(Component):
 
     def _render_description(self, slide, left: float, top: float, description_text: str) -> Any:
         """Render event description."""
+        font_family = self._get_font_family()
         desc_box = slide.shapes.add_textbox(
             Inches(left - 1.0), Inches(top), Inches(2.0), Inches(0.5)
         )
@@ -279,6 +297,7 @@ class Timeline(Component):
         p = text_frame.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         get_text_style("small")
+        p.font.name = font_family
         p.font.size = Pt(FONT_SIZES["xs"])  # Smaller for descriptions
         p.font.color.rgb = self.get_color("muted.foreground")
 

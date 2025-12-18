@@ -72,8 +72,17 @@ class Divider(Component):
         top: float,
         width: Optional[float] = None,
         height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
     ):
         """Render divider line."""
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         if self.orientation == "horizontal":
             # Horizontal line
             line_width = width or CONTENT_WIDTH

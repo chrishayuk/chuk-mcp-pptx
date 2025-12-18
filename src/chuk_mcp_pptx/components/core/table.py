@@ -255,9 +255,14 @@ class Table(ComposableComponent):
 
         return table_shape
 
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
     def _apply_header_styles(self, table):
         """Apply styling to header row."""
         props = self.variant_props
+        font_family = self._get_font_family()
 
         for col_idx, header_text in enumerate(self.headers):
             cell = table.cell(0, col_idx)
@@ -266,6 +271,7 @@ class Table(ComposableComponent):
             # Text formatting
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.alignment = PP_ALIGN.CENTER
+            paragraph.font.name = font_family
             paragraph.font.size = Pt(props.get("header_font_size", 13))
 
             if props.get("header_bold", True):
@@ -291,6 +297,7 @@ class Table(ComposableComponent):
     def _apply_data_styles(self, table):
         """Apply styling to data cells."""
         props = self.variant_props
+        font_family = self._get_font_family()
 
         for row_idx, row_data in enumerate(self.data):
             actual_row_idx = row_idx + 1  # Skip header row
@@ -301,6 +308,7 @@ class Table(ComposableComponent):
 
                 # Text formatting
                 paragraph = cell.text_frame.paragraphs[0]
+                paragraph.font.name = font_family
                 paragraph.font.size = Pt(props.get("font_size", 12))
 
                 # Text color

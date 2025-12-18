@@ -181,7 +181,11 @@ class Icon(Component):
         # Convert pt to inches with some padding
         return (pt_size / 72) + 0.1
 
-    def render(self, slide, left: float, top: float) -> Any:
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
+    def render(self, slide, left: float, top: float, placeholder: Optional[Any] = None) -> Any:
         """
         Render icon to slide.
 
@@ -189,12 +193,22 @@ class Icon(Component):
             slide: PowerPoint slide
             left: Left position in inches
             top: Top position in inches
+            placeholder: Optional placeholder to replace
 
         Returns:
             Shape containing the icon
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         from pptx.util import Inches
 
+        font_family = self._get_font_family()
         size_inches = self._get_size_inches()
         pt_size = self.SIZE_MAP.get(self.size, 16)
 
@@ -213,6 +227,7 @@ class Icon(Component):
 
         p = text_frame.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
+        p.font.name = font_family
         p.font.size = Pt(pt_size)
         p.font.color.rgb = self._get_icon_color()
 
@@ -270,7 +285,11 @@ class IconList(Component):
         self.icon_size = icon_size
         self.spacing = spacing
 
-    def render(self, slide, left: float, top: float, width: float = 6.0) -> list:
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
+    def render(self, slide, left: float, top: float, width: float = 6.0, placeholder: Optional[Any] = None) -> list:
         """
         Render icon list to slide.
 
@@ -279,13 +298,23 @@ class IconList(Component):
             left: Left position in inches
             top: Top position in inches
             width: Total width in inches
+            placeholder: Optional placeholder to replace
 
         Returns:
             List of rendered shapes
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         from pptx.util import Inches
         from ...tokens.typography import get_text_style
 
+        font_family = self._get_font_family()
         shapes = []
         current_top = top
         icon_width = 0.4  # Space for icon
@@ -310,6 +339,7 @@ class IconList(Component):
 
             p = text_frame.paragraphs[0]
             style = get_text_style("body")
+            p.font.name = font_family
             p.font.size = Pt(style["font_size"])
             p.font.color.rgb = self.get_color("foreground.DEFAULT")
 

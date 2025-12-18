@@ -70,10 +70,10 @@ class CodeBlock(Component):
         return self.hex_to_rgb(hex_color)
 
     def render(
-        self, slide, left: float, top: float, width: float = 6.0, height: float = 3.0
+        self, slide, left: float, top: float, width: float = 6.0, height: float = 3.0, placeholder: Optional[Any] = None
     ) -> Any:
         """
-        Render code block to slide.
+        Render code block to slide or replace a placeholder.
 
         Args:
             slide: PowerPoint slide
@@ -81,10 +81,19 @@ class CodeBlock(Component):
             top: Top position in inches
             width: Width in inches
             height: Height in inches
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             Shape object containing the code
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Create container
         container = slide.shapes.add_shape(
             MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)
@@ -156,10 +165,10 @@ class InlineCode(Component):
         self.code = code
 
     def render(
-        self, slide, left: float, top: float, width: Optional[float] = None, height: float = 0.4
+        self, slide, left: float, top: float, width: Optional[float] = None, height: float = 0.4, placeholder: Optional[Any] = None
     ) -> Any:
         """
-        Render inline code to slide.
+        Render inline code to slide or replace a placeholder.
 
         Args:
             slide: PowerPoint slide
@@ -167,10 +176,19 @@ class InlineCode(Component):
             top: Top position in inches
             width: Width (auto-calculated if None)
             height: Height in inches
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             Shape object containing the code
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Calculate width based on text length if not provided
         if width is None:
             # Rough estimation: 0.1 inch per character
@@ -224,9 +242,17 @@ class Terminal(CodeBlock):
         self.prompt = prompt
 
     def render(
-        self, slide, left: float, top: float, width: float = 6.0, height: float = 3.0
+        self, slide, left: float, top: float, width: float = 6.0, height: float = 3.0, placeholder: Optional[Any] = None
     ) -> Any:
-        """Render terminal output."""
+        """Render terminal output or replace a placeholder."""
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Create container with black background
         container = slide.shapes.add_shape(
             MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)

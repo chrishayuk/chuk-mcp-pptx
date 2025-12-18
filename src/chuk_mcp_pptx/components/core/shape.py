@@ -143,9 +143,9 @@ class Shape(Component):
         self.line_color = line_color
         self.line_width = line_width
 
-    def render(self, slide, left: float, top: float, width: float, height: float) -> Any:
+    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> Any:
         """
-        Render shape to slide.
+        Render shape to slide or replace a placeholder.
 
         Args:
             slide: PowerPoint slide object
@@ -153,10 +153,19 @@ class Shape(Component):
             top: Top position in inches
             width: Width in inches
             height: Height in inches
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             Shape object
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Get MSO shape type
         mso_shape = SHAPE_TYPES.get(self.shape_type.lower(), MSO_SHAPE.RECTANGLE)
 

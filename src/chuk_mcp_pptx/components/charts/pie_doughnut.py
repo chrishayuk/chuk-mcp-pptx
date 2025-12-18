@@ -193,9 +193,10 @@ class PieChart(ChartComponent):
         chart_data.add_series("Values", self.values)
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render pie chart with theme styling."""
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
@@ -228,7 +229,7 @@ class PieChart(ChartComponent):
             # Skip data labels if they cause issues
             pass
 
-        return chart
+        return chart_shape
 
 
 @component(
@@ -296,12 +297,13 @@ class DoughnutChart(PieChart):
         super().__init__(**kwargs)
         self.hole_size = hole_size
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render doughnut chart."""
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         # Set hole size if supported
         if hasattr(chart.plots[0], "doughnut_hole_size"):
             chart.plots[0].doughnut_hole_size = int(self.hole_size * 100)
 
-        return chart
+        return chart_shape

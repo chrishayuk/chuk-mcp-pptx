@@ -96,10 +96,11 @@ class RadarChart(ChartComponent):
 
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render radar chart with beautiful styling."""
         # Call base render to create chart
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
@@ -151,7 +152,7 @@ class RadarChart(ChartComponent):
             gridlines.color.rgb = self.get_color("border.secondary")
             gridlines.width = Pt(0.5)
 
-        return chart
+        return chart_shape
 
 
 class ComboChart(ChartComponent):
@@ -239,10 +240,11 @@ class ComboChart(ChartComponent):
 
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render combo chart with mixed chart types."""
         # Call base render to create chart
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
@@ -297,7 +299,7 @@ class ComboChart(ChartComponent):
 
                 series_idx += 1
 
-        return chart
+        return chart_shape
 
 
 class GaugeChart(ChartComponent):
@@ -378,7 +380,7 @@ class GaugeChart(ChartComponent):
         chart_data.add_series("Gauge", self.values)
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render gauge chart with custom styling and integrated labels."""
         from pptx.enum.text import PP_ALIGN
 
@@ -389,7 +391,8 @@ class GaugeChart(ChartComponent):
         height = kwargs.get("height", 2.5)
 
         # Call base render to create chart
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         if len(chart.series) > 0:
             series = chart.series[0]
@@ -452,4 +455,4 @@ class GaugeChart(ChartComponent):
         label_para.font.color.rgb = self.get_color("muted.foreground")
         label_para.alignment = PP_ALIGN.CENTER
 
-        return chart
+        return chart_shape

@@ -125,6 +125,10 @@ class TextBox(Component):
         self.alignment = alignment
         self.auto_fit = auto_fit
 
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
     def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> Any:
         """
         Render text box to slide or populate a placeholder.
@@ -154,6 +158,9 @@ class TextBox(Component):
         text_frame.text = self.text
         text_frame.word_wrap = True
 
+        # Get font family from theme if not explicitly set
+        font_family = self._get_font_family() if self.font_name == "Calibri" else self.font_name
+
         # Format text
         for paragraph in text_frame.paragraphs:
             # Set alignment
@@ -167,7 +174,7 @@ class TextBox(Component):
 
             # Format font
             font = paragraph.font
-            font.name = self.font_name
+            font.name = font_family
             font.size = Pt(self.font_size)
             font.bold = self.bold
             font.italic = self.italic
@@ -311,6 +318,10 @@ class BulletList(Component):
         self.bullet_char = bullet_char
         self.spacing = spacing
 
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
     def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> Any:
         """
         Render bullet list to slide or populate a placeholder.
@@ -339,6 +350,8 @@ class BulletList(Component):
         text_frame = text_box.text_frame
         text_frame.word_wrap = True
 
+        font_family = self._get_font_family()
+
         # Add items
         for idx, item in enumerate(self.items):
             if idx == 0:
@@ -347,6 +360,7 @@ class BulletList(Component):
                 p = text_frame.add_paragraph()
 
             p.text = f"{self.bullet_char} {item}"
+            p.font.name = font_family
             p.font.size = Pt(self.font_size)
             p.space_after = Pt(self.spacing)
 

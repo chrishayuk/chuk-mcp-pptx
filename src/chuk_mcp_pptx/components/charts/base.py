@@ -48,8 +48,10 @@ class ChartComponent(ComposableComponent):
     """
 
     # Default chart dimensions
+    # Note: DEFAULT_TOP=2.0 leaves 1.0" for title, and with SLIDE_HEIGHT=5.625 and MARGIN_BOTTOM=0.5,
+    # the available height is 5.625 - 2.0 - 0.5 = 3.125 inches
     DEFAULT_WIDTH = 8.0
-    DEFAULT_HEIGHT = 4.5
+    DEFAULT_HEIGHT = 3.0  # Fits comfortably below title area
     DEFAULT_LEFT = 1.0
     DEFAULT_TOP = 2.0
 
@@ -149,9 +151,10 @@ class ChartComponent(ComposableComponent):
         top: Optional[float] = None,
         width: Optional[float] = None,
         height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
-        Render chart to slide.
+        Render chart to slide or replace a placeholder.
 
         Args:
             slide: PowerPoint slide
@@ -159,15 +162,27 @@ class ChartComponent(ComposableComponent):
             top: Top position in inches
             width: Chart width in inches
             height: Chart height in inches
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             Chart object
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Chart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Use defaults if not provided
-        left = left or self.DEFAULT_LEFT
-        top = top or self.DEFAULT_TOP
-        width = width or self.DEFAULT_WIDTH
-        height = height or self.DEFAULT_HEIGHT
+        left = left if left is not None else self.DEFAULT_LEFT
+        top = top if top is not None else self.DEFAULT_TOP
+        width = width if width is not None else self.DEFAULT_WIDTH
+        height = height if height is not None else self.DEFAULT_HEIGHT
 
         # Validate data
         is_valid, error = self.validate_data()
@@ -218,4 +233,5 @@ class ChartComponent(ComposableComponent):
             label_color=self.get_color("muted.foreground"),
         )
 
-        return chart
+        # Return chart_shape (not chart) so position attributes are accessible
+        return chart_shape

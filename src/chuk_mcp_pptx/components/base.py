@@ -127,18 +127,54 @@ class Component:
         Get attribute from theme, handling both Theme objects and dicts.
 
         Args:
-            attr: Attribute name
+            attr: Attribute name (supports dot notation like 'typography.font_family')
             default: Default value if not found
 
         Returns:
             Attribute value or default
         """
         if hasattr(self._internal_theme, attr):
-            # Theme object
+            # Theme object with direct attribute
             return getattr(self._internal_theme, attr)
         elif isinstance(self._internal_theme, dict):
-            # Dict theme
-            return self._internal_theme.get(attr, default)
+            # Dict theme - support both flat and nested access
+            # First check for direct key
+            if attr in self._internal_theme:
+                return self._internal_theme[attr]
+
+            # Check nested structures (typography.font_family, colors.primary, etc.)
+            parts = attr.split('.') if '.' in attr else [attr]
+
+            # Also check common nested paths for known attributes
+            nested_paths = {
+                'font_family': ['typography', 'font_family'],
+                'font_size': ['typography', 'font_size'],
+                'font_bold': ['typography', 'font_bold'],
+                'font_italic': ['typography', 'font_italic'],
+                'padding': ['spacing', 'padding'],
+                'margin': ['spacing', 'margin'],
+                'gap': ['spacing', 'gap'],
+                'border_radius': ['borders', 'radius'],
+                'border_width': ['borders', 'width'],
+                'primary_color': ['colors', 'primary'],
+                'secondary_color': ['colors', 'secondary'],
+                'background_color': ['colors', 'background'],
+                'text_color': ['colors', 'text'],
+                'border_color': ['colors', 'border'],
+            }
+
+            # Try the nested path if attr is a known shortcut
+            if attr in nested_paths:
+                parts = nested_paths[attr]
+
+            # Navigate the nested structure
+            value = self._internal_theme
+            for part in parts:
+                if isinstance(value, dict) and part in value:
+                    value = value[part]
+                else:
+                    return default
+            return value
         return default
 
     def get_theme_color_hex(self, color_path: str) -> Optional[str]:
@@ -208,6 +244,11 @@ class Component:
         Returns:
             Spacing value in inches
         """
+        # First check theme override
+        theme_spacing = self.get_theme_attr(f'spacing.{size}')
+        if theme_spacing is not None:
+            return float(theme_spacing)
+
         # Check if it's a preset like "md"
         if size in MARGINS:
             return MARGINS[size]
@@ -216,7 +257,69 @@ class Component:
 
     def get_padding(self, size: str) -> float:
         """Get padding value in inches."""
+        # First check theme override
+        theme_padding = self.get_theme_attr('padding')
+        if theme_padding is not None:
+            return float(theme_padding)
         return PADDING.get(size, PADDING["md"])
+
+    def get_margin(self, size: str = "md") -> float:
+        """Get margin value in inches."""
+        # First check theme override
+        theme_margin = self.get_theme_attr('margin')
+        if theme_margin is not None:
+            return float(theme_margin)
+        return MARGINS.get(size, MARGINS["md"])
+
+    def get_gap(self, size: str = "md") -> float:
+        """Get gap value in inches for spacing between elements."""
+        from ..tokens.spacing import GAPS
+        # First check theme override
+        theme_gap = self.get_theme_attr('gap')
+        if theme_gap is not None:
+            return float(theme_gap)
+        return GAPS.get(size, GAPS["md"])
+
+    def get_border_radius(self, size: str = "md") -> float:
+        """Get border radius in points."""
+        from ..tokens.spacing import RADIUS
+        # First check theme override
+        theme_radius = self.get_theme_attr('border_radius')
+        if theme_radius is not None:
+            return float(theme_radius)
+        return RADIUS.get(size, RADIUS["md"])
+
+    def get_border_width(self, size: str = "2") -> float:
+        """Get border width in points."""
+        from ..tokens.spacing import BORDER_WIDTH
+        # First check theme override
+        theme_width = self.get_theme_attr('border_width')
+        if theme_width is not None:
+            return float(theme_width)
+        return BORDER_WIDTH.get(size, BORDER_WIDTH["2"])
+
+    def get_font_size(self, size: str = "base") -> int:
+        """Get font size in points."""
+        from ..tokens.typography import FONT_SIZES
+        # First check theme override
+        theme_size = self.get_theme_attr('font_size')
+        if theme_size is not None:
+            return int(theme_size)
+        return FONT_SIZES.get(size, FONT_SIZES["base"])
+
+    def get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
+    def get_font_weight(self, weight: str = "normal") -> int:
+        """Get font weight value."""
+        from ..tokens.typography import FONT_WEIGHTS
+        return FONT_WEIGHTS.get(weight, FONT_WEIGHTS["normal"])
+
+    def get_line_height(self, size: str = "normal") -> float:
+        """Get line height multiplier."""
+        from ..tokens.typography import LINE_HEIGHTS
+        return LINE_HEIGHTS.get(size, LINE_HEIGHTS["normal"])
 
     def get_text_style(self, variant: str) -> Dict[str, Any]:
         """Get text style configuration."""

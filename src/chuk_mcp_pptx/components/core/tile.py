@@ -147,6 +147,10 @@ class Tile(Component):
         else:
             return self.get_color("muted.foreground")
 
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
     def render(
         self,
         slide,
@@ -154,6 +158,7 @@ class Tile(Component):
         top: float,
         width: Optional[float] = None,
         height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
         Render tile to slide.
@@ -164,10 +169,19 @@ class Tile(Component):
             top: Top position in inches
             width: Tile width in inches (optional, uses size if not provided)
             height: Tile height in inches (optional, uses size if not provided)
+            placeholder: Optional placeholder to replace
 
         Returns:
             Shape object representing the tile
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Get dimensions from size if not provided
         default_width, default_height = self.SIZE_MAP.get(self.size, (2.0, 2.0))
         tile_width = width if width is not None else default_width
@@ -212,6 +226,7 @@ class Tile(Component):
         text_frame.margin_bottom = Inches(padding)
 
         # Render content based on what's provided
+        font_family = self._get_font_family()
         current_p = text_frame.paragraphs[0]
         has_content = False
 
@@ -222,6 +237,7 @@ class Tile(Component):
             symbol = ICON_SYMBOLS.get(self.icon, self.icon)
             current_p.text = symbol
             current_p.alignment = PP_ALIGN.CENTER
+            current_p.font.name = font_family
             current_p.font.size = Pt(24 if self.size in ["lg", "xl"] else 20)
             current_p.font.color.rgb = self._get_text_color()
             has_content = True
@@ -243,6 +259,7 @@ class Tile(Component):
             else:
                 font_size = 16
 
+            current_p.font.name = font_family
             current_p.font.size = Pt(font_size)
             current_p.font.bold = True
             current_p.font.color.rgb = self._get_text_color()
@@ -256,6 +273,7 @@ class Tile(Component):
 
             current_p.text = self.label
             current_p.alignment = PP_ALIGN.CENTER
+            current_p.font.name = font_family
             current_p.font.size = Pt(FONT_SIZES["xs"])
             current_p.font.color.rgb = self._get_label_color()
 

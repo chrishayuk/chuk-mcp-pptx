@@ -87,7 +87,7 @@ class ContentGrid(Component):
         self.item_type = item_type
         self.columns = min(max(columns, 2), 4)  # Clamp to 2-4
 
-    def render(self, slide, left: float, top: float, width: float, height: float):
+    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None):
         """
         Render content grid using Grid system.
 
@@ -97,10 +97,19 @@ class ContentGrid(Component):
             top: Top position in inches
             width: Total width in inches
             height: Total height in inches
+            placeholder: Optional placeholder to replace
 
         Returns:
             List of rendered shapes
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         from .card import Card
         from .tile import Tile
         from .button import Button

@@ -194,9 +194,10 @@ class ColumnChart(ChartComponent):
 
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render column chart with additional configuration."""
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         # Add data labels if requested
         if self.variant_props.get("show_values", False):
@@ -221,7 +222,7 @@ class ColumnChart(ChartComponent):
         if "stacked" in self.variant and hasattr(chart.plots[0], "overlap"):
             chart.plots[0].overlap = self.variant_props.get("overlap", 100)
 
-        return chart
+        return chart_shape
 
 
 @component(
@@ -449,9 +450,10 @@ class WaterfallChart(ChartComponent):
 
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render waterfall chart with special formatting."""
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         try:
             # Make base series invisible
@@ -486,4 +488,4 @@ class WaterfallChart(ChartComponent):
             # If any formatting fails, return the basic chart
             pass
 
-        return chart
+        return chart_shape

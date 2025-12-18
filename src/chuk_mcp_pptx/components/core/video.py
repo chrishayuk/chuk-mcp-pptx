@@ -116,6 +116,7 @@ class Video(Component):
         top: float,
         width: float = 4.0,
         height: float = 3.0,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
         Render video to slide.
@@ -126,10 +127,19 @@ class Video(Component):
             top: Top position in inches
             width: Width in inches
             height: Height in inches
+            placeholder: Optional placeholder to replace
 
         Returns:
             Movie shape object
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Validate video file exists (if local path)
         if not self.video_source.startswith(("http://", "https://")):
             video_path = Path(self.video_source)

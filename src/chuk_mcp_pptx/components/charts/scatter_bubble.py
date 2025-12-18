@@ -103,10 +103,11 @@ class ScatterChart(ChartComponent):
 
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render scatter chart with beautiful styling."""
         # Call base render to create chart
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
@@ -163,7 +164,7 @@ class ScatterChart(ChartComponent):
             cat_axis = chart.category_axis
             cat_axis.has_major_gridlines = True
 
-        return chart
+        return chart_shape
 
 
 class BubbleChart(ChartComponent):
@@ -252,10 +253,11 @@ class BubbleChart(ChartComponent):
 
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render bubble chart with beautiful styling."""
         # Call base render to create chart
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
@@ -286,7 +288,7 @@ class BubbleChart(ChartComponent):
             value_axis = chart.value_axis
             value_axis.has_major_gridlines = True
 
-        return chart
+        return chart_shape
 
 
 class Matrix3DChart(BubbleChart):

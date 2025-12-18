@@ -193,7 +193,7 @@ class Alert(ComposableComponent):
             self.add_child(self.Description(description, theme))
 
     def render(
-        self, slide, left: float, top: float, width: float = 5.0, height: float = 1.5
+        self, slide, left: float, top: float, width: float = 5.0, height: float = 1.5, placeholder: Optional[Any] = None
     ) -> Any:
         """
         Render alert to slide.
@@ -204,10 +204,19 @@ class Alert(ComposableComponent):
             top: Top position in inches
             width: Alert width in inches
             height: Alert height in inches
+            placeholder: Optional placeholder to replace
 
         Returns:
             Shape object representing the alert
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Create alert container
         alert = slide.shapes.add_shape(
             MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)

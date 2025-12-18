@@ -510,22 +510,38 @@ def register_universal_component_api(mcp, manager):
                     error=f"Unknown component type: '{component}'. Use pptx_list_components to see available components."
                 ).model_dump_json()
 
-            # Build theme object for components that support it
+            # Build comprehensive theme object with all design tokens
             theme_obj = {
                 'colors': {
                     'primary': design_system.primary_color,
                     'secondary': design_system.secondary_color,
                     'background': design_system.background_color,
                     'text': design_system.text_color,
+                    'border': design_system.border_color,
                 },
                 'typography': {
                     'font_family': design_system.font_family,
                     'font_size': design_system.font_size,
+                    'font_bold': design_system.font_bold,
+                    'font_italic': design_system.font_italic,
                 },
                 'spacing': {
                     'padding': design_system.padding,
                     'margin': design_system.margin,
-                }
+                    'gap': design_system.gap,
+                },
+                'borders': {
+                    'radius': design_system.border_radius,
+                    'width': design_system.border_width,
+                },
+                # Also expose as flat keys for easy access via get_theme_attr()
+                'font_family': design_system.font_family,
+                'font_size': design_system.font_size,
+                'padding': design_system.padding,
+                'margin': design_system.margin,
+                'gap': design_system.gap,
+                'border_radius': design_system.border_radius,
+                'border_width': design_system.border_width,
             }
 
             # Merge user params with theme object
@@ -547,6 +563,14 @@ def register_universal_component_api(mcp, manager):
 
             # Check if render is async
             import asyncio
+
+            # Validate and adjust position to fit within slide bounds
+            # This prevents overlapping with title areas and slide boundaries
+            if final_left is not None and final_top is not None and final_width is not None and final_height is not None:
+                from ...layout.helpers import validate_position
+                final_left, final_top, final_width, final_height = validate_position(
+                    final_left, final_top, final_width, final_height
+                )
 
             # Prepare render kwargs
             render_kwargs = {

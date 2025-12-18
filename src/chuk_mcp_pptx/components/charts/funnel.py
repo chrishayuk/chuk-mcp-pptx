@@ -2,7 +2,10 @@
 Funnel chart component for sales pipeline and conversion visualization.
 """
 
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    pass  # For type hints only
 from pptx.slide import Slide
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
@@ -83,6 +86,7 @@ class FunnelChart(ChartComponent):
         top: float | None = None,
         width: float | None = None,
         height: float | None = None,
+        placeholder: Optional[Any] = None,
     ):
         """
         Render funnel chart to a slide (shape-based, not native chart).
@@ -93,10 +97,22 @@ class FunnelChart(ChartComponent):
             top: Top position in inches
             width: Width in inches
             height: Height in inches
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             None (no chart object since this uses shapes)
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"FunnelChart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Use defaults if not specified
         left = left if left is not None else self.DEFAULT_LEFT
         top = top if top is not None else self.DEFAULT_TOP
@@ -324,6 +340,7 @@ class GanttChart(ChartComponent):
         top: float | None = None,
         width: float | None = None,
         height: float | None = None,
+        placeholder: Optional[Any] = None,
     ):
         """
         Render Gantt chart to a slide (shape-based, not native chart).
@@ -334,10 +351,22 @@ class GanttChart(ChartComponent):
             top: Top position in inches
             width: Width in inches
             height: Height in inches
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             None (no chart object since this uses shapes)
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"GanttChart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Use defaults if not specified
         left = left if left is not None else self.DEFAULT_LEFT
         top = top if top is not None else self.DEFAULT_TOP
@@ -481,6 +510,7 @@ class HeatmapChart(ChartComponent):
         top: float | None = None,
         width: float | None = None,
         height: float | None = None,
+        placeholder: Optional[Any] = None,
     ):
         """
         Render heatmap chart to a slide (shape-based, not native chart).
@@ -491,10 +521,22 @@ class HeatmapChart(ChartComponent):
             top: Top position in inches
             width: Width in inches
             height: Height in inches
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             None (no chart object since this uses shapes)
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"HeatmapChart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Use defaults if not specified
         left = left if left is not None else self.DEFAULT_LEFT
         top = top if top is not None else self.DEFAULT_TOP
