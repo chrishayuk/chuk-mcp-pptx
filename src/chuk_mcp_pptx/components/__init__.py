@@ -26,6 +26,8 @@ from .core import (
     MetricCard,
     Icon,
     IconList,
+    Image,
+    Video,
     ProgressBar,
     Tile,
     IconTile,
@@ -108,6 +110,9 @@ __all__ = [
     # Icons
     "Icon",
     "IconList",
+    # Media
+    "Image",
+    "Video",
     # Timeline
     "Timeline",
     # Tiles

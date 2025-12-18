@@ -103,6 +103,13 @@ class Video(Component):
             theme: Optional theme override
         """
         super().__init__(theme)
+
+        # Validate required parameters
+        if not video_source:
+            raise ValueError("Video requires 'video_source' (URL or file path)")
+        if not isinstance(video_source, str):
+            raise TypeError(f"Video 'video_source' must be a string, got {type(video_source).__name__}")
+
         self.video_source = video_source
         self.poster_image = poster_image
         self.autoplay = autoplay

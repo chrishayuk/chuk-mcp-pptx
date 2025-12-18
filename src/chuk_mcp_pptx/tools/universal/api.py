@@ -26,15 +26,25 @@ def register_universal_component_api(mcp, manager):
         presentation: str | None = None,
     ) -> str:
         """
-        List all components on a slide with their IDs, types, positions, and relationships.
+        List all components on a slide with validation for placeholders and images.
 
         This tool is CRITICAL for verifying slide layouts, especially when working with
         templates. It shows all shapes, text boxes, images, charts, and other components
-        on a slide, including those from template layouts and those you've added.
+        on a slide, PLUS validates that:
+        - All placeholders have been populated with content
+        - All images loaded successfully without errors
+        - Content matches the layout's purpose
+
+        ⚠️ MANDATORY AFTER POPULATING SLIDES:
+        You MUST call this tool after populating placeholders to verify:
+        1. No empty placeholders remain (they show "Click to add" in final presentation)
+        2. All images loaded correctly (no broken image icons)
+        3. Layout integrity is maintained
 
         Use this tool to:
         - Verify template layouts after adding slides
         - Check placeholder population results
+        - Validate image loading
         - Identify existing components before adding new ones
         - Understand component positioning and relationships
         - Debug layout issues
@@ -51,42 +61,84 @@ def register_universal_component_api(mcp, manager):
                 - position: X, Y coordinates and dimensions
                 - target: Composition target info (parent, container relationships)
                 - content_preview: First 50 chars of text content if applicable
-            - total: Total number of components
+            - placeholders: Status of all placeholders:
+                - idx: Placeholder index
+                - type: Placeholder type (TITLE, BODY, CHART, etc.)
+                - name: Placeholder name
+                - is_empty: Whether placeholder needs content
+                - has_text: Whether placeholder has text
+                - has_image: Whether placeholder has image
+                - content_preview: Preview of content
+            - images: Status of all images:
+                - component_id: Image component ID
+                - placeholder_idx: Placeholder index if in placeholder
+                - loaded_successfully: Whether image loaded without errors
+                - error_message: Error details if image failed
+                - source: Image source (URL or path)
+            - warnings: List of validation warnings:
+                - type: Warning type (empty_placeholder, missing_image, layout_mismatch)
+                - message: Detailed warning message
+                - placeholder_idx: Related placeholder if applicable
+                - component_id: Related component if applicable
+            - validation_passed: Boolean - true if no warnings, false if issues found
+            - component_count: Total number of components
             - slide_index: The slide that was queried
 
         BEST PRACTICE:
-            Call this after populating placeholders to verify the slide layout matches
-            your expectations. This is especially important with templates to ensure
-            all placeholders were populated correctly.
+            Always call this after populating placeholders. Check the warnings array
+            and validation_passed flag. If validation_passed is false, you MUST fix
+            the issues before moving to the next slide.
 
-        Example - Verify template slide:
+        Example - Verify template slide with validation:
             # After adding and populating a slide from template
             result = await pptx_list_slide_components(slide_index=5)
             # Response shows:
             # {
-            #   "components": [
-            #     {"component_id": "shape_0", "component_type": "TextBox",
-            #      "position": {"left": 0.5, "top": 1.0, "width": 9.0, "height": 1.0},
-            #      "content_preview": "Our Product"},
-            #     {"component_id": "shape_1", "component_type": "TextBox",
-            #      "position": {"left": 0.5, "top": 2.5, "width": 9.0, "height": 3.0},
-            #      "content_preview": "Key features include..."},
-            #     {"component_id": "shape_2", "component_type": "Shape",
-            #      "position": {"left": 0.0, "top": 0.0, "width": 10.0, "height": 0.1}}
+            #   "slide_index": 5,
+            #   "component_count": 3,
+            #   "components": [...],
+            #   "placeholders": [
+            #     {"idx": 0, "type": "TITLE", "name": "Title 1", "is_empty": false,
+            #      "has_text": true, "content_preview": "Our Product"},
+            #     {"idx": 1, "type": "BODY", "name": "Content Placeholder 2", "is_empty": false,
+            #      "has_text": true, "content_preview": "Key features include..."},
+            #     {"idx": 10, "type": "PICTURE", "name": "Picture Placeholder 3", "is_empty": true,
+            #      "has_text": false, "has_image": false}
             #   ],
-            #   "total": 3,
-            #   "slide_index": 5
+            #   "images": [],
+            #   "warnings": [
+            #     {"type": "empty_placeholder", "message": "Placeholder 10 (PICTURE: Picture Placeholder 3) is empty and needs content",
+            #      "placeholder_idx": 10}
+            #   ],
+            #   "validation_passed": false
             # }
+            #
+            # ⚠️ validation_passed is false! Must populate placeholder 10 before moving on
 
-        Example - Check before adding components:
-            # Before adding a chart, see what's already on the slide
-            components = await pptx_list_slide_components(slide_index=3)
-            # Helps avoid overlapping components
+        Example - All validation passed:
+            result = await pptx_list_slide_components(slide_index=3)
+            # Response shows:
+            # {
+            #   "validation_passed": true,
+            #   "warnings": [],
+            #   "placeholders": [
+            #     {"idx": 0, "is_empty": false, "has_text": true, ...},
+            #     {"idx": 1, "is_empty": false, "has_text": true, ...}
+            #   ],
+            #   "images": [
+            #     {"component_id": "img_0", "loaded_successfully": true, ...}
+            #   ]
+            # }
+            # ✅ All good! Safe to move to next slide
         """
         try:
-            from ...models import ErrorResponse, ComponentListResponse, ComponentInfo, ComponentPosition, ComponentTarget, TargetType
+            from ...models import (
+                ErrorResponse, ComponentListResponse, ComponentInfo, ComponentPosition,
+                ComponentTarget, TargetType, PlaceholderStatus, ImageStatus, ValidationWarning
+            )
             from ...components.tracking import component_tracker
             from ...constants import ErrorMessages
+            from pptx.enum.shapes import MSO_SHAPE_TYPE
 
             # Get presentation
             result = await manager.get(presentation)
@@ -95,10 +147,18 @@ def register_universal_component_api(mcp, manager):
 
             prs, metadata = result
 
+            # Validate slide index
+            if slide_index < 0 or slide_index >= len(prs.slides):
+                return ErrorResponse(
+                    error=f"Slide index {slide_index} not found. Presentation has {len(prs.slides)} slides."
+                ).model_dump_json()
+
+            slide = prs.slides[slide_index]
+
             # Get all components on slide
             components = component_tracker.list_on_slide(metadata.name, slide_index)
 
-            # Build response using Pydantic models
+            # Build component list
             component_list = []
             for comp in components:
                 # Convert target_type string to TargetType enum
@@ -123,10 +183,145 @@ def register_universal_component_api(mcp, manager):
                 )
                 component_list.append(component_info)
 
+            # VALIDATION: Check all placeholders
+            placeholder_statuses = []
+            warnings = []
+
+            for shape in slide.placeholders:
+                try:
+                    idx = shape.placeholder_format.idx
+                    ph_type = shape.placeholder_format.type
+                    type_name = ph_type.name if hasattr(ph_type, 'name') else str(ph_type)
+
+                    is_empty = True
+                    has_text = False
+                    has_image = False
+                    content_preview = None
+
+                    # Check for text content
+                    if hasattr(shape, 'text_frame') and hasattr(shape.text_frame, 'text'):
+                        text_content = shape.text_frame.text.strip()
+                        if text_content:
+                            has_text = True
+                            is_empty = False
+                            content_preview = text_content[:50] + "..." if len(text_content) > 50 else text_content
+                    elif hasattr(shape, 'text'):
+                        text_content = shape.text.strip()
+                        if text_content:
+                            has_text = True
+                            is_empty = False
+                            content_preview = text_content[:50] + "..." if len(text_content) > 50 else text_content
+
+                    # Check for image content
+                    if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
+                        # Check if placeholder contains an image
+                        if hasattr(shape, 'image'):
+                            has_image = True
+                            is_empty = False
+                        # Check for picture in placeholder
+                        elif len(list(shape.element.iter())) > 1:
+                            # Placeholder has child elements, likely not empty
+                            for child in shape.element.iter():
+                                if 'pic' in str(child.tag).lower() or 'blip' in str(child.tag).lower():
+                                    has_image = True
+                                    is_empty = False
+                                    break
+
+                    # Create status
+                    status = PlaceholderStatus(
+                        idx=idx,
+                        type=type_name,
+                        name=shape.name,
+                        is_empty=is_empty,
+                        has_text=has_text,
+                        has_image=has_image,
+                        content_preview=content_preview,
+                    )
+                    placeholder_statuses.append(status)
+
+                    # Add warning if empty
+                    if is_empty:
+                        warnings.append(ValidationWarning(
+                            type="empty_placeholder",
+                            message=f"Placeholder {idx} ({type_name}: {shape.name}) is empty and needs content",
+                            placeholder_idx=idx,
+                        ))
+
+                except Exception as e:
+                    logger.warning(f"Could not analyze placeholder: {e}")
+
+            # VALIDATION: Check all images
+            image_statuses = []
+
+            for shape in slide.shapes:
+                if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                    try:
+                        # Find corresponding component
+                        comp_id = None
+                        placeholder_idx = None
+                        for comp in components:
+                            if comp.component_type == "Image":
+                                comp_id = comp.component_id
+                                if comp.target_type == "placeholder":
+                                    placeholder_idx = comp.target_id
+                                break
+
+                        # Check if image loaded successfully
+                        loaded_successfully = True
+                        error_message = None
+                        source = None
+
+                        # Try to get image info
+                        try:
+                            if hasattr(shape, 'image'):
+                                # Image loaded successfully
+                                loaded_successfully = True
+                            else:
+                                # No image data
+                                loaded_successfully = False
+                                error_message = "Image shape has no image data"
+                        except Exception as img_err:
+                            loaded_successfully = False
+                            error_message = str(img_err)
+
+                        # Try to get source from component params
+                        if comp_id:
+                            for comp in components:
+                                if comp.component_id == comp_id and 'image_source' in comp.params:
+                                    source = comp.params['image_source']
+                                    break
+
+                        image_status = ImageStatus(
+                            component_id=comp_id or f"image_{shape.shape_id}",
+                            placeholder_idx=placeholder_idx,
+                            loaded_successfully=loaded_successfully,
+                            error_message=error_message,
+                            source=source,
+                        )
+                        image_statuses.append(image_status)
+
+                        # Add warning if image failed
+                        if not loaded_successfully:
+                            warnings.append(ValidationWarning(
+                                type="missing_image",
+                                message=f"Image failed to load: {error_message or 'Unknown error'}",
+                                component_id=comp_id,
+                            ))
+
+                    except Exception as e:
+                        logger.warning(f"Could not analyze image: {e}")
+
+            # Determine if validation passed
+            validation_passed = len(warnings) == 0
+
             response = ComponentListResponse(
                 slide_index=slide_index,
                 component_count=len(components),
                 components=component_list,
+                placeholders=placeholder_statuses,
+                images=image_statuses,
+                warnings=warnings,
+                validation_passed=validation_passed,
             )
             return response.model_dump_json()
 
@@ -168,6 +363,32 @@ def register_universal_component_api(mcp, manager):
         4. Explicit theme parameter
         5. Individual property overrides in params
 
+        ⚠️ CRITICAL: Content Placeholders (CHART, TABLE, PICTURE, OBJECT)
+        When adding slides from templates, ALWAYS check the pptx_add_slide_from_template() response
+        for content placeholders. The response explicitly identifies these:
+
+            "🚨 CRITICAL: This layout has CHART placeholder(s) at indices [2]"
+            "📊 CRITICAL: This layout has TABLE placeholder(s) at indices [14]"
+            "📦 OBJECT placeholder(s) at indices [13] can hold tables, charts, or other content"
+
+        For ALL content placeholders (CHART, TABLE, PICTURE, OBJECT):
+        - MUST use target_placeholder parameter (e.g., target_placeholder=2)
+        - DO NOT use left/top/width/height (this creates overlays with visible "Click to add" text!)
+        - Component automatically inherits placeholder's position and size
+        - OBJECT placeholders can accept any component type (Table, Chart, Image)
+
+        WRONG (creates overlay - placeholder remains visible underneath):
+            pptx_add_component(slide_index=3, component='Table',
+                              left=0.6, top=2.0, width=8.4, height=2.4, ...)
+            pptx_add_component(slide_index=5, component='ColumnChart',
+                              left=1.0, top=2.0, width=8.0, height=3.5, ...)
+
+        CORRECT (replaces placeholder - clean template design):
+            pptx_add_component(slide_index=3, component='Table',
+                              target_placeholder=14, params={...})
+            pptx_add_component(slide_index=5, component='ColumnChart',
+                              target_placeholder=2, params={...})
+
         BEST PRACTICE - Verify Placeholder Population:
         After adding components to placeholders, ALWAYS verify with:
             components = await pptx_list_slide_components(slide_index=X)
@@ -178,9 +399,10 @@ def register_universal_component_api(mcp, manager):
         - Design system colors are correctly applied
 
         For template-based presentations, use this workflow:
-        1. pptx_add_slide_from_template() - Add slide with layout
-        2. pptx_add_component() - Populate placeholders
-        3. pptx_list_slide_components() - Verify layout matches template
+        1. pptx_add_slide_from_template(layout_index=X) - Add slide with layout (READ the response!)
+        2. Check response for CHART/PICTURE placeholder warnings
+        3. pptx_add_component() - Populate placeholders using target_placeholder
+        4. pptx_list_slide_components() - Verify layout matches template
 
         Args:
             slide_index: Index of the slide (0-based)
@@ -308,6 +530,56 @@ def register_universal_component_api(mcp, manager):
             target_placeholder_obj = None
             target_component_obj = None
             final_left, final_top, final_width, final_height = left, top, width, height
+
+            # VALIDATION: Check if using free-form positioning for content that should use placeholders
+            if target_placeholder is None and target_component is None and left is not None:
+                # This is free-form positioning - check if slide has appropriate placeholders
+                from pptx.enum.shapes import PP_PLACEHOLDER
+
+                # Map component types to placeholder types they should use
+                component_to_placeholder_map = {
+                    'Table': [PP_PLACEHOLDER.TABLE, PP_PLACEHOLDER.OBJECT],
+                    'ColumnChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    'BarChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    'LineChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    'AreaChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    'PieChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    'DoughnutChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    'ScatterChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    'BubbleChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    'WaterfallChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    'SparklineChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    'Image': [PP_PLACEHOLDER.PICTURE, PP_PLACEHOLDER.OBJECT],
+                }
+
+                if component in component_to_placeholder_map:
+                    # Check if slide has matching placeholders
+                    available_placeholders = []
+                    placeholder_types = component_to_placeholder_map[component]
+
+                    for shape in slide.placeholders:
+                        try:
+                            ph_type = shape.placeholder_format.type
+                            if ph_type in placeholder_types:
+                                available_placeholders.append({
+                                    'idx': shape.placeholder_format.idx,
+                                    'type': ph_type.name if hasattr(ph_type, 'name') else str(ph_type),
+                                    'name': shape.name
+                                })
+                        except Exception:
+                            continue
+
+                    if available_placeholders:
+                        # ERROR: They're using free-form positioning when placeholders exist!
+                        ph_list = ", ".join([f"idx={ph['idx']} ({ph['type']})" for ph in available_placeholders])
+                        return ErrorResponse(
+                            error=f"❌ PLACEHOLDER REQUIRED: Cannot add {component} with free-form positioning (left/top/width/height) "
+                            f"because this slide has {len(available_placeholders)} suitable placeholder(s): {ph_list}. "
+                            f"\n\n✅ USE THIS INSTEAD: pptx_add_component(slide_index={slide_index}, component='{component}', "
+                            f"target_placeholder={available_placeholders[0]['idx']}, params={{...}})"
+                            f"\n\n⚠️ Using free-form positioning creates overlays where the placeholder 'Click to add' text "
+                            f"remains visible underneath your content, breaking the template design."
+                        ).model_dump_json()
 
             # MODE 1: Target placeholder
             if target_placeholder is not None:

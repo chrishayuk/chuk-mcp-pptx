@@ -173,12 +173,56 @@ class ComponentInfo(BaseModel):
         extra = "forbid"
 
 
+class PlaceholderStatus(BaseModel):
+    """Status of a placeholder on a slide."""
+
+    idx: int = Field(..., description="Placeholder index", ge=0)
+    type: str = Field(..., description="Placeholder type (e.g., TITLE, BODY, PICTURE)")
+    name: str = Field(..., description="Placeholder name")
+    is_empty: bool = Field(..., description="Whether placeholder has no content")
+    has_text: bool = Field(default=False, description="Whether placeholder has text content")
+    has_image: bool = Field(default=False, description="Whether placeholder has an image")
+    content_preview: str | None = Field(None, description="Preview of content if available")
+
+    class Config:
+        extra = "forbid"
+
+
+class ImageStatus(BaseModel):
+    """Status of an image on a slide."""
+
+    component_id: str = Field(..., description="Component ID of the image")
+    placeholder_idx: int | None = Field(None, description="Placeholder index if image is in placeholder")
+    loaded_successfully: bool = Field(..., description="Whether image loaded without errors")
+    error_message: str | None = Field(None, description="Error message if image failed to load")
+    source: str | None = Field(None, description="Image source (path or URL)")
+
+    class Config:
+        extra = "forbid"
+
+
+class ValidationWarning(BaseModel):
+    """Validation warning for slide content."""
+
+    type: Literal["empty_placeholder", "missing_image", "layout_mismatch"] = Field(..., description="Warning type")
+    message: str = Field(..., description="Warning message")
+    placeholder_idx: int | None = Field(None, description="Placeholder index if applicable")
+    component_id: str | None = Field(None, description="Component ID if applicable")
+
+    class Config:
+        extra = "forbid"
+
+
 class ComponentListResponse(BaseModel):
     """Response model for listing components on a slide."""
 
     slide_index: int = Field(..., description="Slide index", ge=0)
     component_count: int = Field(..., description="Number of components", ge=0)
     components: list[ComponentInfo] = Field(..., description="List of components")
+    placeholders: list[PlaceholderStatus] = Field(default_factory=list, description="Status of all placeholders on slide")
+    images: list[ImageStatus] = Field(default_factory=list, description="Status of all images on slide")
+    warnings: list[ValidationWarning] = Field(default_factory=list, description="Validation warnings for this slide")
+    validation_passed: bool = Field(default=True, description="Whether slide passed all validation checks")
 
     class Config:
         extra = "forbid"

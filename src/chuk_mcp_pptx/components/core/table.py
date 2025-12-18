@@ -203,6 +203,27 @@ class Table(ComposableComponent):
             theme: Optional theme override
         """
         super().__init__(theme)
+
+        # Validate required parameters
+        if not headers:
+            raise ValueError("Table requires 'headers' (list of column names)")
+        if not isinstance(headers, list):
+            raise TypeError(f"Table 'headers' must be a list, got {type(headers).__name__}")
+        if data is None:
+            raise ValueError("Table requires 'data' (list of rows)")
+        if not isinstance(data, list):
+            raise TypeError(f"Table 'data' must be a list of rows, got {type(data).__name__}")
+
+        # Validate each row has same number of columns as headers
+        for i, row in enumerate(data):
+            if not isinstance(row, list):
+                raise TypeError(f"Table row {i} must be a list, got {type(row).__name__}")
+            if len(row) != len(headers):
+                raise ValueError(
+                    f"Table row {i} has {len(row)} columns but headers has {len(headers)} columns. "
+                    f"Each row must have the same number of values as headers."
+                )
+
         self.headers = headers
         self.data = data
         self.variant = variant

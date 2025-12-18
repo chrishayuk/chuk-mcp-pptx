@@ -126,8 +126,11 @@ def register_workflow_tools(mcp, manager, template_manager):
                 placeholder_list = ", ".join([f"idx={p.idx} {p.name} (type: {p.type})" for p in placeholders])
 
                 # Count placeholder types
-                text_placeholders = [p for p in placeholders if p.type in ('TITLE', 'SUBTITLE', 'BODY', 'OBJECT')]
+                text_placeholders = [p for p in placeholders if p.type in ('TITLE', 'SUBTITLE', 'BODY')]
                 picture_placeholders = [p for p in placeholders if p.type == 'PICTURE']
+                chart_placeholders = [p for p in placeholders if p.type == 'CHART']
+                table_placeholders = [p for p in placeholders if p.type == 'TABLE']
+                object_placeholders = [p for p in placeholders if p.type == 'OBJECT']  # Generic content placeholder
 
                 guidance_parts = [
                     f"✅ Slide {slide_index} added with layout '{layout.name}'.",
@@ -146,20 +149,97 @@ def register_workflow_tools(mcp, manager, template_manager):
                         f"      Example: await pptx_populate_placeholder(slide_index={slide_index}, placeholder_idx={text_placeholders[0].idx}, content='Your text here')"
                     )
 
+                if chart_placeholders:
+                    chart_ids = ", ".join([str(p.idx) for p in chart_placeholders])
+                    guidance_parts.append(
+                        f"   🚨 CRITICAL: This layout has CHART placeholder(s) at indices {chart_ids}"
+                    )
+                    guidance_parts.append(
+                        f"      ✅ RECOMMENDED (Simple): await pptx_populate_placeholder(slide_index={slide_index}, placeholder_idx={chart_placeholders[0].idx}, content={{'type': 'ColumnChart', 'series': {{...}}, 'categories': [...]}})"
+                    )
+                    guidance_parts.append(
+                        f"      OR: await pptx_add_component(slide_index={slide_index}, component='ColumnChart', target_placeholder={chart_placeholders[0].idx}, params={{...}})"
+                    )
+                    guidance_parts.append(
+                        f"      ❌ DO NOT use left/top/width/height (creates overlays!)"
+                    )
+
+                if table_placeholders:
+                    table_ids = ", ".join([str(p.idx) for p in table_placeholders])
+                    guidance_parts.append(
+                        f"   📊 CRITICAL: This layout has TABLE placeholder(s) at indices {table_ids}"
+                    )
+                    guidance_parts.append(
+                        f"      ✅ RECOMMENDED (Simple): await pptx_populate_placeholder(slide_index={slide_index}, placeholder_idx={table_placeholders[0].idx}, content={{'type': 'Table', 'headers': [...], 'data': [[...]]}})"
+                    )
+                    guidance_parts.append(
+                        f"      OR: await pptx_add_component(slide_index={slide_index}, component='Table', target_placeholder={table_placeholders[0].idx}, params={{...}})"
+                    )
+                    guidance_parts.append(
+                        f"      ❌ DO NOT use left/top/width/height (creates overlays!)"
+                    )
+
+                if object_placeholders:
+                    obj_ids = ", ".join([str(p.idx) for p in object_placeholders])
+                    guidance_parts.append(
+                        f"   📦 OBJECT placeholder(s) at indices {obj_ids} - flexible content areas"
+                    )
+                    guidance_parts.append(
+                        f"      ⚠️ ANALYZE THE LAYOUT FIRST: Look at the layout name '{layout.name}' to understand what content makes sense"
+                    )
+                    guidance_parts.append(
+                        f"      • Agenda/List layouts → Use text bullets, NOT tables"
+                    )
+                    guidance_parts.append(
+                        f"      • Data/Chart layouts → Use charts or tables with actual data"
+                    )
+                    guidance_parts.append(
+                        f"      • Content layouts → Use text, bullets, or simple visuals"
+                    )
+                    guidance_parts.append(
+                        f"      ✅ Populate with: pptx_populate_placeholder(placeholder_idx=X, content='text' OR {{'type': 'Table/Chart', ...}})"
+                    )
+
                 if picture_placeholders:
                     pic_ids = ", ".join([str(p.idx) for p in picture_placeholders])
                     guidance_parts.append(
-                        f"   2. For image placeholder(s) {pic_ids}: Use pptx_add_component(component='Image', target_placeholder=X, ...)"
+                        f"   📷 For image placeholder(s) {pic_ids}: await pptx_populate_placeholder(placeholder_idx=X, content={{'type': 'Image', 'image_source': '...'}})"
                     )
 
                 guidance_parts.append(
-                    f"   {len(placeholders) + 1 if picture_placeholders else 2}. VERIFY: Call pptx_list_slide_components(slide_index={slide_index}) to confirm all placeholders are populated"
+                    f"   🔍 CRITICAL - VERIFY AFTER POPULATING: Call pptx_list_slide_components(slide_index={slide_index})"
                 )
                 guidance_parts.append(
-                    f"      This ensures no 'Click to add text' placeholders remain visible"
+                    f"      This command shows which placeholders are still empty and need content"
+                )
+                guidance_parts.append(
+                    f"      ⚠️ EVERY placeholder MUST be filled - empty placeholders show 'Click to add' text in the final presentation"
                 )
                 guidance_parts.append(
                     f"🚫 DO NOT use pptx_add_text_box or free-form positioning - it will overlay the placeholders and break the template design!"
+                )
+
+                # Add verification reminder at the end
+                guidance_parts.append(
+                    f"\n⚠️ MANDATORY VERIFICATION STEP:"
+                )
+                guidance_parts.append(
+                    f"   After populating ALL placeholders on this slide, you MUST call:"
+                )
+                guidance_parts.append(
+                    f"   pptx_list_slide_components(slide_index={slide_index})"
+                )
+                guidance_parts.append(
+                    f"   Check the response to ensure:"
+                )
+                guidance_parts.append(
+                    f"   • No empty placeholders remain"
+                )
+                guidance_parts.append(
+                    f"   • All images loaded successfully"
+                )
+                guidance_parts.append(
+                    f"   • Content is appropriate for the layout ('{layout.name}')"
                 )
 
                 guidance = " ".join(guidance_parts)

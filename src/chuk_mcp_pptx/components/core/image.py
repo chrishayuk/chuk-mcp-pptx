@@ -156,6 +156,13 @@ class Image(Component):
             theme: Optional theme override
         """
         super().__init__(theme)
+
+        # Validate required parameters
+        if not image_source:
+            raise ValueError("Image requires 'image_source' (URL or file path)")
+        if not isinstance(image_source, str):
+            raise TypeError(f"Image 'image_source' must be a string, got {type(image_source).__name__}")
+
         self.image_source = image_source
         self.shadow = shadow
         self.glow = glow

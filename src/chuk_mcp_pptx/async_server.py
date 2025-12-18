@@ -486,7 +486,11 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
                         data=pptx_data,
                         mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
                         summary=f"{pres_name}.pptx",
-                        meta={"filename": f"{pres_name}.pptx", "presentation_name": pres_name},
+                        meta={
+                            "filename": f"{pres_name}.pptx",
+                            "presentation_name": pres_name,
+                            "expiration_days": 30,  # Hint for S3 lifecycle policy
+                        },
                     )
                     logger.info(f"Stored as artifact: {artifact_id}")
 
@@ -571,7 +575,11 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
             data=pptx_data,
             mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
             summary=f"{pres_name}.pptx",
-            meta={"filename": f"{pres_name}.pptx", "presentation_name": pres_name},
+            meta={
+                "filename": f"{pres_name}.pptx",
+                "presentation_name": pres_name,
+                "expiration_days": 30,  # Hint for S3 lifecycle policy
+            },
         )
         logger.info(f"Stored presentation as artifact: {artifact_id}")
 
