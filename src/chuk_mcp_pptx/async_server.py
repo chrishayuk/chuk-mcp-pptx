@@ -494,10 +494,10 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
                     )
                     logger.info(f"Stored as artifact: {artifact_id}")
 
-                    # Generate presigned URL
-                    download_url = await store.presign(artifact_id, expires=3600)
+                    # Generate presigned URL with 24-hour expiration
+                    download_url = await store.presign(artifact_id, expires=86400)
                     logger.info(
-                        f"Generated presigned URL: {download_url[:80] if download_url else 'None'}..."
+                        f"Generated presigned URL (24h expiry): {download_url[:80] if download_url else 'None'}..."
                     )
             else:
                 logger.warning("Artifact store not available for presigned URL generation")
@@ -522,7 +522,7 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
 
 
 @mcp.tool  # type: ignore[arg-type]
-async def pptx_get_download_url(presentation: str | None = None, expires_in: int = 3600) -> str:
+async def pptx_get_download_url(presentation: str | None = None, expires_in: int = 86400) -> str:
     """
     Get a presigned download URL for the presentation.
 
@@ -532,14 +532,22 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
 
     Args:
         presentation: Name of presentation (uses current if not specified)
-        expires_in: URL expiration time in seconds (default: 3600 = 1 hour)
+        expires_in: URL expiration time in seconds (default: 86400 = 24 hours)
+            Common values:
+            - 3600 = 1 hour
+            - 86400 = 24 hours (default)
+            - 604800 = 7 days
+            - Maximum: 604800 (7 days) for most S3 providers
 
     Returns:
         JSON string with download URL or error
 
     Example:
+        # Get URL with default 24-hour expiration
         result = await pptx_get_download_url()
-        # Returns: {"url": "https://...", "expires_in": 3600}
+
+        # Get URL with 7-day expiration
+        result = await pptx_get_download_url(expires_in=604800)
     """
     try:
         import io
