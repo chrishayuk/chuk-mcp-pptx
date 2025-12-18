@@ -22,9 +22,22 @@ def register_workflow_tools(mcp, manager, template_manager):
         """
         Add a slide using a specific layout from the template.
 
-        When a presentation is created from a template, this tool adds a new slide
-        using one of the template's layouts. Use pptx_analyze_template to see
-        available layout indices and their names.
+        ⚠️ REQUIRED FIRST STEP - Before calling this tool:
+        You MUST call pptx_analyze_template() first to see ALL available layouts.
+        Templates often have 20-50+ different layouts (Title, Content, Comparison, etc.)
+        and you should use a variety of them to create engaging presentations.
+
+        Common layout types to look for:
+        - Title slides (for section headers)
+        - Content with Picture (text + image)
+        - Two Content (side-by-side content)
+        - Comparison (compare two things)
+        - Quote/Testimonial (for quotes)
+        - Section Header (chapter dividers)
+        - Blank/Empty (for custom layouts)
+        - Charts/Data layouts
+        - Agenda layouts
+        - Conclusion layouts
 
         Args:
             layout_index: Index of the layout to use (from pptx_analyze_template)
@@ -39,40 +52,39 @@ def register_workflow_tools(mcp, manager, template_manager):
                 - placeholders: List of available placeholders with idx, type, and name
                 - message: Guidance on how to populate the placeholders
 
-        CRITICAL NEXT STEPS:
-            After calling this tool, you MUST:
+        CRITICAL NEXT STEPS after calling this tool:
             1. Review the layout_info.placeholders in the response
             2. Call pptx_populate_placeholder(slide_index=X, placeholder_idx=Y, content="...")
                for EACH placeholder you want to populate
-            3. Optionally call pptx_list_slide_components(slide_index=X) to see any
-               pre-existing components from the layout (shapes, images, etc.)
+            3. For PICTURE placeholders, use pptx_add_component with target_placeholder
 
-        DO NOT use pptx_add_text_box or other overlay tools - they bypass the template
-        design. Always use pptx_populate_placeholder to respect the template's styling.
+        DO NOT:
+        - Use the same layout repeatedly - templates have variety for a reason!
+        - Use pptx_add_text_box or free-form positioning - it bypasses template design
+        - Skip analyzing the template first - you'll miss better layout options
 
         Example Workflow:
-            # Step 1: Analyze template to find layout indices
+            # Step 1: ALWAYS analyze template FIRST to see ALL layouts
             layouts = await pptx_analyze_template("brand_proposal")
-            # You see: layout 1 = "Content with Picture"
+            # Returns layouts like: "Title with Picture", "Content with Picture",
+            # "Two Content", "Comparison", "Quote", "Data Chart", etc.
+            # Note the index for each layout you want to use
 
-            # Step 2: Add slide with that layout
-            result = await pptx_add_slide_from_template(layout_index=1)
-            # Response: slide_index=5, placeholders=[
-            #   {idx=0, type=TITLE, name="Title 1"},
-            #   {idx=1, type=OBJECT, name="Content Placeholder 2"},
-            #   {idx=2, type=PICTURE, name="Picture Placeholder 3"}
-            # ]
+            # Step 2: Choose appropriate layout for your content
+            # Find "Content with Picture" in the layouts list (say it's at index 20)
+            result = await pptx_add_slide_from_template(layout_index=20)
 
-            # Step 3: Populate text placeholders
-            await pptx_populate_placeholder(slide_index=5, placeholder_idx=0, content="Our Product")
-            await pptx_populate_placeholder(slide_index=5, placeholder_idx=1, content="Key features...")
+            # Step 3: Populate ALL placeholders
+            await pptx_populate_placeholder(slide_index=0, placeholder_idx=0, content="Our Product")
+            await pptx_populate_placeholder(slide_index=0, placeholder_idx=1, content="Features...")
 
-            # Step 4: Check what other components exist
-            components = await pptx_list_slide_components(slide_index=5)
-            # Shows any decorative shapes or elements from the layout
+            # For comparison slide -> find "Comparison" layout in the list
+            result2 = await pptx_add_slide_from_template(layout_index=<index_from_analysis>)
+            # Then populate left/right content placeholders
 
-            # Step 5: Add image to picture placeholder if needed
-            # Use pptx_add_component for images into PICTURE placeholders
+            # For data/charts -> find chart-friendly layout in the list
+            result3 = await pptx_add_slide_from_template(layout_index=<index_from_analysis>)
+            # Then add table/chart to the chart placeholder
         """
         try:
             from ...models.responses import SlideResponse, LayoutInfo, PlaceholderInfo
@@ -109,15 +121,48 @@ def register_workflow_tools(mcp, manager, template_manager):
                 except Exception as e:
                     logger.warning(f"Could not analyze placeholder: {e}")
 
-            # Create guidance message
+            # Create guidance message with explicit placeholder requirements
             if placeholders:
                 placeholder_list = ", ".join([f"idx={p.idx} {p.name} (type: {p.type})" for p in placeholders])
-                guidance = (
-                    f"Slide added with layout '{layout.name}'. Available placeholders: {placeholder_list}. "
-                    f"IMPORTANT: Use pptx_populate_placeholder(slide_index={slide_index}, placeholder_idx=X, content='...') "
-                    f"to populate each placeholder and respect the template's design system. "
-                    f"Do NOT use pptx_add_text_box as it overlays content and bypasses the template design."
+
+                # Count placeholder types
+                text_placeholders = [p for p in placeholders if p.type in ('TITLE', 'SUBTITLE', 'BODY', 'OBJECT')]
+                picture_placeholders = [p for p in placeholders if p.type == 'PICTURE']
+
+                guidance_parts = [
+                    f"✅ Slide {slide_index} added with layout '{layout.name}'.",
+                    f"📋 Found {len(placeholders)} placeholders: {placeholder_list}",
+                ]
+
+                if text_placeholders:
+                    text_ids = ", ".join([str(p.idx) for p in text_placeholders])
+                    guidance_parts.append(
+                        f"⚠️ REQUIRED NEXT STEPS:"
+                    )
+                    guidance_parts.append(
+                        f"   1. Call pptx_populate_placeholder() for EACH text placeholder: {text_ids}"
+                    )
+                    guidance_parts.append(
+                        f"      Example: await pptx_populate_placeholder(slide_index={slide_index}, placeholder_idx={text_placeholders[0].idx}, content='Your text here')"
+                    )
+
+                if picture_placeholders:
+                    pic_ids = ", ".join([str(p.idx) for p in picture_placeholders])
+                    guidance_parts.append(
+                        f"   2. For image placeholder(s) {pic_ids}: Use pptx_add_component(component='Image', target_placeholder=X, ...)"
+                    )
+
+                guidance_parts.append(
+                    f"   {len(placeholders) + 1 if picture_placeholders else 2}. VERIFY: Call pptx_list_slide_components(slide_index={slide_index}) to confirm all placeholders are populated"
                 )
+                guidance_parts.append(
+                    f"      This ensures no 'Click to add text' placeholders remain visible"
+                )
+                guidance_parts.append(
+                    f"🚫 DO NOT use pptx_add_text_box or free-form positioning - it will overlay the placeholders and break the template design!"
+                )
+
+                guidance = " ".join(guidance_parts)
             else:
                 guidance = f"Slide added with layout '{layout.name}'. No placeholders detected - this may be a blank layout."
 

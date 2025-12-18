@@ -63,6 +63,18 @@ from .containers import (
     ChatContainer,
 )
 
+# Chart components - import to register with decorator
+from .charts import (
+    ColumnChart,
+    BarChart,
+    WaterfallChart,
+    LineChart,
+    AreaChart,
+    SparklineChart,
+    PieChart,
+    DoughnutChart,
+)
+
 __all__ = [
     # Base
     "Component",
@@ -139,4 +151,13 @@ __all__ = [
     "WindowsWindow",
     # Containers - Generic
     "ChatContainer",
+    # Charts
+    "ColumnChart",
+    "BarChart",
+    "WaterfallChart",
+    "LineChart",
+    "AreaChart",
+    "SparklineChart",
+    "PieChart",
+    "DoughnutChart",
 ]

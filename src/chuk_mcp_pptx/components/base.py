@@ -307,6 +307,30 @@ class Component:
                 for run in paragraph.runs:
                     run.font.color.rgb = self.get_color(fg_path)
 
+    def _extract_placeholder_bounds(self, placeholder):
+        """
+        Extract bounds from a placeholder before deletion.
+
+        Args:
+            placeholder: Placeholder shape
+
+        Returns:
+            Tuple of (left, top, width, height) in inches, or None if no placeholder
+        """
+        if placeholder is None:
+            return None
+
+        try:
+            left = placeholder.left.inches if hasattr(placeholder.left, 'inches') else placeholder.left / 914400
+            top = placeholder.top.inches if hasattr(placeholder.top, 'inches') else placeholder.top / 914400
+            width = placeholder.width.inches if hasattr(placeholder.width, 'inches') else placeholder.width / 914400
+            height = placeholder.height.inches if hasattr(placeholder.height, 'inches') else placeholder.height / 914400
+            return (left, top, width, height)
+        except Exception as e:
+            import logging
+            logging.warning(f"Could not extract placeholder bounds: {e}")
+            return None
+
     def _delete_placeholder_if_needed(self, placeholder):
         """
         Delete a placeholder shape from the slide.

@@ -10,13 +10,13 @@ from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
 
 from .base import ChartComponent
-from ...variants import LINE_CHART_VARIANTS
-from ...components.registry import component, ComponentCategory, prop, example
+from ..variants import LINE_CHART_VARIANTS
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(
     name="LineChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Line chart component for showing trends and changes over time",
     props=[
         prop(
@@ -225,7 +225,7 @@ class LineChart(ChartComponent):
 
 @component(
     name="AreaChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Area chart component for showing cumulative trends with filled areas",
     props=[
         prop(
@@ -357,7 +357,7 @@ class AreaChart(ChartComponent):
 
 @component(
     name="SparklineChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Sparkline chart component for compact inline trend visualization",
     props=[
         prop("values", "array", "Data values", required=True, example=[10, 15, 13, 17, 14, 20]),

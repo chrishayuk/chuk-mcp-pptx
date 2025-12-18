@@ -9,13 +9,13 @@ from pptx.util import Pt
 from pptx.dml.color import RGBColor
 
 from .base import ChartComponent
-from ...variants import COLUMN_CHART_VARIANTS
-from ...components.registry import component, ComponentCategory, prop, example
+from ..variants import COLUMN_CHART_VARIANTS
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(
     name="ColumnChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Column chart component for vertical bar comparisons with multiple variants",
     props=[
         prop(
@@ -226,7 +226,7 @@ class ColumnChart(ChartComponent):
 
 @component(
     name="BarChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Bar chart component for horizontal bar comparisons",
     props=[
         prop(
@@ -322,7 +322,7 @@ class BarChart(ColumnChart):
 
 @component(
     name="WaterfallChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Waterfall chart for showing incremental changes and cumulative effects",
     props=[
         prop(

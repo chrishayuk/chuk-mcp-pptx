@@ -226,8 +226,17 @@ class Table(ComposableComponent):
         Returns:
             Table shape object
         """
-        # If placeholder provided, delete it first (tables can't populate placeholders directly)
+        # If placeholder provided, use its bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Table targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+
+        # Delete placeholder after extracting bounds
         self._delete_placeholder_if_needed(placeholder)
+
         rows = len(self.data) + 1  # +1 for header
         cols = len(self.headers)
 

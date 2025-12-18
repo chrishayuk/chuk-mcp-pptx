@@ -136,23 +136,32 @@ async def pptx_create(
         - layout_count: Number of layouts available
         - message: Guidance on how to use the layouts
 
-    TEMPLATE WORKFLOW (CRITICAL):
-        When creating from a template, you MUST follow this workflow:
+    TEMPLATE WORKFLOW (CRITICAL - REQUIRED STEPS):
+        When creating from a template, you MUST follow this exact workflow:
 
         1. Create presentation with template_name parameter
-        2. Call pptx_analyze_template(template_name) to see ALL available layouts
+        2. ⚠️ IMMEDIATELY call pptx_analyze_template(template_name) to see ALL layouts
+           - Templates have 20-50+ different layouts (not just 2-3!)
+           - Examples: Title, Content, Two Content, Comparison, Quote, Charts, etc.
+           - You MUST review ALL layouts before adding any slides
+           - Using variety makes presentations more engaging and professional
+
         3. For EACH slide you want to add:
-           a. Call pptx_add_slide_from_template(layout_index=X)
-           b. Review the layout_info in the response to see available placeholders
-           c. Call pptx_populate_placeholder() for EACH placeholder to add content
+           a. Choose the BEST layout from the analyzed list (use variety!)
+           b. Call pptx_add_slide_from_template(layout_index=X) with that layout
+           c. Review the layout_info in the response to see available placeholders
+           d. Call pptx_populate_placeholder() for EACH text placeholder
+           e. For images/tables, use pptx_add_component with target_placeholder
+           f. VERIFY with pptx_list_slide_components() to ensure all placeholders filled
 
-        DO NOT use pptx_add_slide, pptx_add_title_slide, or pptx_add_text_box when
-        working with templates - these bypass the template's design system.
+        DO NOT:
+        - Use the same layout repeatedly (templates have variety - use it!)
+        - Skip analyzing layouts (you'll miss better options)
+        - Use pptx_add_slide, pptx_add_title_slide, or pptx_add_text_box (bypasses template)
+        - Add free-form content over placeholders (breaks template design)
 
-        IMPORTANT: After adding a slide, use pptx_list_slide_components(slide_index=X)
-        to see what components already exist on the slide from the template layout.
-        You can then update existing components or add new ones while respecting
-        the template's design.
+        TIP: Use pptx_list_slide_components(slide_index=X) after adding a slide
+        to see what decorative shapes/elements exist from the template layout.
 
     Examples:
         # Create blank presentation
@@ -161,31 +170,36 @@ async def pptx_create(
         # Create from built-in template - RECOMMENDED WORKFLOW
         # DO NOT call pptx_get_builtin_template first - just use template_name parameter
         result = await pptx_create(name="new_brand", template_name="brand_proposal")
-        # This creates presentation with ALL 55 layouts from brand_proposal template
+        # This creates presentation with ALL layouts from the template
 
-        # Step 1: Analyze template to see all 55 layouts
+        # Step 1: Analyze template to see ALL available layouts
         layouts = await pptx_analyze_template("brand_proposal")
-        # Shows: layout 0 = "Title with Picture", layout 1 = "Content", etc.
+        # Shows: index 0 = "Title with Picture", index 1 = "Content", etc.
+        # Note which layout indices match your content needs
 
-        # Step 2: Add title slide using layout 0
-        slide_result = await pptx_add_slide_from_template(layout_index=0)
-        # Response shows: placeholder 0 (TITLE), placeholder 1 (SUBTITLE)
+        # Step 2: Add title slide (find title layout in analysis results)
+        slide_result = await pptx_add_slide_from_template(layout_index=<title_layout_index>)
+        # Response shows: placeholder 0 (TITLE), placeholder 1 (SUBTITLE), etc.
 
-        # Step 3: Populate placeholders on the title slide
+        # Step 3: Populate ALL placeholders on the title slide
         await pptx_populate_placeholder(slide_index=0, placeholder_idx=0, content="My Brand")
         await pptx_populate_placeholder(slide_index=0, placeholder_idx=1, content="Tagline")
 
-        # Step 4: Add content slide using layout 1
-        slide_result = await pptx_add_slide_from_template(layout_index=1)
+        # Step 3b: VERIFY placeholders were populated correctly
+        await pptx_list_slide_components(slide_index=0)
+        # Should show no empty placeholders - all should have content
+
+        # Step 4: Add content slide (find content layout in analysis)
+        slide_result = await pptx_add_slide_from_template(layout_index=<content_layout_index>)
         # Response shows available placeholders for this layout
 
-        # Step 5: Check what components exist from template
-        components = await pptx_list_slide_components(slide_index=1)
-        # Shows any pre-existing shapes, images, or other components from the layout
-
-        # Step 6: Populate content placeholders
+        # Step 5: Populate ALL content placeholders
         await pptx_populate_placeholder(slide_index=1, placeholder_idx=0, content="Section Title")
         await pptx_populate_placeholder(slide_index=1, placeholder_idx=1, content="Content here")
+
+        # Step 6: VERIFY again - ensures no "Click to add text" remains
+        await pptx_list_slide_components(slide_index=1)
+        # All placeholders should be filled with your content
     """
     try:
         logger.info(
@@ -237,10 +251,16 @@ async def pptx_add_title_slide(
     title: str, subtitle: str = "", presentation: str | None = None
 ) -> str:
     """
-    Add a title slide to the current presentation.
+    ⚠️ DEPRECATED: Use pptx_add_slide_from_template() instead for template-based presentations.
 
-    Creates a standard title slide with a main title and optional subtitle.
-    This is typically used as the first slide in a presentation.
+    This tool bypasses template designs and should ONLY be used for blank presentations
+    created without a template_name parameter.
+
+    For template-based presentations:
+    1. Call pptx_analyze_template() to see available layouts
+    2. Find a title layout (e.g., "Title with Picture", "Title Slide")
+    3. Call pptx_add_slide_from_template(layout_index=X)
+    4. Populate placeholders with pptx_populate_placeholder()
 
     Args:
         title: Main title text for the slide
@@ -248,9 +268,9 @@ async def pptx_add_title_slide(
         presentation: Name of presentation to add slide to (uses current if not specified)
 
     Returns:
-        JSON string with SlideResponse model
+        JSON string with SlideResponse model or error if used with template
 
-    Example:
+    Example (ONLY for blank presentations):
         await pptx_add_title_slide(
             title="Annual Report 2024",
             subtitle="Financial Results and Strategic Outlook"
@@ -309,30 +329,32 @@ async def pptx_add_title_slide(
 @mcp.tool  # type: ignore[arg-type]
 async def pptx_add_slide(title: str, content: list[str], presentation: str | None = None) -> str:
     """
-    Add a text content slide with title and bullet points.
+    ⚠️ DEPRECATED: Use pptx_add_slide_from_template() instead for template-based presentations.
 
-    Creates a slide with a title and bulleted text list.
+    This tool bypasses template designs and should ONLY be used for blank presentations
+    created without a template_name parameter.
 
-    ⚠️  For CHARTS use pptx_add_chart instead - this only creates text bullets.
-
-    Perfect for: agendas, key points, lists, text content.
-    NOT for: charts, graphs, data visualizations (use pptx_add_chart).
+    For template-based presentations:
+    1. Call pptx_analyze_template() to see available layouts
+    2. Find a content layout (e.g., "Content", "Two Content", "Bullets")
+    3. Call pptx_add_slide_from_template(layout_index=X)
+    4. Populate title placeholder with pptx_populate_placeholder()
+    5. Populate content placeholder(s) with pptx_populate_placeholder()
 
     Args:
         title: Title text for the slide
-        content: List of strings, each becoming a bullet point (TEXT only)
+        content: List of strings, each becoming a bullet point
         presentation: Name of presentation to add slide to (uses current if not specified)
 
     Returns:
-        JSON string with SlideResponse model
+        JSON string with SlideResponse model or error if used with template
 
-    Example:
+    Example (ONLY for blank presentations):
         await pptx_add_slide(
             title="Project Milestones",
             content=[
                 "Phase 1: Research completed",
-                "Phase 2: Development in progress",
-                "Phase 3: Testing scheduled for Q2"
+                "Phase 2: Development in progress"
             ]
         )
     """

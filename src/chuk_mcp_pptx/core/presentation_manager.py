@@ -606,10 +606,21 @@ class PresentationManager:
 
             # Check for charts, tables, images
             for shape in slide.shapes:
-                if hasattr(shape, "chart") and shape.has_chart:
-                    slide_meta.has_chart = True
-                if hasattr(shape, "table") and shape.has_table:
-                    slide_meta.has_table = True
+                # Check for charts - has_chart raises exception on non-chart shapes
+                try:
+                    if hasattr(shape, "has_chart") and shape.has_chart:
+                        slide_meta.has_chart = True
+                except:
+                    pass
+
+                # Check for tables - has_table raises exception on non-table shapes
+                try:
+                    if hasattr(shape, "has_table") and shape.has_table:
+                        slide_meta.has_table = True
+                except:
+                    pass
+
+                # Check for images by shape type
                 if shape.shape_type == 13:  # Picture type
                     slide_meta.has_images = True
 
