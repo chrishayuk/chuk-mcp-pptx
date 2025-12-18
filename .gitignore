@@ -49,10 +49,10 @@ outputs/
 *.bak
 *.log
 
-# Development
-*.pptx
-*.ppt
-~$*
+# # Development
+# *.pptx
+# *.ppt
+# ~$*
 
 # Keep example outputs
 !examples/*.pptx
