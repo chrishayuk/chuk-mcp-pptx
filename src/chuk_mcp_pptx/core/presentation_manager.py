@@ -70,7 +70,9 @@ class PresentationManager:
         self._namespace_ids: dict[str, str] = {}  # name -> namespace_id mapping
         self._cache_timestamps: dict[str, float] = {}  # name -> last_loaded_time
         self._current_presentation: str | None = None
-        logger.info(f"PresentationManager initialized (multi-instance safe), base path: {base_path}")
+        logger.info(
+            f"PresentationManager initialized (multi-instance safe), base path: {base_path}"
+        )
 
     def _get_store(self):
         """Get the artifact store from context."""
@@ -125,7 +127,9 @@ class PresentationManager:
 
             for ns_info in namespaces:
                 if ns_info.name == expected_name:
-                    logger.debug(f"Found namespace {ns_info.namespace_id} for presentation '{name}'")
+                    logger.debug(
+                        f"Found namespace {ns_info.namespace_id} for presentation '{name}'"
+                    )
                     return ns_info.namespace_id
 
             logger.debug(f"Presentation '{name}' not found in artifact store")
@@ -216,7 +220,9 @@ class PresentationManager:
             logger.error(f"Failed to save to artifact store: {e}")
             return False
 
-    async def _load_from_store(self, name: str, force_refresh: bool = False) -> PresentationType | None:
+    async def _load_from_store(
+        self, name: str, force_refresh: bool = False
+    ) -> PresentationType | None:
         """
         Load presentation from artifact store by name.
 
@@ -238,7 +244,9 @@ class PresentationManager:
         try:
             # Check cache first (if not forcing refresh)
             if not force_refresh and self._is_cache_valid(name) and name in self._presentations:
-                logger.debug(f"Using cached presentation '{name}' (age: {time.time() - self._cache_timestamps[name]:.1f}s)")
+                logger.debug(
+                    f"Using cached presentation '{name}' (age: {time.time() - self._cache_timestamps[name]:.1f}s)"
+                )
                 return self._presentations[name]
 
             # Find namespace in artifact store (multi-instance safe)
@@ -638,7 +646,10 @@ class PresentationManager:
 
                 for ns_info in namespaces:
                     # Filter for presentations (not templates)
-                    if ns_info.name.startswith(f"{self.base_path}/") and "/templates/" not in ns_info.name:
+                    if (
+                        ns_info.name.startswith(f"{self.base_path}/")
+                        and "/templates/" not in ns_info.name
+                    ):
                         # Extract presentation name from namespace
                         name_parts = ns_info.name.split("/")
                         if len(name_parts) >= 2:
@@ -662,7 +673,9 @@ class PresentationManager:
                                     namespace_id=ns_info.namespace_id,
                                 )
                             )
-                            logger.debug(f"Listed presentation: {raw_name} ({ns_info.namespace_id})")
+                            logger.debug(
+                                f"Listed presentation: {raw_name} ({ns_info.namespace_id})"
+                            )
             except Exception as e:
                 logger.error(f"Failed to list presentations from artifact store: {e}")
                 # Fallback to memory-only listing
@@ -673,9 +686,11 @@ class PresentationManager:
                             name=name,
                             slide_count=len(prs.slides),
                             is_current=(name == self._current_presentation),
-                            file_path=self.get_artifact_uri(name)
-                            if metadata and metadata.is_saved
-                            else None,
+                            file_path=(
+                                self.get_artifact_uri(name)
+                                if metadata and metadata.is_saved
+                                else None
+                            ),
                             namespace_id=self.get_namespace_id(name),
                         )
                     )
@@ -689,9 +704,9 @@ class PresentationManager:
                         name=name,
                         slide_count=len(prs.slides),
                         is_current=(name == self._current_presentation),
-                        file_path=self.get_artifact_uri(name)
-                        if metadata and metadata.is_saved
-                        else None,
+                        file_path=(
+                            self.get_artifact_uri(name) if metadata and metadata.is_saved else None
+                        ),
                         namespace_id=self.get_namespace_id(name),
                     )
                 )
