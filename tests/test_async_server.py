@@ -1096,7 +1096,7 @@ class TestPptxGetDownloadUrl:
                 assert data["url"] == "https://example.com/presigned-url"
                 assert data["presentation"] == "mocked_store"
                 assert data["artifact_id"] == "artifact-123"
-                assert data["expires_in"] == 3600
+                assert data["expires_in"] == 86400  # Default is 24 hours
 
         manager.clear_all()
 
