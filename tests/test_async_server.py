@@ -1171,6 +1171,6 @@ class TestPptxGetDownloadUrl:
 
                 # Should use "second" (current presentation)
                 assert data["presentation"] == "second"
-                mock_store.presign.assert_called_once_with("artifact-second", expires=3600)
+                mock_store.presign.assert_called_once_with("artifact-second", expires=86400)
 
         manager.clear_all()
