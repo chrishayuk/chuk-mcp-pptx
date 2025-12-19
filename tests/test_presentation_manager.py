@@ -950,7 +950,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_presentation_not_in_metadata(self) -> None:
         """Test handling when presentation exists but metadata doesn't - should create metadata."""
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import patch
 
         manager = PresentationManager()
         # This shouldn't happen normally, but test the handling
