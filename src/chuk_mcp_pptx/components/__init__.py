@@ -6,6 +6,10 @@ Provides reusable, theme-aware components for presentations.
 from .base import Component, AsyncComponent
 from .code import CodeBlock, InlineCode, Terminal
 
+# Component infrastructure
+from .registry import ComponentRegistry, registry, get_component_class
+from .tracking import ComponentTracker, component_tracker, ComponentInstance
+
 # Core UI components
 from .core import (
     Alert,
@@ -22,6 +26,8 @@ from .core import (
     MetricCard,
     Icon,
     IconList,
+    Image,
+    Video,
     ProgressBar,
     Tile,
     IconTile,
@@ -59,10 +65,29 @@ from .containers import (
     ChatContainer,
 )
 
+# Chart components - import to register with decorator
+from .charts import (
+    ColumnChart,
+    BarChart,
+    WaterfallChart,
+    LineChart,
+    AreaChart,
+    SparklineChart,
+    PieChart,
+    DoughnutChart,
+)
+
 __all__ = [
     # Base
     "Component",
     "AsyncComponent",
+    # Infrastructure
+    "ComponentRegistry",
+    "registry",
+    "get_component_class",
+    "ComponentTracker",
+    "component_tracker",
+    "ComponentInstance",
     # Buttons
     "Button",
     "IconButton",
@@ -85,6 +110,9 @@ __all__ = [
     # Icons
     "Icon",
     "IconList",
+    # Media
+    "Image",
+    "Video",
     # Timeline
     "Timeline",
     # Tiles
@@ -128,4 +156,13 @@ __all__ = [
     "WindowsWindow",
     # Containers - Generic
     "ChatContainer",
+    # Charts
+    "ColumnChart",
+    "BarChart",
+    "WaterfallChart",
+    "LineChart",
+    "AreaChart",
+    "SparklineChart",
+    "PieChart",
+    "DoughnutChart",
 ]

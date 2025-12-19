@@ -1,6 +1,6 @@
 [project]
 name = "chuk-mcp-pptx"
-version = "0.2.2"
+version = "0.3"
 description = "PowerPoint MCP Server - A shadcn-inspired design system for presentations"
 authors = [{ name = "Chris Hay" }]
 readme = "README.md"
@@ -14,6 +14,7 @@ dependencies = [
     "chuk-artifacts",
     "aiobotocore>=2.5.0",
     "redis>=5.0.0",
+    "python-dotenv>=1.1.1",
 ]
 
 [project.optional-dependencies]
@@ -86,6 +87,9 @@ python_version = "3.11"
 ignore_missing_imports = true
 check_untyped_defs = false
 disallow_untyped_defs = false
+exclude = [
+    "mlx",
+]
 
 # NOTE: Component type system needs refactoring to properly support Theme objects
 # Currently components expect dict[str, Any] but we're migrating to Theme class

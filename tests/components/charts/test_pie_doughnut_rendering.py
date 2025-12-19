@@ -34,26 +34,26 @@ class TestPieChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.has_title
-        assert result.chart_title.text_frame.text == "Quarterly Distribution"
+        assert result.chart.has_title
+        assert result.chart.chart_title.text_frame.text == "Quarterly Distribution"
 
     def test_render_pie_variant(self, slide):
         """Test pie variant rendering."""
         chart = PieChart(categories=["A", "B"], values=[60, 40], variant="pie")
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.PIE
+        assert result.chart.chart_type == XL_CHART_TYPE.PIE
 
     def test_render_doughnut_variant(self, slide):
         """Test doughnut variant rendering."""
         chart = PieChart(categories=["A", "B"], values=[60, 40], variant="doughnut")
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.DOUGHNUT
+        assert result.chart.chart_type == XL_CHART_TYPE.DOUGHNUT
 
     def test_render_exploded_variant(self, slide):
         """Test exploded variant rendering."""
         chart = PieChart(categories=["A", "B"], values=[60, 40], variant="exploded")
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.PIE_EXPLODED
+        assert result.chart.chart_type == XL_CHART_TYPE.PIE_EXPLODED
 
     def test_render_with_explode_slice(self, slide):
         """Test rendering with exploded slice."""
@@ -67,7 +67,7 @@ class TestPieChartRendering:
         chart = PieChart(categories=["A", "B"], values=[60, 40], style="default")
         result = chart.render(slide)
         # Default style shows basic data labels (simplified to avoid corruption)
-        assert result.plots[0].has_data_labels
+        assert result.chart.plots[0].has_data_labels
 
     def test_render_with_minimal_style(self, slide):
         """Test rendering with minimal style."""
@@ -81,16 +81,16 @@ class TestPieChartRendering:
         chart = PieChart(categories=["A", "B"], values=[60, 40], style="detailed")
         result = chart.render(slide)
         # Detailed style shows basic data labels (simplified to avoid corruption)
-        assert result.plots[0].has_data_labels
+        assert result.chart.plots[0].has_data_labels
 
     def test_render_applies_theme_colors(self, slide):
         """Test that theme colors are applied to slices."""
         chart = PieChart(categories=["A", "B", "C"], values=[40, 35, 25])
         result = chart.render(slide)
         # Verify colors were applied (at least one series)
-        assert len(result.series) > 0
+        assert len(result.chart.series) > 0
         # Points should have custom colors applied
-        series = result.series[0]
+        series = result.chart.series[0]
         assert len(series.points) == 3
 
     def test_render_custom_position(self, slide):
@@ -121,7 +121,7 @@ class TestPieChartRendering:
         for position in positions:
             chart = PieChart(categories=["A", "B"], values=[60, 40], legend=position)
             result = chart.render(slide)
-            assert result.has_legend
+            assert result.chart.has_legend
 
     def test_render_without_title(self, slide):
         """Test rendering without title."""
@@ -134,7 +134,7 @@ class TestPieChartRendering:
         chart = PieChart(categories=["A", "B", "C"], values=[50, 30, 20])
         result = chart.render(slide)
         # Verify data labels exist (properties simplified to prevent corruption)
-        assert result.plots[0].has_data_labels
+        assert result.chart.plots[0].has_data_labels
 
 
 class TestDoughnutChartRendering:
@@ -158,7 +158,7 @@ class TestDoughnutChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.chart_type == XL_CHART_TYPE.DOUGHNUT
+        assert result.chart.chart_type == XL_CHART_TYPE.DOUGHNUT
 
     def test_render_with_default_hole_size(self, slide):
         """Test rendering with default hole size."""
@@ -177,7 +177,7 @@ class TestDoughnutChartRendering:
         """Test that theme colors are applied."""
         chart = DoughnutChart(categories=["A", "B", "C"], values=[40, 35, 25])
         result = chart.render(slide)
-        assert len(result.series) > 0
+        assert len(result.chart.series) > 0
 
     def test_render_with_different_styles(self, slide):
         """Test rendering with different styles."""
@@ -216,7 +216,7 @@ class TestPieChartEdgeCases:
         chart = PieChart(categories=categories, values=values)
         result = chart.render(slide)
         assert result is not None
-        assert len(result.series[0].points) == 10
+        assert len(result.chart.series[0].points) == 10
 
     def test_uneven_distribution(self, slide):
         """Test with very uneven value distribution."""
@@ -270,13 +270,13 @@ class TestVariantPropsApplication:
         chart = PieChart(categories=["A", "B"], values=[60, 40], style="default")
         result = chart.render(slide)
         # Verify data labels are shown based on variant props
-        assert result.plots[0].has_data_labels
+        assert result.chart.plots[0].has_data_labels
 
     def test_show_percentages_from_style(self, slide):
         """Test percentages shown based on style."""
         chart = PieChart(categories=["A", "B"], values=[60, 40], style="default")
         result = chart.render(slide)
-        result.plots[0].data_labels
+        result.chart.plots[0].data_labels
         # Default style should show percentages
         assert chart.variant_props.get("show_percentages") is True
 
@@ -307,7 +307,7 @@ class TestChartColorApplication:
         chart = PieChart(categories=["A", "B", "C", "D"], values=[25, 25, 25, 25])
         result = chart.render(slide)
         # All points should have colors applied
-        series = result.series[0]
+        series = result.chart.series[0]
         for point in series.points:
             # Just verify we can access the point's format
             assert point.format is not None

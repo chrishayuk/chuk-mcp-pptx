@@ -13,7 +13,7 @@ import asyncio
 import logging
 
 from chuk_mcp_server import ChukMCPServer
-from .presentation_manager import PresentationManager
+from .core.presentation_manager import PresentationManager
 from .models import (
     ErrorResponse,
     SuccessResponse,
@@ -29,20 +29,21 @@ from .constants import (
 # Text utilities now handled by tools/text.py via register_text_tools()
 # Shape utilities now available as components in components.core
 
-# Import modular tools modules
-from .chart_tools import register_chart_tools
-from .tools.image_tools import register_image_tools
-from .tools.text_tools import register_text_tools
-from .inspection_tools import register_inspection_tools
-from .tools.table_tools import register_table_tools
-from .tools.slide_layout_tools import register_layout_tools
-from .tools.component_tools import register_component_tools
-from .tools.registry_tools import register_registry_tools
-from .tools.token_tools import register_token_tools
-from .tools.semantic_tools import register_semantic_tools
-from .tools.theme_tools import register_theme_tools
-from .tools.shape_tools import register_shape_tools
+# Import organized tool modules
+from .tools.core import register_placeholder_tools
+from .tools.universal import (
+    register_universal_component_api,
+    register_registry_tools,
+    register_semantic_tools,
+)
+
+# Legacy content tools removed - use universal component API instead
+from .tools.theme import register_theme_tools
+from .tools.template import register_template_tools, register_extraction_tools
+from .tools.layout import register_layout_tools
+from .tools.inspection import register_inspection_tools
 from .themes.theme_manager import ThemeManager
+from .templates import TemplateManager
 
 
 logging.basicConfig(level=logging.INFO)
@@ -58,47 +59,34 @@ manager = PresentationManager(base_path="presentations")
 # Create theme manager instance
 theme_manager = ThemeManager()
 
-# Register all modular tools
-chart_tools = register_chart_tools(mcp, manager)
-image_tools = register_image_tools(mcp, manager)
-text_tools = register_text_tools(mcp, manager)
-inspection_tools = register_inspection_tools(mcp, manager)
-table_tools = register_table_tools(mcp, manager)
-layout_tools = register_layout_tools(mcp, manager)
-shape_tools = register_shape_tools(mcp, manager)
+# Create template manager instance (for builtin templates)
+template_manager = TemplateManager()
 
-# Register design system tools (NEW)
-component_tools = register_component_tools(mcp, manager)
-registry_tools = register_registry_tools(mcp, manager)
-token_tools = register_token_tools(mcp, manager)
+# Register all modular tools
+# Legacy chart/image/table tools removed - use universal component API instead
 theme_tools = register_theme_tools(mcp, manager)
 
-# Register LLM-friendly semantic tools (NEW)
+# Register consolidated template tools
+template_tools = register_template_tools(mcp, manager, template_manager)
+
+# Register template extraction tools
+extraction_tools = register_extraction_tools(mcp, manager, theme_manager)
+
+# Register organized tool modules
+placeholder_tools = register_placeholder_tools(mcp, manager)
+universal_component_api = register_universal_component_api(mcp, manager)
+registry_tools = register_registry_tools(mcp, manager)
 semantic_tools = register_semantic_tools(mcp, manager)
+layout_tools = register_layout_tools(mcp, manager)
+inspection_tools = register_inspection_tools(mcp, manager)
 
 # Make tools available at module level for easier imports
-if chart_tools:
-    pptx_add_chart = chart_tools["pptx_add_chart"]
-
-if image_tools:
-    pptx_add_image_slide = image_tools["pptx_add_image_slide"]
-    pptx_add_image = image_tools["pptx_add_image"]
-    pptx_add_background_image = image_tools["pptx_add_background_image"]
-    pptx_add_image_gallery = image_tools["pptx_add_image_gallery"]
-    pptx_add_image_with_caption = image_tools["pptx_add_image_with_caption"]
-    pptx_add_logo = image_tools["pptx_add_logo"]
-    pptx_replace_image = image_tools["pptx_replace_image"]
+# Legacy chart/image/table tool exports removed - use universal component API
 
 if inspection_tools:
     pptx_inspect_slide = inspection_tools["pptx_inspect_slide"]
     pptx_fix_slide_layout = inspection_tools["pptx_fix_slide_layout"]
     pptx_analyze_presentation_layout = inspection_tools["pptx_analyze_presentation_layout"]
-
-if table_tools:
-    pptx_add_data_table = table_tools["pptx_add_data_table"]
-    pptx_add_comparison_table = table_tools["pptx_add_comparison_table"]
-    pptx_update_table_cell = table_tools["pptx_update_table_cell"]
-    pptx_format_table = table_tools["pptx_format_table"]
 
 if layout_tools:
     pptx_list_layouts = layout_tools["pptx_list_layouts"]
@@ -108,10 +96,6 @@ if layout_tools:
     pptx_duplicate_slide = layout_tools["pptx_duplicate_slide"]
     pptx_reorder_slides = layout_tools["pptx_reorder_slides"]
 
-if shape_tools:
-    pptx_add_arrow = shape_tools["pptx_add_arrow"]
-    pptx_add_smart_art = shape_tools["pptx_add_smart_art"]
-    pptx_add_code_block = shape_tools["pptx_add_code_block"]
 
 # Theme tools now in their own module
 if theme_tools:
@@ -127,37 +111,135 @@ if theme_tools:
 
 
 @mcp.tool  # type: ignore[arg-type]
-async def pptx_create(name: str, theme: str | None = None) -> str:
+async def pptx_create(name: str, theme: str | None = None, template_name: str | None = None) -> str:
     """
-    Create a new PowerPoint presentation.
+    Create a new PowerPoint presentation, optionally from a template.
 
-    Creates a new blank presentation and sets it as the current active presentation.
+    Creates a new presentation and sets it as the current active presentation.
+    Can create from scratch, apply a theme, or use a builtin or custom template.
     Automatically saves to the virtual filesystem for persistence.
 
     Args:
         name: Unique name for the presentation (used for reference in other commands)
         theme: Optional theme to apply (e.g., "dark-violet", "tech-blue")
+        template_name: Optional built-in template name to use as base. IMPORTANT:
+            - Use this to get professional layouts and designs
+            - Built-in templates: "brand_proposal" (55 layouts), "corporate", "minimal"
+            - Use pptx_list_templates() to see all available templates
+            - DO NOT use pptx_get_builtin_template first - just pass the name directly
+            - Example: pptx_create(name="my_deck", template_name="brand_proposal")
 
     Returns:
-        JSON string with PresentationResponse model
+        JSON string with PresentationResponse model. When created from a template,
+        the response includes template_info with:
+        - layout_count: Number of layouts available
+        - message: Guidance on how to use the layouts
 
-    Example:
+    TEMPLATE WORKFLOW (CRITICAL - REQUIRED STEPS):
+        When creating from a template, you MUST follow this exact workflow:
+
+        1. Create presentation with template_name parameter
+        2. ⚠️ IMMEDIATELY call pptx_analyze_template(template_name) to see ALL layouts
+           - Templates have 20-50+ different layouts (not just 2-3!)
+           - Examples: Title, Content, Two Content, Comparison, Quote, Charts, etc.
+           - You MUST review ALL layouts before adding any slides
+           - Using variety makes presentations more engaging and professional
+
+        3. For EACH slide you want to add:
+           a. Choose the BEST layout from the analyzed list (use variety!)
+           b. Call pptx_add_slide_from_template(layout_index=X) with that layout
+           c. Review the layout_info in the response to see available placeholders
+           d. Call pptx_populate_placeholder() for EACH text placeholder
+           e. For images/tables, use pptx_add_component with target_placeholder
+           f. VERIFY with pptx_list_slide_components() to ensure all placeholders filled
+
+        DO NOT:
+        - Use the same layout repeatedly (templates have variety - use it!)
+        - Skip analyzing layouts (you'll miss better options)
+        - Use pptx_add_slide, pptx_add_title_slide, or pptx_add_text_box (bypasses template)
+        - Add free-form content over placeholders (breaks template design)
+
+        TIP: Use pptx_list_slide_components(slide_index=X) after adding a slide
+        to see what decorative shapes/elements exist from the template layout.
+
+    Examples:
+        # Create blank presentation
         await pptx_create(name="quarterly_report", theme="tech-blue")
+
+        # Create from built-in template - RECOMMENDED WORKFLOW
+        # DO NOT call pptx_get_builtin_template first - just use template_name parameter
+        result = await pptx_create(name="new_brand", template_name="brand_proposal")
+        # This creates presentation with ALL layouts from the template
+
+        # Step 1: Analyze template to see ALL available layouts
+        layouts = await pptx_analyze_template("brand_proposal")
+        # Shows: index 0 = "Title with Picture", index 1 = "Content", etc.
+        # Note which layout indices match your content needs
+
+        # Step 2: Add title slide (find title layout in analysis results)
+        slide_result = await pptx_add_slide_from_template(layout_index=<title_layout_index>)
+        # Response shows: placeholder 0 (TITLE), placeholder 1 (SUBTITLE), etc.
+
+        # Step 3: Populate ALL placeholders on the title slide
+        await pptx_populate_placeholder(slide_index=0, placeholder_idx=0, content="My Brand")
+        await pptx_populate_placeholder(slide_index=0, placeholder_idx=1, content="Tagline")
+
+        # Step 3b: VERIFY placeholders were populated correctly
+        await pptx_list_slide_components(slide_index=0)
+        # Should show no empty placeholders - all should have content
+
+        # Step 4: Add content slide (find content layout in analysis)
+        slide_result = await pptx_add_slide_from_template(layout_index=<content_layout_index>)
+        # Response shows available placeholders for this layout
+
+        # Step 5: Populate ALL content placeholders
+        await pptx_populate_placeholder(slide_index=1, placeholder_idx=0, content="Section Title")
+        await pptx_populate_placeholder(slide_index=1, placeholder_idx=1, content="Content here")
+
+        # Step 6: VERIFY again - ensures no "Click to add text" remains
+        await pptx_list_slide_components(slide_index=1)
+        # All placeholders should be filled with your content
     """
     try:
-        logger.info(f"🎯 pptx_create called: name={name!r}, theme={theme!r}")
-        logger.info(f"   name type: {type(name)}, theme type: {type(theme)}")
+        logger.info(
+            f"🎯 pptx_create called: name={name!r}, theme={theme!r}, template={template_name!r}"
+        )
+        logger.info(
+            f"   name type: {type(name)}, theme type: {type(theme)}, template type: {type(template_name)}"
+        )
 
         # Create presentation (returns PresentationMetadata model)
-        metadata = await manager.create(name=name, theme=theme)
+        metadata = await manager.create(name=name, theme=theme, template_name=template_name)
         logger.info(f"✓ Presentation created successfully: {metadata.name}")
+
+        message = f"Created presentation '{metadata.name}'"
+        if template_name:
+            message += f" from template '{template_name}'"
+        if metadata.slide_count > 0:
+            message += f" with {metadata.slide_count} slide(s)"
+
+        # If template was used, add layout info to help AI understand what's available
+        template_info = None
+        if template_name:
+            result = await manager.get(metadata.name)
+            if result:
+                from .models.responses import TemplateInfo
+
+                prs, _ = result
+                layout_count = len(prs.slide_layouts) if prs.slide_layouts else 0
+                template_info = TemplateInfo(
+                    template_name=template_name,
+                    layout_count=layout_count,
+                    message=f"Template loaded with {layout_count} layouts. Use pptx_add_slide_from_template(layout_index=X) to use specific layouts, or call pptx_analyze_template('{template_name}') to see all available layouts with their names and placeholders.",
+                )
 
         # Return PresentationResponse as JSON
         return PresentationResponse(
             name=metadata.name,
-            message=f"Created presentation '{metadata.name}'",
+            message=message,
             slide_count=metadata.slide_count,
             is_current=True,
+            template_info=template_info,
         ).model_dump_json()
     except Exception as e:
         logger.error(f"Failed to create presentation: {e}")
@@ -169,10 +251,16 @@ async def pptx_add_title_slide(
     title: str, subtitle: str = "", presentation: str | None = None
 ) -> str:
     """
-    Add a title slide to the current presentation.
+    ⚠️ DEPRECATED: Use pptx_add_slide_from_template() instead for template-based presentations.
 
-    Creates a standard title slide with a main title and optional subtitle.
-    This is typically used as the first slide in a presentation.
+    This tool bypasses template designs and should ONLY be used for blank presentations
+    created without a template_name parameter.
+
+    For template-based presentations:
+    1. Call pptx_analyze_template() to see available layouts
+    2. Find a title layout (e.g., "Title with Picture", "Title Slide")
+    3. Call pptx_add_slide_from_template(layout_index=X)
+    4. Populate placeholders with pptx_populate_placeholder()
 
     Args:
         title: Main title text for the slide
@@ -180,18 +268,28 @@ async def pptx_add_title_slide(
         presentation: Name of presentation to add slide to (uses current if not specified)
 
     Returns:
-        JSON string with SlideResponse model
+        JSON string with SlideResponse model or error if used with template
 
-    Example:
+    Example (ONLY for blank presentations):
         await pptx_add_title_slide(
             title="Annual Report 2024",
             subtitle="Financial Results and Strategic Outlook"
         )
     """
     try:
-        prs = manager.get_presentation(presentation)
+        prs = await manager.get_presentation(presentation)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        # Check if presentation was created from a template
+        metadata = await manager.get_metadata(presentation)
+        if metadata and metadata.template_path:
+            return ErrorResponse(
+                error=f"This presentation was created from template '{metadata.template_path}'. "
+                f"You must use pptx_add_slide_from_template(layout_index=X) to add slides with "
+                f"specific template layouts. Call pptx_analyze_template('{metadata.template_path}') "
+                f"to see all {len(prs.slide_layouts)} available layouts."
+            ).model_dump_json()
 
         slide_layout = prs.slide_layouts[SlideLayoutIndex.TITLE]
         slide = prs.slides.add_slide(slide_layout)
@@ -201,7 +299,7 @@ async def pptx_add_title_slide(
             slide.placeholders[1].text = subtitle
 
         # Apply presentation theme to the slide
-        metadata = manager.get_metadata(presentation)
+        metadata = await manager.get_metadata(presentation)
         if metadata and metadata.theme:
             theme_obj = theme_manager.get_theme(metadata.theme)
             if theme_obj:
@@ -210,7 +308,7 @@ async def pptx_add_title_slide(
         slide_index = len(prs.slides) - 1
 
         # Update metadata
-        manager.update_slide_metadata(slide_index)
+        await manager.update_slide_metadata(slide_index)
 
         # Update in VFS
         await manager.update(presentation)
@@ -231,37 +329,49 @@ async def pptx_add_title_slide(
 @mcp.tool  # type: ignore[arg-type]
 async def pptx_add_slide(title: str, content: list[str], presentation: str | None = None) -> str:
     """
-    Add a text content slide with title and bullet points.
+    ⚠️ DEPRECATED: Use pptx_add_slide_from_template() instead for template-based presentations.
 
-    Creates a slide with a title and bulleted text list.
+    This tool bypasses template designs and should ONLY be used for blank presentations
+    created without a template_name parameter.
 
-    ⚠️  For CHARTS use pptx_add_chart instead - this only creates text bullets.
-
-    Perfect for: agendas, key points, lists, text content.
-    NOT for: charts, graphs, data visualizations (use pptx_add_chart).
+    For template-based presentations:
+    1. Call pptx_analyze_template() to see available layouts
+    2. Find a content layout (e.g., "Content", "Two Content", "Bullets")
+    3. Call pptx_add_slide_from_template(layout_index=X)
+    4. Populate title placeholder with pptx_populate_placeholder()
+    5. Populate content placeholder(s) with pptx_populate_placeholder()
 
     Args:
         title: Title text for the slide
-        content: List of strings, each becoming a bullet point (TEXT only)
+        content: List of strings, each becoming a bullet point
         presentation: Name of presentation to add slide to (uses current if not specified)
 
     Returns:
-        JSON string with SlideResponse model
+        JSON string with SlideResponse model or error if used with template
 
-    Example:
+    Example (ONLY for blank presentations):
         await pptx_add_slide(
             title="Project Milestones",
             content=[
                 "Phase 1: Research completed",
-                "Phase 2: Development in progress",
-                "Phase 3: Testing scheduled for Q2"
+                "Phase 2: Development in progress"
             ]
         )
     """
     try:
-        prs = manager.get_presentation(presentation)
+        prs = await manager.get_presentation(presentation)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        # Check if presentation was created from a template
+        metadata = await manager.get_metadata(presentation)
+        if metadata and metadata.template_path:
+            return ErrorResponse(
+                error=f"This presentation was created from template '{metadata.template_path}'. "
+                f"You must use pptx_add_slide_from_template(layout_index=X) to add slides with "
+                f"specific template layouts. Call pptx_analyze_template('{metadata.template_path}') "
+                f"to see all {len(prs.slide_layouts)} available layouts."
+            ).model_dump_json()
 
         slide_layout = prs.slide_layouts[SlideLayoutIndex.TITLE_AND_CONTENT]
         slide = prs.slides.add_slide(slide_layout)
@@ -279,7 +389,7 @@ async def pptx_add_slide(title: str, content: list[str], presentation: str | Non
                 p.level = 0  # First level bullet
 
         # Apply presentation theme to the slide
-        metadata = manager.get_metadata(presentation)
+        metadata = await manager.get_metadata(presentation)
         if metadata and metadata.theme:
             theme_obj = theme_manager.get_theme(metadata.theme)
             if theme_obj:
@@ -288,7 +398,7 @@ async def pptx_add_slide(title: str, content: list[str], presentation: str | Non
         slide_index = len(prs.slides) - 1
 
         # Update metadata
-        manager.update_slide_metadata(slide_index)
+        await manager.update_slide_metadata(slide_index)
 
         # Update in VFS
         await manager.update(presentation)
@@ -336,7 +446,7 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
         if not pres_name:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
-        prs = manager.get_presentation(pres_name)
+        prs = await manager.get_presentation(pres_name)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
@@ -376,14 +486,18 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
                         data=pptx_data,
                         mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
                         summary=f"{pres_name}.pptx",
-                        meta={"filename": f"{pres_name}.pptx", "presentation_name": pres_name},
+                        meta={
+                            "filename": f"{pres_name}.pptx",
+                            "presentation_name": pres_name,
+                            "expiration_days": 30,  # Hint for S3 lifecycle policy
+                        },
                     )
                     logger.info(f"Stored as artifact: {artifact_id}")
 
-                    # Generate presigned URL
-                    download_url = await store.presign(artifact_id, expires=3600)
+                    # Generate presigned URL with 24-hour expiration
+                    download_url = await store.presign(artifact_id, expires=86400)
                     logger.info(
-                        f"Generated presigned URL: {download_url[:80] if download_url else 'None'}..."
+                        f"Generated presigned URL (24h expiry): {download_url[:80] if download_url else 'None'}..."
                     )
             else:
                 logger.warning("Artifact store not available for presigned URL generation")
@@ -408,7 +522,7 @@ async def pptx_save(path: str, presentation: str | None = None) -> str:
 
 
 @mcp.tool  # type: ignore[arg-type]
-async def pptx_get_download_url(presentation: str | None = None, expires_in: int = 3600) -> str:
+async def pptx_get_download_url(presentation: str | None = None, expires_in: int = 86400) -> str:
     """
     Get a presigned download URL for the presentation.
 
@@ -418,18 +532,25 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
 
     Args:
         presentation: Name of presentation (uses current if not specified)
-        expires_in: URL expiration time in seconds (default: 3600 = 1 hour)
+        expires_in: URL expiration time in seconds (default: 86400 = 24 hours)
+            Common values:
+            - 3600 = 1 hour
+            - 86400 = 24 hours (default)
+            - 604800 = 7 days
+            - Maximum: 604800 (7 days) for most S3 providers
 
     Returns:
         JSON string with download URL or error
 
     Example:
+        # Get URL with default 24-hour expiration
         result = await pptx_get_download_url()
-        # Returns: {"url": "https://...", "expires_in": 3600}
+
+        # Get URL with 7-day expiration
+        result = await pptx_get_download_url(expires_in=604800)
     """
     try:
         import io
-        import json
 
         from chuk_mcp_server import get_artifact_store, has_artifact_store
 
@@ -438,7 +559,7 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
         # Make sure presentation exists
-        prs = manager.get_presentation(pres_name)
+        prs = await manager.get_presentation(pres_name)
         if not prs:
             return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
 
@@ -461,7 +582,11 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
             data=pptx_data,
             mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
             summary=f"{pres_name}.pptx",
-            meta={"filename": f"{pres_name}.pptx", "presentation_name": pres_name},
+            meta={
+                "filename": f"{pres_name}.pptx",
+                "presentation_name": pres_name,
+                "expiration_days": 30,  # Hint for S3 lifecycle policy
+            },
         )
         logger.info(f"Stored presentation as artifact: {artifact_id}")
 
@@ -469,16 +594,15 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
         url = await store.presign(artifact_id, expires=expires_in)
         logger.info(f"Generated presigned URL for {pres_name}")
 
-        return json.dumps(
-            {
-                "success": True,
-                "url": url,
-                "presentation": pres_name,
-                "artifact_id": artifact_id,
-                "expires_in": expires_in,
-                "filename": f"{pres_name}.pptx",
-            }
-        )
+        from .models import DownloadUrlResponse
+
+        return DownloadUrlResponse(
+            url=url,
+            presentation=pres_name,
+            artifact_id=artifact_id,
+            expires_in=expires_in,
+            message=f"Generated download URL for {pres_name}, expires in {expires_in} seconds",
+        ).model_dump_json()
     except Exception as e:
         logger.error(f"Failed to generate download URL: {e}")
         return ErrorResponse(error=f"Failed to generate download URL: {str(e)}").model_dump_json()
@@ -551,7 +675,7 @@ async def pptx_import_base64(data: str, name: str) -> str:
         if not success:
             return ErrorResponse(error="Failed to import presentation").model_dump_json()
 
-        prs = manager.get_presentation(name)
+        prs = await manager.get_presentation(name)
         slide_count = len(prs.slides) if prs else 0
 
         from .models import ImportResponse

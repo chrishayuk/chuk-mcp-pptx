@@ -5,7 +5,7 @@ Tests all slide layout management MCP tools for >90% coverage.
 """
 
 import pytest
-from chuk_mcp_pptx.tools.slide_layout_tools import register_layout_tools
+from chuk_mcp_pptx.tools.layout.slide_management import register_layout_tools
 
 
 @pytest.fixture

@@ -9,7 +9,7 @@ from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 
-from ...composition import (
+from ..composition import (
     ComposableComponent,
     CardHeader,
     CardContent,
@@ -17,8 +17,8 @@ from ...composition import (
     CardTitle,
     CardDescription,
 )
-from ...variants import CARD_VARIANTS
-from ...registry import component, ComponentCategory, prop, example
+from ..variants import CARD_VARIANTS
+from ..registry import component, ComponentCategory, prop, example
 from ...tokens.typography import FONT_SIZES, PARAGRAPH_SPACING
 
 
@@ -190,9 +190,10 @@ class Card(ComposableComponent):
         top: float,
         width: Optional[float] = None,
         height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
-        Render card to slide.
+        Render card to slide or replace a placeholder.
 
         Args:
             slide: PowerPoint slide object
@@ -200,6 +201,7 @@ class Card(ComposableComponent):
             top: Top position in inches
             width: Card width in inches (optional, auto-calculated if None)
             height: Card height in inches (optional, auto-calculated if None)
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             Shape object representing the card
@@ -208,6 +210,20 @@ class Card(ComposableComponent):
             For cards with text content, omit height parameter to use auto-calculation
             which ensures all content fits properly.
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.info(
+                f"Card targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+            )
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Use calculated width and height if not provided
         card_width = width if width is not None else self._calculate_min_width()
 
@@ -239,8 +255,11 @@ class Card(ComposableComponent):
         text_frame.word_wrap = True  # Enable wrapping for descriptions
         text_frame.vertical_anchor = MSO_ANCHOR.TOP  # Anchor text to top of shape
 
-        # Apply padding from variant
-        padding_inches = self.variant_props.get("padding", 0.5)
+        # Apply padding from design system (theme takes priority, then variant, then default)
+        padding_inches = self.get_padding("md")  # Uses theme if available
+        variant_padding = self.variant_props.get("padding")
+        if variant_padding is not None:
+            padding_inches = variant_padding
         text_frame.margin_left = Inches(padding_inches)
         text_frame.margin_right = Inches(padding_inches)
         text_frame.margin_top = Inches(padding_inches)
@@ -254,7 +273,7 @@ class Card(ComposableComponent):
         return card
 
     def _apply_variant_styles(self, shape):
-        """Apply variant-based styling to shape."""
+        """Apply variant-based styling to shape using design tokens."""
         props = self.variant_props
 
         # Background color
@@ -264,18 +283,32 @@ class Card(ComposableComponent):
         else:
             shape.fill.background()
 
-        # Border
-        border_width = props.get("border_width", 0)
+        # Border - use design token for width if not specified in variant
+        border_width = props.get("border_width")
+        if border_width is None:
+            border_width = self.get_border_width("2")  # Default from design tokens
         if border_width > 0:
-            shape.line.color.rgb = self.get_color(props.get("border_color", "border.DEFAULT"))
+            border_color = props.get("border_color", "border.DEFAULT")
+            shape.line.color.rgb = self.get_color(border_color)
             shape.line.width = Pt(border_width)
         else:
             shape.line.fill.background()
 
+        # Border radius - apply from design tokens
+        # Note: PowerPoint rounded rectangles have built-in radius, but we can adjust
+        try:
+            # Attempt to set corner radius if shape supports it
+            if hasattr(shape, "adjustments") and len(shape.adjustments) > 0:
+                radius = self.get_border_radius("md")
+                # Convert points to adjustment value (0-1 scale)
+                shape.adjustments[0] = min(0.5, radius / 100)
+        except Exception:
+            pass  # Some shapes don't support adjustments
+
         # Shadow (for elevated variant)
         if props.get("shadow"):
             shape.shadow.visible = True
-            shape.shadow.blur_radius = Pt(FONT_SIZES["xs"])
+            shape.shadow.blur_radius = Pt(self.get_font_size("xs"))
             shape.shadow.distance = Pt(4)
             shape.shadow.angle = 90
             shape.shadow.transparency = 0.3
@@ -402,13 +435,28 @@ class MetricCard(Card):
         top: float,
         width: Optional[float] = None,
         height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
     ):
         """Render metric card."""
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.info(
+                f"MetricCard targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+            )
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Use calculated width and height if not provided
         card_width = width if width is not None else self._calculate_min_width()
         card_height = height if height is not None else self._calculate_min_height()
 
-        # Create base card
+        # Create base card (don't pass placeholder since we already extracted bounds)
         card_shape = super().render(slide, left, top, card_width, card_height)
 
         # Clear and rebuild content

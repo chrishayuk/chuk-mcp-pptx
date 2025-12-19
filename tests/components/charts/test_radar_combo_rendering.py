@@ -34,7 +34,7 @@ class TestRadarChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.has_title
+        assert result.chart.has_title
 
     def test_render_filled_variant(self, slide):
         """Test filled variant rendering."""
@@ -42,7 +42,7 @@ class TestRadarChartRendering:
             categories=["A", "B", "C", "D"], series={"S1": [10, 20, 30, 40]}, variant="filled"
         )
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.RADAR_FILLED
+        assert result.chart.chart_type == XL_CHART_TYPE.RADAR_FILLED
 
     def test_render_markers_variant(self, slide):
         """Test markers variant rendering."""
@@ -50,7 +50,7 @@ class TestRadarChartRendering:
             categories=["A", "B", "C", "D"], series={"S1": [10, 20, 30, 40]}, variant="markers"
         )
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.RADAR_MARKERS
+        assert result.chart.chart_type == XL_CHART_TYPE.RADAR_MARKERS
 
     def test_render_lines_variant(self, slide):
         """Test lines variant rendering."""
@@ -58,7 +58,7 @@ class TestRadarChartRendering:
             categories=["A", "B", "C", "D"], series={"S1": [10, 20, 30, 40]}, variant="lines"
         )
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.RADAR
+        assert result.chart.chart_type == XL_CHART_TYPE.RADAR
 
     def test_render_multiple_series(self, slide):
         """Test rendering with multiple data series."""
@@ -67,7 +67,7 @@ class TestRadarChartRendering:
             series={"Product A": [80, 90, 70], "Product B": [70, 85, 90]},
         )
         result = chart.render(slide)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_with_max_value(self, slide):
         """Test rendering with custom max value."""
@@ -111,7 +111,7 @@ class TestRadarChartRendering:
             categories=["A", "B", "C"], series={"Series 1": [10, 20, 30], "Series 2": [15, 25, 35]}
         )
         result = chart.render(slide)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_minimum_categories(self, slide):
         """Test radar with minimum 3 categories."""
@@ -132,7 +132,7 @@ class TestRadarChartRendering:
         """Test rendering with default style."""
         chart = RadarChart(categories=["A", "B", "C"], series={"S1": [10, 20, 30]}, style="default")
         result = chart.render(slide)
-        assert result.has_legend
+        assert result.chart.has_legend
 
     def test_render_without_title(self, slide):
         """Test rendering without title."""
@@ -165,7 +165,7 @@ class TestComboChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.has_title
+        assert result.chart.has_title
 
     def test_render_column_line_combo(self, slide):
         """Test column-line combo chart."""
@@ -175,7 +175,7 @@ class TestComboChartRendering:
             line_series={"Line": [15, 25, 35]},
         )
         result = chart.render(slide)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_with_secondary_axis(self, slide):
         """Test combo chart with secondary axis."""
@@ -245,7 +245,7 @@ class TestComboChartRendering:
         )
         result = chart.render(slide)
         # Verify series were created
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_without_title(self, slide):
         """Test rendering without title."""
@@ -360,4 +360,4 @@ class TestRadarComboEdgeCases:
             categories=["A", "B", "C"], column_series=column_series, line_series=line_series
         )
         result = chart.render(slide)
-        assert len(result.series) == 5
+        assert len(result.chart.series) == 5

@@ -36,12 +36,15 @@ class Component:
             # Theme object from new theme system
             mode = self._internal_theme.mode
             primary_hue = "blue"  # Default for new themes
+            self.tokens = get_semantic_tokens(primary_hue, mode)
+        elif isinstance(self._internal_theme, dict) and "colors" in self._internal_theme:
+            # Design system theme with explicit colors - use them directly
+            self.tokens = self._build_tokens_from_colors(self._internal_theme["colors"])
         else:
             # Legacy dict theme
-            mode = self._internal_theme.get("mode", "dark")
+            mode = self._internal_theme.get("mode", "light")
             primary_hue = self._internal_theme.get("primary_hue", "blue")
-
-        self.tokens = get_semantic_tokens(primary_hue, mode)
+            self.tokens = get_semantic_tokens(primary_hue, mode)
 
     @property
     def theme(self) -> Union["Theme", Dict[str, Any], None]:
@@ -66,16 +69,52 @@ class Component:
         # Update tokens when theme changes
         self.tokens = get_semantic_tokens(primary_hue, mode)
 
+    def _build_tokens_from_colors(self, colors: Dict[str, str]) -> Dict[str, Any]:
+        """
+        Build tokens dict from explicit design system colors.
+
+        Args:
+            colors: Dict with 'primary', 'secondary', 'background', 'text' keys
+
+        Returns:
+            Tokens dict compatible with get_color() method
+        """
+        primary = colors.get("primary", "#4F46E5")
+        secondary = colors.get("secondary", "#818CF8")
+        background = colors.get("background", "#FFFFFF")
+        text = colors.get("text", "#000000")
+
+        return {
+            "primary": {"DEFAULT": primary},
+            "secondary": {"DEFAULT": secondary},
+            "background": {"DEFAULT": background},
+            "foreground": {"DEFAULT": text},
+            "text": text,
+            "card": {
+                "DEFAULT": background,
+                "foreground": text,
+            },
+            "muted": {
+                "DEFAULT": "#F3F4F6",  # Light gray for alternating rows
+                "foreground": text,
+            },
+            "border": {
+                "DEFAULT": "#E5E7EB",
+                "secondary": "#D1D5DB",
+            },
+        }
+
     @staticmethod
     def get_default_theme() -> Dict[str, Any]:
         """Get default theme configuration."""
         return {
             "name": "default",
-            "mode": "dark",
+            "mode": "light",  # Changed from "dark" to "light" for better template compatibility
             "primary_hue": "blue",
-            "font_family": "Inter",
+            "font_family": "Calibri",  # PowerPoint default
             "radius": "md",
             "spacing": "default",
+            "template_aware": True,  # Signal that components should respect template styling
         }
 
     def hex_to_rgb(self, hex_color: str) -> Tuple[int, int, int]:
@@ -88,18 +127,54 @@ class Component:
         Get attribute from theme, handling both Theme objects and dicts.
 
         Args:
-            attr: Attribute name
+            attr: Attribute name (supports dot notation like 'typography.font_family')
             default: Default value if not found
 
         Returns:
             Attribute value or default
         """
         if hasattr(self._internal_theme, attr):
-            # Theme object
+            # Theme object with direct attribute
             return getattr(self._internal_theme, attr)
         elif isinstance(self._internal_theme, dict):
-            # Dict theme
-            return self._internal_theme.get(attr, default)
+            # Dict theme - support both flat and nested access
+            # First check for direct key
+            if attr in self._internal_theme:
+                return self._internal_theme[attr]
+
+            # Check nested structures (typography.font_family, colors.primary, etc.)
+            parts = attr.split(".") if "." in attr else [attr]
+
+            # Also check common nested paths for known attributes
+            nested_paths = {
+                "font_family": ["typography", "font_family"],
+                "font_size": ["typography", "font_size"],
+                "font_bold": ["typography", "font_bold"],
+                "font_italic": ["typography", "font_italic"],
+                "padding": ["spacing", "padding"],
+                "margin": ["spacing", "margin"],
+                "gap": ["spacing", "gap"],
+                "border_radius": ["borders", "radius"],
+                "border_width": ["borders", "width"],
+                "primary_color": ["colors", "primary"],
+                "secondary_color": ["colors", "secondary"],
+                "background_color": ["colors", "background"],
+                "text_color": ["colors", "text"],
+                "border_color": ["colors", "border"],
+            }
+
+            # Try the nested path if attr is a known shortcut
+            if attr in nested_paths:
+                parts = nested_paths[attr]
+
+            # Navigate the nested structure
+            value = self._internal_theme
+            for part in parts:
+                if isinstance(value, dict) and part in value:
+                    value = value[part]
+                else:
+                    return default
+            return value
         return default
 
     def get_theme_color_hex(self, color_path: str) -> Optional[str]:
@@ -169,6 +244,11 @@ class Component:
         Returns:
             Spacing value in inches
         """
+        # First check theme override
+        theme_spacing = self.get_theme_attr(f"spacing.{size}")
+        if theme_spacing is not None:
+            return float(theme_spacing)
+
         # Check if it's a preset like "md"
         if size in MARGINS:
             return MARGINS[size]
@@ -177,7 +257,75 @@ class Component:
 
     def get_padding(self, size: str) -> float:
         """Get padding value in inches."""
+        # First check theme override
+        theme_padding = self.get_theme_attr("padding")
+        if theme_padding is not None:
+            return float(theme_padding)
         return PADDING.get(size, PADDING["md"])
+
+    def get_margin(self, size: str = "md") -> float:
+        """Get margin value in inches."""
+        # First check theme override
+        theme_margin = self.get_theme_attr("margin")
+        if theme_margin is not None:
+            return float(theme_margin)
+        return MARGINS.get(size, MARGINS["md"])
+
+    def get_gap(self, size: str = "md") -> float:
+        """Get gap value in inches for spacing between elements."""
+        from ..tokens.spacing import GAPS
+
+        # First check theme override
+        theme_gap = self.get_theme_attr("gap")
+        if theme_gap is not None:
+            return float(theme_gap)
+        return GAPS.get(size, GAPS["md"])
+
+    def get_border_radius(self, size: str = "md") -> float:
+        """Get border radius in points."""
+        from ..tokens.spacing import RADIUS
+
+        # First check theme override
+        theme_radius = self.get_theme_attr("border_radius")
+        if theme_radius is not None:
+            return float(theme_radius)
+        return RADIUS.get(size, RADIUS["md"])
+
+    def get_border_width(self, size: str = "2") -> float:
+        """Get border width in points."""
+        from ..tokens.spacing import BORDER_WIDTH
+
+        # First check theme override
+        theme_width = self.get_theme_attr("border_width")
+        if theme_width is not None:
+            return float(theme_width)
+        return BORDER_WIDTH.get(size, BORDER_WIDTH["2"])
+
+    def get_font_size(self, size: str = "base") -> int:
+        """Get font size in points."""
+        from ..tokens.typography import FONT_SIZES
+
+        # First check theme override
+        theme_size = self.get_theme_attr("font_size")
+        if theme_size is not None:
+            return int(theme_size)
+        return FONT_SIZES.get(size, FONT_SIZES["base"])
+
+    def get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
+    def get_font_weight(self, weight: str = "normal") -> int:
+        """Get font weight value."""
+        from ..tokens.typography import FONT_WEIGHTS
+
+        return FONT_WEIGHTS.get(weight, FONT_WEIGHTS["normal"])
+
+    def get_line_height(self, size: str = "normal") -> float:
+        """Get line height multiplier."""
+        from ..tokens.typography import LINE_HEIGHTS
+
+        return LINE_HEIGHTS.get(size, LINE_HEIGHTS["normal"])
 
     def get_text_style(self, variant: str) -> Dict[str, Any]:
         """Get text style configuration."""
@@ -268,13 +416,74 @@ class Component:
                 for run in paragraph.runs:
                     run.font.color.rgb = self.get_color(fg_path)
 
+    def _extract_placeholder_bounds(self, placeholder):
+        """
+        Extract bounds from a placeholder before deletion.
+
+        Args:
+            placeholder: Placeholder shape
+
+        Returns:
+            Tuple of (left, top, width, height) in inches, or None if no placeholder
+        """
+        if placeholder is None:
+            return None
+
+        try:
+            left = (
+                placeholder.left.inches
+                if hasattr(placeholder.left, "inches")
+                else placeholder.left / 914400
+            )
+            top = (
+                placeholder.top.inches
+                if hasattr(placeholder.top, "inches")
+                else placeholder.top / 914400
+            )
+            width = (
+                placeholder.width.inches
+                if hasattr(placeholder.width, "inches")
+                else placeholder.width / 914400
+            )
+            height = (
+                placeholder.height.inches
+                if hasattr(placeholder.height, "inches")
+                else placeholder.height / 914400
+            )
+            return (left, top, width, height)
+        except Exception as e:
+            import logging
+
+            logging.warning(f"Could not extract placeholder bounds: {e}")
+            return None
+
+    def _delete_placeholder_if_needed(self, placeholder):
+        """
+        Delete a placeholder shape from the slide.
+
+        Used when components need to replace placeholders (most components
+        except Image which can use insert_picture()).
+
+        Args:
+            placeholder: Placeholder shape to delete
+        """
+        if placeholder is not None:
+            try:
+                shape_elem = placeholder.element
+                shape_elem.getparent().remove(shape_elem)
+            except Exception as e:
+                # Log but don't fail - just overlay if deletion fails
+                import logging
+
+                logging.warning(f"Could not delete placeholder: {e}")
+
     async def render(self, slide, **kwargs):
         """
         Render component to slide (to be implemented by subclasses).
 
         Args:
             slide: PowerPoint slide object
-            **kwargs: Component-specific parameters
+            **kwargs: Component-specific parameters (may include 'placeholder')
         """
         raise NotImplementedError("Subclasses must implement render method")
 

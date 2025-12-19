@@ -21,8 +21,12 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:${PATH}"
 
 # Copy project configuration
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md MANIFEST.in ./
 COPY src ./src
+
+# Verify templates exist before build
+RUN test -f src/chuk_mcp_pptx/templates/builtin/brand_proposal.pptx || \
+    (echo "ERROR: Brand template not found in source!" && exit 1)
 
 # Install the package with all dependencies
 # Use --no-cache to reduce layer size
@@ -48,6 +52,10 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/README.md ./
 COPY --from=builder /app/pyproject.toml ./
+
+# Verify templates are present
+RUN test -f /app/src/chuk_mcp_pptx/templates/builtin/brand_proposal.pptx || \
+    (echo "ERROR: Brand template not found!" && exit 1)
 
 # Create non-root user for security
 RUN useradd -m -u 1000 mcpuser && \

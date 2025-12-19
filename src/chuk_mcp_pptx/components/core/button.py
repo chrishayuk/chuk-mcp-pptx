@@ -9,9 +9,9 @@ from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
 
-from ...composition import ComposableComponent
-from ...variants import BUTTON_VARIANTS
-from ...registry import component, ComponentCategory, prop, example
+from ..composition import ComposableComponent
+from ..variants import BUTTON_VARIANTS
+from ..registry import component, ComponentCategory, prop, example
 from ...constants import ComponentSizing
 
 
@@ -126,6 +126,7 @@ class Button(ComposableComponent):
         top: float,
         width: Optional[float] = None,
         height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
         Render button to slide.
@@ -136,10 +137,19 @@ class Button(ComposableComponent):
             top: Top position in inches
             width: Optional width override (uses size default if None)
             height: Optional height override (uses size default if None)
+            placeholder: Optional placeholder to replace
 
         Returns:
             Shape object representing the button
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Get dimensions from variant props or use provided
         btn_width = width if width is not None else self._get_default_width()
         btn_height = height if height is not None else self.variant_props.get("height", 0.5)
@@ -353,6 +363,7 @@ class IconButton(Button):
         top: float,
         width: Optional[float] = None,
         height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
         Render icon button (square by default).
@@ -363,7 +374,16 @@ class IconButton(Button):
             top: Top position
             width: Optional width (defaults to square)
             height: Optional height (defaults to square)
+            placeholder: Optional placeholder to replace
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Icon buttons are square by default
         size = width or self._get_default_width()
         return super().render(slide, left, top, size, height or size)
@@ -430,7 +450,7 @@ class ButtonGroup(ComposableComponent):
         self.orientation = orientation
         self.spacing = spacing
 
-    def render(self, slide, left: float, top: float) -> list:
+    def render(self, slide, left: float, top: float, placeholder: Optional[Any] = None) -> list:
         """
         Render button group.
 
@@ -438,10 +458,19 @@ class ButtonGroup(ComposableComponent):
             slide: PowerPoint slide
             left: Starting left position
             top: Starting top position
+            placeholder: Optional placeholder to replace
 
         Returns:
             List of button shapes
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         shapes = []
         current_left = left
         current_top = top

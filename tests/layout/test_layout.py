@@ -6,14 +6,14 @@ Tests Grid, Container, Stack, Spacer, and Divider.
 import pytest
 from pptx import Presentation
 
-from chuk_mcp_pptx.layout import (
+from chuk_mcp_pptx.components.core import (
     Grid,
     Container,
     Stack,
     Spacer,
     Divider,
-    SLIDE_WIDTH,
 )
+from chuk_mcp_pptx.layout import SLIDE_WIDTH
 from chuk_mcp_pptx.themes import ThemeManager
 
 

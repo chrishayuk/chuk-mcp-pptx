@@ -9,7 +9,7 @@ from pptx.util import Inches
 
 from chuk_mcp_pptx.components.core.alert import Alert
 from chuk_mcp_pptx.themes import ThemeManager
-from chuk_mcp_pptx.registry import get_component_schema, list_components
+from chuk_mcp_pptx.components.registry import get_component_schema, list_components
 
 
 class TestAlertCreation:

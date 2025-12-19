@@ -18,6 +18,7 @@ Components:
 - Icon: Icon and visual indicators
 - Image: Picture and image components
 - Progress: Progress bars and loading indicators
+- Video: Video and multimedia components
 - Shape: Geometric shapes and basic elements
 - SmartArt: Diagram components (ProcessFlow, CycleDiagram, HierarchyDiagram)
 - Spacer: Invisible spacer for adding spacing between elements
@@ -41,6 +42,7 @@ from .grid import Grid
 from .icon import Icon, IconList
 from .image import Image
 from .progress import ProgressBar
+from .video import Video
 from .shape import Shape
 from .smart_art import ProcessFlow, CycleDiagram, HierarchyDiagram
 from .spacer import Spacer
@@ -85,6 +87,8 @@ __all__ = [
     "Image",
     # Progress
     "ProgressBar",
+    # Video
+    "Video",
     # Shape
     "Shape",
     # SmartArt

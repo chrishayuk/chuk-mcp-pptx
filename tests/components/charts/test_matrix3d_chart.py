@@ -125,7 +125,7 @@ class TestMatrix3DChart:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.chart_type == XL_CHART_TYPE.BUBBLE
+        assert result.chart.chart_type == XL_CHART_TYPE.BUBBLE
 
     def test_render_with_color_grouping(self, slide):
         """Test rendering with color-based grouping."""
@@ -140,7 +140,7 @@ class TestMatrix3DChart:
         result = chart.render(slide)
         assert result is not None
         # Should have 2 series (Alpha and Beta)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_many_data_points(self, slide):
         """Test rendering with many data points."""
@@ -171,7 +171,7 @@ class TestMatrix3DChart:
             color_field="group",
         )
         result = chart.render(slide)
-        assert len(result.series) == 3
+        assert len(result.chart.series) == 3
 
     def test_convert_unknown_color_field(self):
         """Test grouping with Unknown for missing color field."""

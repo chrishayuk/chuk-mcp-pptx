@@ -35,7 +35,7 @@ class TestScatterChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.has_title
+        assert result.chart.has_title
 
     def test_render_default_variant(self, slide):
         """Test default variant rendering."""
@@ -44,7 +44,7 @@ class TestScatterChartRendering:
         )
         result = chart.render(slide)
         # Default variant is XY_SCATTER
-        assert result.chart_type in [XL_CHART_TYPE.XY_SCATTER, XL_CHART_TYPE.XY_SCATTER_LINES]
+        assert result.chart.chart_type in [XL_CHART_TYPE.XY_SCATTER, XL_CHART_TYPE.XY_SCATTER_LINES]
 
     def test_render_smooth_variant(self, slide):
         """Test smooth variant rendering."""
@@ -52,7 +52,7 @@ class TestScatterChartRendering:
             series_data=[{"x_values": [1, 2, 3], "y_values": [1, 4, 2]}], variant="smooth"
         )
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.XY_SCATTER_SMOOTH
+        assert result.chart.chart_type == XL_CHART_TYPE.XY_SCATTER_SMOOTH
 
     def test_render_smooth_markers_variant(self, slide):
         """Test smooth markers variant rendering."""
@@ -61,7 +61,7 @@ class TestScatterChartRendering:
         )
         result = chart.render(slide)
         # Smooth markers variant
-        assert result.chart_type in [
+        assert result.chart.chart_type in [
             XL_CHART_TYPE.XY_SCATTER_SMOOTH_NO_MARKERS,
             XL_CHART_TYPE.XY_SCATTER_SMOOTH,
         ]
@@ -72,7 +72,7 @@ class TestScatterChartRendering:
             series_data=[{"x_values": [1, 2, 3], "y_values": [1, 2, 3]}], variant="lines"
         )
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.XY_SCATTER_LINES
+        assert result.chart.chart_type == XL_CHART_TYPE.XY_SCATTER_LINES
 
     def test_render_lines_markers_variant(self, slide):
         """Test lines markers variant rendering."""
@@ -81,7 +81,7 @@ class TestScatterChartRendering:
         )
         result = chart.render(slide)
         # Lines markers variant
-        assert result.chart_type in [
+        assert result.chart.chart_type in [
             XL_CHART_TYPE.XY_SCATTER_LINES_NO_MARKERS,
             XL_CHART_TYPE.XY_SCATTER_LINES,
         ]
@@ -95,7 +95,7 @@ class TestScatterChartRendering:
             ]
         )
         result = chart.render(slide)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_with_trendline(self, slide):
         """Test rendering with trendline."""
@@ -180,7 +180,7 @@ class TestBubbleChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.has_title
+        assert result.chart.has_title
 
     def test_render_multiple_bubble_series(self, slide):
         """Test rendering with multiple bubble series."""
@@ -191,13 +191,13 @@ class TestBubbleChartRendering:
             ]
         )
         result = chart.render(slide)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_3d_bubble(self, slide):
         """Test 3D bubble - uses standard bubble chart."""
         chart = BubbleChart(series_data=[{"points": [[1, 1, 10], [2, 2, 20], [3, 3, 30]]}])
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.BUBBLE
+        assert result.chart.chart_type == XL_CHART_TYPE.BUBBLE
 
     def test_render_custom_position(self, slide):
         """Test rendering at custom position."""

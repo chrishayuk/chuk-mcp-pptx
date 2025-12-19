@@ -3,7 +3,7 @@ Comprehensive tests for the variant system.
 """
 
 import pytest
-from chuk_mcp_pptx.variants import (
+from chuk_mcp_pptx.components.variants import (
     VariantConfig,
     VariantDefinition,
     CompoundVariant,

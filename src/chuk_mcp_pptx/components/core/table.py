@@ -7,9 +7,9 @@ from typing import Optional, Any, List
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
 
-from ...composition import ComposableComponent
-from ...variants import create_variants
-from ...registry import component, ComponentCategory, prop, example
+from ..composition import ComposableComponent
+from ..variants import create_variants
+from ..registry import component, ComponentCategory, prop, example
 
 
 # Table variants configuration
@@ -203,6 +203,27 @@ class Table(ComposableComponent):
             theme: Optional theme override
         """
         super().__init__(theme)
+
+        # Validate required parameters
+        if not headers:
+            raise ValueError("Table requires 'headers' (list of column names)")
+        if not isinstance(headers, list):
+            raise TypeError(f"Table 'headers' must be a list, got {type(headers).__name__}")
+        if data is None:
+            raise ValueError("Table requires 'data' (list of rows)")
+        if not isinstance(data, list):
+            raise TypeError(f"Table 'data' must be a list of rows, got {type(data).__name__}")
+
+        # Validate each row has same number of columns as headers
+        for i, row in enumerate(data):
+            if not isinstance(row, list):
+                raise TypeError(f"Table row {i} must be a list, got {type(row).__name__}")
+            if len(row) != len(headers):
+                raise ValueError(
+                    f"Table row {i} has {len(row)} columns but headers has {len(headers)} columns. "
+                    f"Each row must have the same number of values as headers."
+                )
+
         self.headers = headers
         self.data = data
         self.variant = variant
@@ -211,9 +232,17 @@ class Table(ComposableComponent):
         # Get variant props
         self.variant_props = TABLE_VARIANTS.build(variant=variant, size=size)
 
-    def render(self, slide, left: float, top: float, width: float, height: float) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> Any:
         """
-        Render table to slide.
+        Render table to slide or replace a placeholder.
 
         Args:
             slide: PowerPoint slide object
@@ -221,10 +250,25 @@ class Table(ComposableComponent):
             top: Top position in inches
             width: Width in inches
             height: Height in inches
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             Table shape object
         """
+        # If placeholder provided, use its bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.info(
+                f"Table targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+            )
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         rows = len(self.data) + 1  # +1 for header
         cols = len(self.headers)
 
@@ -243,9 +287,14 @@ class Table(ComposableComponent):
 
         return table_shape
 
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
     def _apply_header_styles(self, table):
         """Apply styling to header row."""
         props = self.variant_props
+        font_family = self._get_font_family()
 
         for col_idx, header_text in enumerate(self.headers):
             cell = table.cell(0, col_idx)
@@ -254,6 +303,7 @@ class Table(ComposableComponent):
             # Text formatting
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.alignment = PP_ALIGN.CENTER
+            paragraph.font.name = font_family
             paragraph.font.size = Pt(props.get("header_font_size", 13))
 
             if props.get("header_bold", True):
@@ -279,6 +329,7 @@ class Table(ComposableComponent):
     def _apply_data_styles(self, table):
         """Apply styling to data cells."""
         props = self.variant_props
+        font_family = self._get_font_family()
 
         for row_idx, row_data in enumerate(self.data):
             actual_row_idx = row_idx + 1  # Skip header row
@@ -289,6 +340,7 @@ class Table(ComposableComponent):
 
                 # Text formatting
                 paragraph = cell.text_frame.paragraphs[0]
+                paragraph.font.name = font_family
                 paragraph.font.size = Pt(props.get("font_size", 12))
 
                 # Text color

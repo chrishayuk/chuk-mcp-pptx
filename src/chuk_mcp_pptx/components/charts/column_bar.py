@@ -9,13 +9,13 @@ from pptx.util import Pt
 from pptx.dml.color import RGBColor
 
 from .base import ChartComponent
-from ...variants import COLUMN_CHART_VARIANTS
-from ...registry import component, ComponentCategory, prop, example
+from ..variants import COLUMN_CHART_VARIANTS
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(
     name="ColumnChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Column chart component for vertical bar comparisons with multiple variants",
     props=[
         prop(
@@ -194,9 +194,10 @@ class ColumnChart(ChartComponent):
 
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render column chart with additional configuration."""
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         # Add data labels if requested
         if self.variant_props.get("show_values", False):
@@ -221,12 +222,12 @@ class ColumnChart(ChartComponent):
         if "stacked" in self.variant and hasattr(chart.plots[0], "overlap"):
             chart.plots[0].overlap = self.variant_props.get("overlap", 100)
 
-        return chart
+        return chart_shape
 
 
 @component(
     name="BarChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Bar chart component for horizontal bar comparisons",
     props=[
         prop(
@@ -322,7 +323,7 @@ class BarChart(ColumnChart):
 
 @component(
     name="WaterfallChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Waterfall chart for showing incremental changes and cumulative effects",
     props=[
         prop(
@@ -449,9 +450,10 @@ class WaterfallChart(ChartComponent):
 
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render waterfall chart with special formatting."""
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         try:
             # Make base series invisible
@@ -486,4 +488,4 @@ class WaterfallChart(ChartComponent):
             # If any formatting fails, return the basic chart
             pass
 
-        return chart
+        return chart_shape

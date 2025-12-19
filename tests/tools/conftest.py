@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
-from chuk_mcp_pptx.presentation_manager import PresentationManager
+from chuk_mcp_pptx.core.presentation_manager import PresentationManager
 
 
 @pytest.fixture

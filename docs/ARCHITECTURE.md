@@ -1,38 +1,133 @@
-# Pydantic-Native Architecture
+# Architecture
 
 ## Overview
 
-chuk-mcp-pptx follows a **Pydantic-first** design philosophy inspired by chuk-motion. Every data structure is a Pydantic `BaseModel` for type safety, validation, and maintainability.
+chuk-mcp-pptx follows a **template-first, Pydantic-native** architecture designed for LLM consumption. The system emphasizes professional template workflows, a universal component API, and type-safe responses.
 
 ## Core Principles
 
-1. **No Dictionary Goop**: Never pass raw dictionaries. All data is typed and validated.
-2. **Async Native**: All I/O operations are async using `AsyncVirtualFileSystem`
-3. **Constants Over Strings**: Magic strings/numbers are defined as enums/constants
-4. **Model-Based Responses**: All tool responses return `model_dump_json()`
-5. **Virtual Filesystem**: Flexible storage with file/memory/sqlite/s3 providers
+1. **Template-First Workflow**: Professional templates with 50+ layouts for consistent presentations
+2. **Universal Component API**: Single `pptx_add_component` tool handles all component types
+3. **Pydantic-Native**: All data structures are typed `BaseModel` classes
+4. **Async Native**: All I/O operations are async using artifact stores
+5. **Design System Resolution**: Components automatically inherit template/theme styling
+6. **Validation & Verification**: Tools validate placeholders and warn about issues
 
 ## Architecture Layers
 
 ```
-┌──────────────────────────────────────────┐
-│         MCP Tools (async_server.py)      │
-│  - Pydantic Response Models              │
-│  - Constants for Messages & Types        │
-└────────────────┬─────────────────────────┘
-                 │
-┌────────────────▼─────────────────────────┐
-│     PresentationManager                  │
-│  - Manages Presentation Objects          │
-│  - Tracks PresentationMetadata (Pydantic)│
-│  - VFS Integration (async)               │
-└────────────────┬─────────────────────────┘
-                 │
-┌────────────────▼─────────────────────────┐
-│      AsyncVirtualFileSystem              │
-│  - File Provider (default)               │
-│  - Memory/SQLite/S3 Providers            │
-└──────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    MCP Tools Layer                          │
+├─────────────────────────────────────────────────────────────┤
+│  tools/universal/   │  Universal Component API              │
+│    api.py          │  - pptx_add_component                  │
+│    registry.py     │  - pptx_list_slide_components          │
+│                    │  - Component registry tools            │
+├────────────────────┼────────────────────────────────────────┤
+│  tools/template/   │  Template Workflow                     │
+│    workflow.py     │  - pptx_add_slide_from_template        │
+│    analyze.py      │  - pptx_analyze_template               │
+│    list.py         │  - pptx_list_templates                 │
+├────────────────────┼────────────────────────────────────────┤
+│  tools/core/       │  Core Tools                            │
+│    placeholder.py  │  - pptx_populate_placeholder           │
+├────────────────────┼────────────────────────────────────────┤
+│  tools/theme/      │  Theme Management                      │
+│  tools/layout/     │  Layout Management                     │
+│  tools/inspection/ │  Slide Inspection & Fixes              │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼───────────────────────────────┐
+│                  Component System                            │
+├─────────────────────────────────────────────────────────────┤
+│  components/registry.py   │  Component registry & schemas   │
+│  components/tracking.py   │  Component instance tracking    │
+│  components/base.py       │  Base component class           │
+├───────────────────────────┼─────────────────────────────────┤
+│  components/core/         │  UI components (Table, Image,   │
+│                          │  Card, Badge, Alert, etc.)       │
+├───────────────────────────┼─────────────────────────────────┤
+│  components/charts/       │  Chart components (Column, Line,│
+│                          │  Pie, Gauge, Funnel, etc.)       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼───────────────────────────────┐
+│                   Core Services                              │
+├─────────────────────────────────────────────────────────────┤
+│  core/presentation_manager.py  │  Presentation lifecycle    │
+│  themes/design_system.py       │  Design system resolution  │
+│  themes/theme_manager.py       │  Theme management          │
+│  templates/template_manager.py │  Template management       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼───────────────────────────────┐
+│                   Storage Layer                              │
+├─────────────────────────────────────────────────────────────┤
+│  chuk-artifacts              │  Artifact storage             │
+│  - Memory provider (dev)     │  - S3/Tigris (production)    │
+│  - Redis session provider    │  - Presigned URLs            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Key Workflows
+
+### Template-Based Presentation (Recommended)
+
+```
+1. pptx_create(template_name="brand_proposal")
+   └─> Creates presentation with all template layouts loaded
+
+2. pptx_analyze_template("brand_proposal")
+   └─> Returns 50+ layouts with placeholder details
+
+3. pptx_add_slide_from_template(layout_index=X)
+   └─> Adds slide, returns placeholder indices
+
+4. pptx_populate_placeholder(placeholder_idx=Y, content=...)
+   └─> Smart routing: strings → text, dicts → components
+
+5. pptx_list_slide_components(slide_index=N)
+   └─> Validates all placeholders populated
+
+6. pptx_save(path="output.pptx")
+```
+
+### Universal Component API
+
+The `pptx_add_component` tool supports multiple targeting modes:
+
+```
+Target Modes:
+├── target_placeholder=N   → Insert into template placeholder
+├── target_component="id"  → Compose into parent component
+├── target_layout="grid"   → Auto-position in layout region
+└── left/top/width/height  → Free-form positioning
+```
+
+Design System Resolution Priority (lowest to highest):
+1. Template design system (automatic)
+2. Placeholder styles (if target_placeholder)
+3. Presentation theme
+4. Explicit theme parameter
+5. Individual property overrides in params
+
+### Smart Placeholder Population
+
+`pptx_populate_placeholder` handles content intelligently:
+
+```python
+# String content → Text placeholder
+content="Hello World"
+
+# Dict content → Component rendered into placeholder
+content={
+    'type': 'ColumnChart',
+    'categories': ['Q1', 'Q2'],
+    'series': {'Sales': [100, 200]}
+}
+
+# JSON string → Parsed and routed as dict
+content='{"type": "Table", "headers": [...], "data": [...]}'
 ```
 
 ## Pydantic Models

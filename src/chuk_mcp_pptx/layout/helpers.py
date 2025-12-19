@@ -76,23 +76,51 @@ def validate_position(
     width = max(0.5, width)
     height = max(0.5, height)
 
+    # Define max available content area
+    max_content_bottom = slide_height - MARGIN_BOTTOM
+    max_content_right = slide_width - MARGIN_RIGHT
+
+    # First, ensure position is within valid range
+    # Allow elements above MARGIN_TOP only if explicitly positioned there (e.g., logos)
+    # but adjust elements that would exceed boundaries
+
     # Adjust if element goes beyond right edge
-    if left + width > slide_width:
-        if width <= slide_width:
-            left = slide_width - width
+    if left + width > max_content_right:
+        # First, try to move left
+        new_left = max_content_right - width
+        if new_left >= MARGIN_LEFT:
+            left = new_left
         else:
-            width = slide_width - left
+            # Can't fit by moving, shrink width
+            left = MARGIN_LEFT
+            width = max_content_right - MARGIN_LEFT
 
     # Adjust if element goes beyond bottom edge
-    if top + height > slide_height:
-        if height <= slide_height:
-            top = slide_height - height
+    if top + height > max_content_bottom:
+        # First, try to reduce height to fit at current position
+        available_height = max_content_bottom - top
+        if available_height >= 0.5:  # Minimum useful height
+            height = available_height
         else:
-            height = slide_height - top
+            # Position is too low - move up but not above title area
+            top = max(MARGIN_TOP, max_content_bottom - height)
+            # Recalculate height after moving
+            available_height = max_content_bottom - top
+            if available_height < height:
+                height = max(0.5, available_height)
 
-    # Ensure element starts within slide
-    left = max(0, min(left, slide_width - 0.5))
-    top = max(0, min(top, slide_height - 0.5))
+    # Ensure position doesn't start outside slide bounds
+    if left < 0:
+        left = MARGIN_LEFT
+    if top < 0:
+        top = MARGIN_TOP
+    if top > max_content_bottom - 0.5:
+        top = max(MARGIN_TOP, max_content_bottom - 0.5)
+        height = max(0.5, max_content_bottom - top)
+
+    # Final safety checks - ensure minimum sizes
+    width = max(0.5, min(width, max_content_right - left))
+    height = max(0.5, min(height, max_content_bottom - top))
 
     return left, top, width, height
 

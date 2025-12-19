@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any, Literal
 
 from ..base import Component
 from ...tokens.spacing import SPACING
-from ...registry import component, ComponentCategory, prop
+from ..registry import component, ComponentCategory, prop
 
 
 @component(
@@ -64,8 +64,16 @@ class Spacer(Component):
         }
         return size_map.get(self.size, SPACING["8"])
 
-    def render(self, slide, left: float = 0, top: float = 0):
+    def render(self, slide, left: float = 0, top: float = 0, placeholder: Optional[Any] = None):
         """Spacer doesn't render anything, just returns size."""
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         size = self.get_size()
         if self.direction == "vertical":
             return {"height": size, "width": 0}

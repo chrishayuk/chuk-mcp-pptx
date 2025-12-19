@@ -158,7 +158,18 @@ class Avatar(Component):
             else:
                 return self.get_color("foreground.DEFAULT")
 
-    def render(self, slide, left: float, top: float, diameter: Optional[float] = None) -> Any:
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        diameter: Optional[float] = None,
+        placeholder: Optional[Any] = None,
+    ) -> Any:
         """
         Render avatar to slide.
 
@@ -167,10 +178,20 @@ class Avatar(Component):
             left: Left position in inches
             top: Top position in inches
             diameter: Avatar diameter in inches (optional, uses size if not provided)
+            placeholder: Optional placeholder to replace
 
         Returns:
             Shape object representing the avatar
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+            diameter = min(width, height)  # Use smaller dimension for circular avatar
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Get diameter from size if not provided
         avatar_diameter = diameter if diameter is not None else self.SIZE_MAP.get(self.size, 1.0)
 
@@ -211,6 +232,7 @@ class Avatar(Component):
         text_frame.margin_top = 0
         text_frame.margin_bottom = 0
 
+        font_family = self._get_font_family()
         p = text_frame.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
 
@@ -220,9 +242,11 @@ class Avatar(Component):
 
             symbol = ICON_SYMBOLS.get(self.icon, self.icon)
             p.text = symbol
+            p.font.name = font_family
             p.font.size = Pt(self.FONT_SIZE_MAP.get(self.size, 14))
         elif self.text:
             p.text = self.text.upper()[:2]  # Max 2 characters for initials
+            p.font.name = font_family
             p.font.size = Pt(self.FONT_SIZE_MAP.get(self.size, 14))
             p.font.bold = True
 
@@ -291,7 +315,13 @@ class AvatarWithLabel(Component):
         self.color_variant = color_variant
         self.orientation = orientation
 
-    def render(self, slide, left: float, top: float, width: float = 3.0) -> list:
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
+    def render(
+        self, slide, left: float, top: float, width: float = 3.0, placeholder: Optional[Any] = None
+    ) -> list:
         """
         Render avatar with label to slide.
 
@@ -300,10 +330,19 @@ class AvatarWithLabel(Component):
             left: Left position in inches
             top: Top position in inches
             width: Total width for the component in inches
+            placeholder: Optional placeholder to replace
 
         Returns:
             List of rendered shapes [avatar, label_box]
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         shapes = []
 
         # Create avatar
@@ -336,6 +375,7 @@ class AvatarWithLabel(Component):
 
         # Create label text box
         if self.label or self.sublabel:
+            font_family = self._get_font_family()
             label_height = 0.5 if self.sublabel else 0.3
 
             label_box = slide.shapes.add_textbox(
@@ -357,6 +397,7 @@ class AvatarWithLabel(Component):
                 p.text = self.label
                 p.alignment = text_align
                 style = get_text_style("body")
+                p.font.name = font_family
                 p.font.size = Pt(style["font_size"])
                 p.font.bold = True
                 p.font.color.rgb = self.get_color("foreground.DEFAULT")
@@ -368,6 +409,7 @@ class AvatarWithLabel(Component):
                 p.alignment = text_align
                 p.space_before = Pt(2)
                 style = get_text_style("small")
+                p.font.name = font_family
                 p.font.size = Pt(style["font_size"])
                 p.font.color.rgb = self.get_color("muted.foreground")
 
@@ -432,7 +474,7 @@ class AvatarGroup(Component):
         self.max_display = max_display
         self.overlap = overlap
 
-    def render(self, slide, left: float, top: float) -> list:
+    def render(self, slide, left: float, top: float, placeholder: Optional[Any] = None) -> list:
         """
         Render avatar group to slide.
 
@@ -440,10 +482,19 @@ class AvatarGroup(Component):
             slide: PowerPoint slide
             left: Left position in inches
             top: Top position in inches
+            placeholder: Optional placeholder to replace
 
         Returns:
             List of rendered avatar shapes
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         shapes = []
         avatar_diameter = Avatar.SIZE_MAP.get(self.size, 1.0)
 

@@ -142,7 +142,7 @@ class TestChartComponentRendering:
         chart = _TestChartBase(title="Test Chart")
         result = chart.render(slide)
         assert result is not None
-        assert result.has_title is True
+        assert result.chart.has_title is True
 
     def test_render_with_default_position(self, slide):
         """Test chart renders with default position."""
@@ -168,8 +168,8 @@ class TestChartComponentRendering:
         """Test chart title is applied."""
         chart = _TestChartBase(title="Revenue Chart")
         result = chart.render(slide)
-        assert result.has_title is True
-        assert result.chart_title.text_frame.text == "Revenue Chart"
+        assert result.chart.has_title is True
+        assert result.chart.chart_title.text_frame.text == "Revenue Chart"
 
     def test_render_with_different_styles(self, slide):
         """Test rendering with different style variants."""
@@ -186,14 +186,14 @@ class TestChartComponentRendering:
             chart = _TestChartBase(legend=position)
             result = chart.render(slide)
             assert result is not None
-            assert result.has_legend is True
+            assert result.chart.has_legend is True
 
     def test_render_without_legend(self, slide):
         """Test rendering without legend."""
         chart = _TestChartBase(legend="none")
         result = chart.render(slide)
         assert result is not None
-        assert result.has_legend is False
+        assert result.chart.has_legend is False
 
 
 class TestChartComponentThemeIntegration:
@@ -243,17 +243,17 @@ class TestChartComponentThemeIntegration:
         chart = _TestChartBase()
         result = chart.render(slide)
         # Should not raise errors
-        chart.apply_theme_colors(result)
+        chart.apply_theme_colors(result.chart)
 
 
 class TestChartComponentHelpers:
     """Test chart helper methods."""
 
     def test_get_font_family_default(self):
-        """Test font family defaults to Inter."""
+        """Test font family defaults to Calibri when no theme."""
         chart = _TestChartBase()
         font = chart._get_font_family()
-        assert font == "Inter"
+        assert font == "Calibri"  # Default when no theme is set
 
     def test_get_font_family_from_theme(self):
         """Test font family from theme."""
@@ -319,7 +319,7 @@ class TestChartComponentDefaults:
     def test_default_height(self):
         """Test default chart height."""
         chart = _TestChartBase()
-        assert chart.DEFAULT_HEIGHT == 4.5
+        assert chart.DEFAULT_HEIGHT == 3.0
 
     def test_default_left_position(self):
         """Test default left position."""
@@ -342,7 +342,7 @@ class TestChartComponentComposition:
 
     def test_chart_extends_composable_component(self):
         """Test ChartComponent extends ComposableComponent."""
-        from chuk_mcp_pptx.composition import ComposableComponent
+        from chuk_mcp_pptx.components.composition import ComposableComponent
 
         chart = _TestChartBase()
         assert isinstance(chart, ComposableComponent)
@@ -355,7 +355,7 @@ class TestChartComponentComposition:
 
     def test_chart_can_add_children(self):
         """Test chart can add child components."""
-        from chuk_mcp_pptx.composition import CardTitle
+        from chuk_mcp_pptx.components.composition import CardTitle
 
         chart = _TestChartBase()
         child = CardTitle("Test")
@@ -364,7 +364,7 @@ class TestChartComponentComposition:
 
     def test_chart_get_children(self):
         """Test getting chart children."""
-        from chuk_mcp_pptx.composition import CardTitle
+        from chuk_mcp_pptx.components.composition import CardTitle
 
         chart = _TestChartBase()
         child = CardTitle("Test")
@@ -375,7 +375,7 @@ class TestChartComponentComposition:
 
     def test_chart_clear_children(self):
         """Test clearing chart children."""
-        from chuk_mcp_pptx.composition import CardTitle
+        from chuk_mcp_pptx.components.composition import CardTitle
 
         chart = _TestChartBase()
         chart.add_child(CardTitle("Test"))
@@ -415,7 +415,7 @@ class TestChartComponentEdgeCases:
         chart = _TestChartBase(title=long_title)
         result = chart.render(slide)
         assert result is not None
-        assert result.chart_title.text_frame.text == long_title
+        assert result.chart.chart_title.text_frame.text == long_title
 
     def test_chart_with_special_characters_in_title(self, slide):
         """Test chart with special characters in title."""

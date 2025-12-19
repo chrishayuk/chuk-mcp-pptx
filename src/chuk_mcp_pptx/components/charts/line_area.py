@@ -10,13 +10,13 @@ from pptx.util import Pt, Inches
 from pptx.dml.color import RGBColor
 
 from .base import ChartComponent
-from ...variants import LINE_CHART_VARIANTS
-from ...registry import component, ComponentCategory, prop, example
+from ..variants import LINE_CHART_VARIANTS
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(
     name="LineChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Line chart component for showing trends and changes over time",
     props=[
         prop(
@@ -186,9 +186,10 @@ class LineChart(ChartComponent):
 
         return chart_data
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render line chart with theme styling."""
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])
@@ -220,12 +221,12 @@ class LineChart(ChartComponent):
             if hasattr(chart, "value_axis"):
                 chart.value_axis.has_major_gridlines = False
 
-        return chart
+        return chart_shape
 
 
 @component(
     name="AreaChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Area chart component for showing cumulative trends with filled areas",
     props=[
         prop(
@@ -357,7 +358,7 @@ class AreaChart(ChartComponent):
 
 @component(
     name="SparklineChart",
-    category=ComponentCategory.DATA,
+    category=ComponentCategory.CHART,
     description="Sparkline chart component for compact inline trend visualization",
     props=[
         prop("values", "array", "Data values", required=True, example=[10, 15, 13, 17, 14, 20]),
@@ -433,7 +434,7 @@ class SparklineChart(LineChart):
 
         super().__init__(categories=categories, series={"Value": values}, variant="line", **kwargs)
 
-    def render(self, slide, **kwargs):
+    def render(self, slide, placeholder=None, **kwargs):
         """Render sparkline with minimal styling and integrated labels."""
         from pptx.enum.text import PP_ALIGN
 
@@ -461,7 +462,8 @@ class SparklineChart(LineChart):
         kwargs["width"] = chart_width
         kwargs["height"] = height
 
-        chart = super().render(slide, **kwargs)
+        chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
+        chart = chart_shape.chart  # Access the chart object from the shape
 
         # Remove axes for true sparkline effect
         if hasattr(chart, "category_axis"):
@@ -498,4 +500,4 @@ class SparklineChart(LineChart):
             value_para.font.color.rgb = self.get_color("primary.DEFAULT")
             value_para.alignment = PP_ALIGN.RIGHT
 
-        return chart
+        return chart_shape

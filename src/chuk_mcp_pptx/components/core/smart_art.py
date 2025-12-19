@@ -9,7 +9,7 @@ from typing import List, Optional, Dict, Any
 import math
 
 from ..base import Component
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 from .shape import Shape
 from .connector import Connector
 
@@ -70,8 +70,24 @@ class ProcessFlow(SmartArtBase):
         process.render(slide, left=1, top=2, width=8, height=2)
     """
 
-    def render(self, slide, left: float, top: float, width: float, height: float) -> List[Any]:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> List[Any]:
         """Render process flow diagram."""
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         shapes = []
         num_items = len(self.items)
 
@@ -141,8 +157,24 @@ class CycleDiagram(SmartArtBase):
         cycle.render(slide, left=1, top=1, width=6, height=5)
     """
 
-    def render(self, slide, left: float, top: float, width: float, height: float) -> List[Any]:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> List[Any]:
         """Render cycle diagram."""
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         shapes = []
         num_items = len(self.items)
 
@@ -254,8 +286,24 @@ class HierarchyDiagram(SmartArtBase):
         hierarchy.render(slide, left=1, top=1, width=8, height=3)
     """
 
-    def render(self, slide, left: float, top: float, width: float, height: float) -> List[Any]:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> List[Any]:
         """Render hierarchy diagram."""
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         shapes = []
 
         if len(self.items) == 0:

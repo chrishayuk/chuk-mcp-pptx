@@ -14,7 +14,7 @@ import asyncio
 from PIL import Image as PILImage, ImageFilter, ImageEnhance
 
 from ..base import Component
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(
@@ -156,6 +156,15 @@ class Image(Component):
             theme: Optional theme override
         """
         super().__init__(theme)
+
+        # Validate required parameters
+        if not image_source:
+            raise ValueError("Image requires 'image_source' (URL or file path)")
+        if not isinstance(image_source, str):
+            raise TypeError(
+                f"Image 'image_source' must be a string, got {type(image_source).__name__}"
+            )
+
         self.image_source = image_source
         self.shadow = shadow
         self.glow = glow
@@ -176,9 +185,10 @@ class Image(Component):
         top: float,
         width: Optional[float] = None,
         height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
-        Render image to slide.
+        Render image to slide or into a placeholder.
 
         Args:
             slide: PowerPoint slide object
@@ -186,6 +196,7 @@ class Image(Component):
             top: Top position in inches
             width: Width in inches (optional)
             height: Height in inches (optional)
+            placeholder: Optional placeholder shape to populate
 
         Returns:
             Picture shape object
@@ -202,6 +213,9 @@ class Image(Component):
             or self.invert
         )
 
+        # Get image source (file path, stream, or URL)
+        image_source_for_insertion = None
+
         if needs_processing:
             # Load image for processing
             pil_image = await self._load_image()
@@ -213,23 +227,48 @@ class Image(Component):
             image_stream = io.BytesIO()
             await asyncio.to_thread(pil_image.save, image_stream, format="PNG")
             image_stream.seek(0)
-
-            pic = self._add_picture(slide, image_stream, left, top, width, height)
+            image_source_for_insertion = image_stream
         else:
             # No processing needed, use original
+            # Handle HTTP/HTTPS URLs
+            if self.image_source.startswith(("http://", "https://")):
+                import urllib.request
+
+                try:
+                    # Download image from URL - scheme already validated above (http/https only)
+                    with urllib.request.urlopen(self.image_source) as response:  # nosec B310
+                        image_data = response.read()
+                    image_stream = io.BytesIO(image_data)
+                    image_source_for_insertion = image_stream
+                except Exception as e:
+                    raise FileNotFoundError(
+                        f"Could not download image from URL: {self.image_source}. Error: {str(e)}"
+                    )
+
             # Handle base64 image data
-            if self.image_source.startswith("data:image/"):
+            elif self.image_source.startswith("data:image/"):
                 header, encoded = self.image_source.split(",", 1)
                 image_data = base64.b64decode(encoded)
                 image_stream = io.BytesIO(image_data)
-                pic = self._add_picture(slide, image_stream, left, top, width, height)
+                image_source_for_insertion = image_stream
 
             # Handle file path
             elif Path(self.image_source).exists():
-                pic = self._add_picture(slide, self.image_source, left, top, width, height)
+                image_source_for_insertion = self.image_source
 
             else:
                 raise FileNotFoundError(f"Image not found: {self.image_source}")
+
+        # Insert into placeholder if provided, otherwise add to slide
+        if placeholder is not None:
+            # Use placeholder's insert_picture method
+            try:
+                pic = placeholder.insert_picture(image_source_for_insertion)
+            except AttributeError:
+                # Fallback if placeholder doesn't support insert_picture
+                pic = self._add_picture(slide, image_source_for_insertion, left, top, width, height)
+        else:
+            pic = self._add_picture(slide, image_source_for_insertion, left, top, width, height)
 
         # Apply PowerPoint effects
         if self.shadow:

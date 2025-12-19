@@ -9,6 +9,15 @@ Supports both stdio (for Claude Desktop) and HTTP (for API access) transports.
 import logging
 import os
 import sys
+from pathlib import Path
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
+
+# Find and load .env file from project root
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
 
 logger = logging.getLogger(__name__)
 
@@ -17,16 +26,17 @@ def _init_artifact_store() -> bool:
     """
     Initialize the artifact store from environment variables.
 
-    Checks for S3/Tigris configuration and sets up the global artifact store.
-    This enables cloud storage for presentations on Fly.io deployments.
+    Checks for S3/Tigris/filesystem configuration and sets up the global artifact store.
+    This enables cloud storage or local filesystem for presentations.
 
     Returns:
         True if artifact store was initialized, False otherwise
     """
-    # Check if we have S3 configuration (Tigris on Fly.io)
+    # Check if we have storage configuration
     provider = os.environ.get("CHUK_ARTIFACTS_PROVIDER", "memory")
     bucket = os.environ.get("BUCKET_NAME")
     redis_url = os.environ.get("REDIS_URL")
+    artifacts_path = os.environ.get("CHUK_ARTIFACTS_PATH")
 
     # For S3 provider, we need bucket and AWS credentials
     if provider == "s3":
@@ -45,17 +55,39 @@ def _init_artifact_store() -> bool:
         logger.info(f"  Endpoint: {aws_endpoint}")
         logger.info(f"  Redis URL: {'configured' if redis_url else 'not configured'}")
 
+    # For filesystem provider, ensure the directory exists
+    elif provider == "filesystem":
+        if artifacts_path:
+            path_obj = Path(artifacts_path)
+            path_obj.mkdir(parents=True, exist_ok=True)
+            logger.info(
+                f"Initializing artifact store with filesystem provider (path: {artifacts_path})"
+            )
+        else:
+            logger.warning(
+                "Filesystem provider configured but CHUK_ARTIFACTS_PATH not set. "
+                "Defaulting to memory provider."
+            )
+            provider = "memory"
+
     try:
         from chuk_artifacts import ArtifactStore
         from chuk_mcp_server import set_global_artifact_store
 
         # Create the artifact store with environment-based configuration
-        # chuk-artifacts reads AWS_* env vars automatically
-        store = ArtifactStore(
-            storage_provider=provider,
-            bucket=bucket,
-            session_provider="redis" if redis_url else "memory",
-        )
+        store_kwargs = {
+            "storage_provider": provider,
+            "session_provider": "redis" if redis_url else "memory",
+        }
+
+        # Add provider-specific kwargs
+        if provider == "s3" and bucket:
+            store_kwargs["bucket"] = bucket
+        elif provider == "filesystem" and artifacts_path:
+            # Note: chuk-artifacts may expect 'bucket' param for filesystem too
+            store_kwargs["bucket"] = artifacts_path
+
+        store = ArtifactStore(**store_kwargs)
 
         # Set as global artifact store for chuk-mcp-server context
         set_global_artifact_store(store)

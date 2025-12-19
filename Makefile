@@ -466,9 +466,9 @@ format:
 typecheck:
 	@echo "Running type checker..."
 	@if command -v uv >/dev/null 2>&1; then \
-		uv run mypy src --ignore-missing-imports --exclude '/site-packages/'; \
+		uv run mypy src --ignore-missing-imports --no-site-packages; \
 	elif command -v mypy >/dev/null 2>&1; then \
-		mypy src --ignore-missing-imports --exclude '/site-packages/'; \
+		mypy src --ignore-missing-imports --no-site-packages; \
 	else \
 		echo "MyPy not found. Install with: pip install mypy"; \
 	fi

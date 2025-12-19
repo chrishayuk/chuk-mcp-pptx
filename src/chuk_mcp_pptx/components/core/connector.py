@@ -12,7 +12,7 @@ from pptx.dml.color import RGBColor
 from pptx.oxml import parse_xml
 
 from ..base import Component
-from ...registry import component, ComponentCategory, prop, example
+from ..registry import component, ComponentCategory, prop, example
 
 
 CONNECTOR_TYPES = {
@@ -146,16 +146,30 @@ class Connector(Component):
         self.arrow_start = arrow_start
         self.arrow_end = arrow_end
 
-    def render(self, slide) -> Any:
+    def render(self, slide, placeholder: Optional[Any] = None) -> Any:
         """
         Render connector to slide.
 
         Args:
             slide: PowerPoint slide object
+            placeholder: Optional placeholder to replace
 
         Returns:
             Connector shape object
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+            # For connectors, use bounds to determine start/end points
+            self.start_x = left
+            self.start_y = top + height / 2
+            self.end_x = left + width
+            self.end_y = top + height / 2
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Get connector type
         mso_connector = CONNECTOR_TYPES.get(self.connector_type.lower(), MSO_CONNECTOR.STRAIGHT)
 

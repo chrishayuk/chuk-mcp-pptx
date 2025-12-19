@@ -105,7 +105,13 @@ class ProgressBar(Component):
         """Get background color for unfilled portion."""
         return self.get_color("muted.DEFAULT")
 
-    def render(self, slide, left: float, top: float, width: float = 6.0) -> Any:
+    def _get_font_family(self) -> str:
+        """Get font family from theme."""
+        return self.get_theme_attr("font_family", "Calibri")
+
+    def render(
+        self, slide, left: float, top: float, width: float = 6.0, placeholder: Optional[Any] = None
+    ) -> Any:
         """
         Render progress bar to slide.
 
@@ -114,16 +120,26 @@ class ProgressBar(Component):
             left: Left position in inches
             top: Top position in inches
             width: Total width in inches
+            placeholder: Optional placeholder to replace
 
         Returns:
             List of rendered shapes
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         from pptx.util import Inches
 
         shapes = []
         current_top = top
 
         # Render label if provided
+        font_family = self._get_font_family()
         if self.label:
             label_box = slide.shapes.add_textbox(
                 Inches(left), Inches(current_top), Inches(width), Inches(0.3)
@@ -135,6 +151,7 @@ class ProgressBar(Component):
 
             p = label_frame.paragraphs[0]
             style = get_text_style("small")
+            p.font.name = font_family
             p.font.size = Pt(style["font_size"])
             p.font.color.rgb = self.get_color("foreground.DEFAULT")
             p.font.bold = style.get("font_weight", 400) >= 600
@@ -161,6 +178,7 @@ class ProgressBar(Component):
             p = pct_frame.paragraphs[0]
             p.alignment = PP_ALIGN.RIGHT
             style = get_text_style("small")
+            p.font.name = font_family
             p.font.size = Pt(style["font_size"])
             p.font.color.rgb = self.get_color("muted.foreground")
             p.font.bold = True

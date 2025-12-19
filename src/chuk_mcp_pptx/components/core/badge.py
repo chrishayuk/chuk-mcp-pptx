@@ -11,8 +11,8 @@ from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
 
 from ..base import Component
 from ...constants import ComponentSizing
-from ...variants import BADGE_VARIANTS
-from ...registry import component, ComponentCategory, prop, example
+from ..variants import BADGE_VARIANTS
+from ..registry import component, ComponentCategory, prop, example
 
 
 @component(
@@ -107,9 +107,10 @@ class Badge(Component):
         top: float,
         width: Optional[float] = None,
         height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
-        Render badge to slide.
+        Render badge to slide or replace a placeholder.
 
         Args:
             slide: PowerPoint slide object
@@ -117,10 +118,19 @@ class Badge(Component):
             top: Top position in inches
             width: Optional width override (auto-calculated if None)
             height: Optional height override (default 0.3)
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             Shape object representing the badge
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
         # Calculate dimensions
         badge_width = width or self._calculate_width()
         badge_height = height or 0.3
@@ -265,21 +275,43 @@ class DotBadge(Component):
         self.variant = variant
         self.size = size
 
-    def render(self, slide, left: float, top: float) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
+    ) -> Any:
         """
-        Render dot badge.
+        Render dot badge or replace a placeholder.
 
         Args:
             slide: PowerPoint slide
             left: Left position
             top: Top position
+            width: Optional width (uses size if not provided)
+            height: Optional height (uses size if not provided)
+            placeholder: Optional placeholder shape to replace
 
         Returns:
             Oval shape representing the dot
         """
+        # If placeholder provided, extract bounds and delete it
+        bounds = self._extract_placeholder_bounds(placeholder)
+        if bounds is not None:
+            left, top, width, height = bounds
+
+        # Delete placeholder after extracting bounds
+        self._delete_placeholder_if_needed(placeholder)
+
+        # Use size if width/height not provided
+        dot_size = width or height or self.size
+
         # Create circular dot
         dot = slide.shapes.add_shape(
-            MSO_SHAPE.OVAL, Inches(left), Inches(top), Inches(self.size), Inches(self.size)
+            MSO_SHAPE.OVAL, Inches(left), Inches(top), Inches(dot_size), Inches(dot_size)
         )
 
         # Get color based on variant
