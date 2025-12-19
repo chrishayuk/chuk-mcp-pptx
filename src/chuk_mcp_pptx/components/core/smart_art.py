@@ -70,7 +70,15 @@ class ProcessFlow(SmartArtBase):
         process.render(slide, left=1, top=2, width=8, height=2)
     """
 
-    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> List[Any]:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> List[Any]:
         """Render process flow diagram."""
         # If placeholder provided, extract bounds and delete it
         bounds = self._extract_placeholder_bounds(placeholder)
@@ -149,7 +157,15 @@ class CycleDiagram(SmartArtBase):
         cycle.render(slide, left=1, top=1, width=6, height=5)
     """
 
-    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> List[Any]:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> List[Any]:
         """Render cycle diagram."""
         # If placeholder provided, extract bounds and delete it
         bounds = self._extract_placeholder_bounds(placeholder)
@@ -270,7 +286,15 @@ class HierarchyDiagram(SmartArtBase):
         hierarchy.render(slide, left=1, top=1, width=8, height=3)
     """
 
-    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> List[Any]:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> List[Any]:
         """Render hierarchy diagram."""
         # If placeholder provided, extract bounds and delete it
         bounds = self._extract_placeholder_bounds(placeholder)

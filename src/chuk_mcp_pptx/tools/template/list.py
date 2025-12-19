@@ -97,6 +97,7 @@ def register_list_tools(mcp, manager, template_manager):
         except Exception as e:
             logger.error(f"Failed to list templates: {e}", exc_info=True)
             from ...models import ErrorResponse
+
             return ErrorResponse(error=str(e)).model_dump_json()
 
     return {

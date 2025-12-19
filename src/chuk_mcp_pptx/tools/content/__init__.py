@@ -10,4 +10,4 @@ Use the universal component API instead:
 See tools/universal/api.py for the new API.
 """
 
-__all__ = []
+__all__: list[str] = []

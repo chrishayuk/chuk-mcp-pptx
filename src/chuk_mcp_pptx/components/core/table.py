@@ -232,7 +232,15 @@ class Table(ComposableComponent):
         # Get variant props
         self.variant_props = TABLE_VARIANTS.build(variant=variant, size=size)
 
-    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> Any:
         """
         Render table to slide or replace a placeholder.
 
@@ -252,8 +260,11 @@ class Table(ComposableComponent):
         if bounds is not None:
             left, top, width, height = bounds
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"Table targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+            logger.info(
+                f"Table targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+            )
 
         # Delete placeholder after extracting bounds
         self._delete_placeholder_if_needed(placeholder)

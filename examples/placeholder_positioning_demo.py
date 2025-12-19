@@ -13,21 +13,17 @@ The key is that when targeting a placeholder, the component should
 render at the EXACT bounds of the placeholder, not at hardcoded positions.
 """
 
-import asyncio
 import sys
 import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 # Import components directly for testing
 from chuk_mcp_pptx.components.core.table import Table
-from chuk_mcp_pptx.components.core.card import Card, MetricCard
+from chuk_mcp_pptx.components.core.card import MetricCard
 from chuk_mcp_pptx.components.charts.column_bar import ColumnChart
-from chuk_mcp_pptx.components.charts.pie_doughnut import PieChart
 
 
 def create_test_presentation():
@@ -66,7 +62,7 @@ def test_table_placeholder_positioning():
             ["Cheese B", "$15", "50"],
             ["Cheese C", "$20", "75"],
         ],
-        variant="striped"
+        variant="striped",
     )
 
     # Test 1: Render with explicit positions (no placeholder)
@@ -77,7 +73,7 @@ def test_table_placeholder_positioning():
         top=mock_top,
         width=mock_width,
         height=mock_height,
-        placeholder=None
+        placeholder=None,
     )
 
     # Check actual position
@@ -86,7 +82,9 @@ def test_table_placeholder_positioning():
     actual_width = shape1.width.inches
     actual_height = shape1.height.inches
 
-    print(f"   Actual position: ({actual_left:.2f}, {actual_top:.2f}, {actual_width:.2f}, {actual_height:.2f})")
+    print(
+        f"   Actual position: ({actual_left:.2f}, {actual_top:.2f}, {actual_width:.2f}, {actual_height:.2f})"
+    )
 
     if abs(actual_left - mock_left) < 0.01 and abs(actual_top - mock_top) < 0.01:
         print("   ✅ PASS: Table positioned correctly with explicit coords")
@@ -94,7 +92,9 @@ def test_table_placeholder_positioning():
         print("   ❌ FAIL: Table position mismatch!")
 
     # Save test output
-    output_path = os.path.join(os.path.dirname(__file__), "..", "outputs", "test_table_positioning.pptx")
+    output_path = os.path.join(
+        os.path.dirname(__file__), "..", "outputs", "test_table_positioning.pptx"
+    )
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     prs.save(output_path)
     print(f"\n   Saved to: {output_path}")
@@ -121,7 +121,7 @@ def test_chart_placeholder_positioning():
     chart = ColumnChart(
         categories=["Q1", "Q2", "Q3", "Q4"],
         series={"Revenue": [100, 150, 120, 180]},
-        title="Quarterly Revenue"
+        title="Quarterly Revenue",
     )
 
     # Render with explicit positions
@@ -132,7 +132,7 @@ def test_chart_placeholder_positioning():
         top=mock_top,
         width=mock_width,
         height=mock_height,
-        placeholder=None
+        placeholder=None,
     )
 
     # Check actual position
@@ -141,7 +141,9 @@ def test_chart_placeholder_positioning():
     actual_width = shape.width.inches
     actual_height = shape.height.inches
 
-    print(f"   Actual position: ({actual_left:.2f}, {actual_top:.2f}, {actual_width:.2f}, {actual_height:.2f})")
+    print(
+        f"   Actual position: ({actual_left:.2f}, {actual_top:.2f}, {actual_width:.2f}, {actual_height:.2f})"
+    )
 
     if abs(actual_left - mock_left) < 0.01 and abs(actual_top - mock_top) < 0.01:
         print("   ✅ PASS: Chart positioned correctly")
@@ -153,25 +155,22 @@ def test_chart_placeholder_positioning():
     slide2 = prs.slides.add_slide(slide_layout)
     print("\n2. Rendering ColumnChart with DEFAULT positions (None)...")
     chart2 = ColumnChart(
-        categories=["A", "B", "C"],
-        series={"Sales": [10, 20, 30]},
-        title="Default Position Test"
+        categories=["A", "B", "C"], series={"Sales": [10, 20, 30]}, title="Default Position Test"
     )
 
     # Render with no position params - should use defaults
     shape2 = chart2.render(
-        slide=slide2,
-        left=None,
-        top=None,
-        width=None,
-        height=None,
-        placeholder=None
+        slide=slide2, left=None, top=None, width=None, height=None, placeholder=None
     )
 
-    print(f"   Default position: ({shape2.left.inches:.2f}, {shape2.top.inches:.2f}, {shape2.width.inches:.2f}, {shape2.height.inches:.2f})")
-    print(f"   Expected defaults: (1.0, 2.0, 8.0, 3.0)")  # From ChartComponent class
+    print(
+        f"   Default position: ({shape2.left.inches:.2f}, {shape2.top.inches:.2f}, {shape2.width.inches:.2f}, {shape2.height.inches:.2f})"
+    )
+    print("   Expected defaults: (1.0, 2.0, 8.0, 3.0)")  # From ChartComponent class
 
-    output_path = os.path.join(os.path.dirname(__file__), "..", "outputs", "test_chart_positioning.pptx")
+    output_path = os.path.join(
+        os.path.dirname(__file__), "..", "outputs", "test_chart_positioning.pptx"
+    )
     prs.save(output_path)
     print(f"\n   Saved to: {output_path}")
 
@@ -212,7 +211,7 @@ def test_chart_with_real_placeholder():
         chart = ColumnChart(
             categories=["Q1", "Q2", "Q3", "Q4"],
             series={"Revenue": [100, 150, 120, 180]},
-            title="Chart in Placeholder"
+            title="Chart in Placeholder",
         )
 
         print("\nRendering ColumnChart with placeholder parameter...")
@@ -222,7 +221,7 @@ def test_chart_with_real_placeholder():
             top=1.0,
             width=2.0,
             height=1.0,
-            placeholder=content_placeholder
+            placeholder=content_placeholder,
         )
 
         actual_left = shape.left.inches
@@ -241,7 +240,9 @@ def test_chart_with_real_placeholder():
     else:
         print("No content placeholder found on this layout")
 
-    output_path = os.path.join(os.path.dirname(__file__), "..", "outputs", "test_chart_with_placeholder.pptx")
+    output_path = os.path.join(
+        os.path.dirname(__file__), "..", "outputs", "test_chart_with_placeholder.pptx"
+    )
     prs.save(output_path)
     print(f"\nSaved to: {output_path}")
 
@@ -272,7 +273,9 @@ def test_real_placeholder_extraction():
         top = ph.top.inches
         width = ph.width.inches
         height = ph.height.inches
-        print(f"  idx={idx}, type={ph_type}, bounds=({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+        print(
+            f"  idx={idx}, type={ph_type}, bounds=({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+        )
 
         # Find a content placeholder (type 7 is OBJECT/CONTENT)
         if ph_type == 7 or idx == 1:  # Content placeholder
@@ -290,11 +293,7 @@ def test_real_placeholder_extraction():
         print(f"Placeholder bounds: ({ph_left:.2f}, {ph_top:.2f}, {ph_width:.2f}, {ph_height:.2f})")
 
         # Now render a table INTO this placeholder
-        table = Table(
-            headers=["Item", "Value"],
-            data=[["Test", "123"]],
-            variant="default"
-        )
+        table = Table(headers=["Item", "Value"], data=[["Test", "123"]], variant="default")
 
         # Pass the actual placeholder to render
         print("\nRendering Table with placeholder parameter...")
@@ -304,7 +303,7 @@ def test_real_placeholder_extraction():
             top=1.0,
             width=2.0,
             height=1.0,
-            placeholder=content_placeholder
+            placeholder=content_placeholder,
         )
 
         actual_left = shape.left.inches
@@ -312,7 +311,9 @@ def test_real_placeholder_extraction():
         actual_width = shape.width.inches
         actual_height = shape.height.inches
 
-        print(f"Table rendered at: ({actual_left:.2f}, {actual_top:.2f}, {actual_width:.2f}, {actual_height:.2f})")
+        print(
+            f"Table rendered at: ({actual_left:.2f}, {actual_top:.2f}, {actual_width:.2f}, {actual_height:.2f})"
+        )
 
         # Check if it matches placeholder bounds
         if abs(actual_left - ph_left) < 0.1 and abs(actual_top - ph_top) < 0.1:
@@ -324,7 +325,9 @@ def test_real_placeholder_extraction():
     else:
         print("No content placeholder found on this layout")
 
-    output_path = os.path.join(os.path.dirname(__file__), "..", "outputs", "test_real_placeholder.pptx")
+    output_path = os.path.join(
+        os.path.dirname(__file__), "..", "outputs", "test_real_placeholder.pptx"
+    )
     prs.save(output_path)
     print(f"\nSaved to: {output_path}")
 
@@ -346,12 +349,7 @@ def test_metric_card_positioning():
 
     print(f"\nExpected position: ({mock_left}, {mock_top}, {mock_width}, {mock_height})")
 
-    card = MetricCard(
-        value="$150K",
-        label="Revenue",
-        change="+12%",
-        variant="default"
-    )
+    card = MetricCard(value="$150K", label="Revenue", change="+12%", variant="default")
 
     shape = card.render(
         slide=slide,
@@ -359,7 +357,7 @@ def test_metric_card_positioning():
         top=mock_top,
         width=mock_width,
         height=mock_height,
-        placeholder=None
+        placeholder=None,
     )
 
     actual_left = shape.left.inches
@@ -372,7 +370,9 @@ def test_metric_card_positioning():
     else:
         print("❌ FAIL: MetricCard position mismatch!")
 
-    output_path = os.path.join(os.path.dirname(__file__), "..", "outputs", "test_metric_card_positioning.pptx")
+    output_path = os.path.join(
+        os.path.dirname(__file__), "..", "outputs", "test_metric_card_positioning.pptx"
+    )
     prs.save(output_path)
     print(f"\nSaved to: {output_path}")
 
@@ -404,6 +404,7 @@ def main():
     except Exception as e:
         print(f"❌ Chart with Placeholder test failed: {e}")
         import traceback
+
         traceback.print_exc()
         results.append(("Chart with Placeholder", False))
 
@@ -412,6 +413,7 @@ def main():
     except Exception as e:
         print(f"❌ Real Placeholder test failed: {e}")
         import traceback
+
         traceback.print_exc()
         results.append(("Real Placeholder", False))
 

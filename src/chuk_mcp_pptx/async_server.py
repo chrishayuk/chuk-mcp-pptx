@@ -36,6 +36,7 @@ from .tools.universal import (
     register_registry_tools,
     register_semantic_tools,
 )
+
 # Legacy content tools removed - use universal component API instead
 from .tools.theme import register_theme_tools
 from .tools.template import register_template_tools, register_extraction_tools
@@ -110,9 +111,7 @@ if theme_tools:
 
 
 @mcp.tool  # type: ignore[arg-type]
-async def pptx_create(
-    name: str, theme: str | None = None, template_name: str | None = None
-) -> str:
+async def pptx_create(name: str, theme: str | None = None, template_name: str | None = None) -> str:
     """
     Create a new PowerPoint presentation, optionally from a template.
 
@@ -225,12 +224,13 @@ async def pptx_create(
             result = await manager.get(metadata.name)
             if result:
                 from .models.responses import TemplateInfo
+
                 prs, _ = result
                 layout_count = len(prs.slide_layouts) if prs.slide_layouts else 0
                 template_info = TemplateInfo(
                     template_name=template_name,
                     layout_count=layout_count,
-                    message=f"Template loaded with {layout_count} layouts. Use pptx_add_slide_from_template(layout_index=X) to use specific layouts, or call pptx_analyze_template('{template_name}') to see all available layouts with their names and placeholders."
+                    message=f"Template loaded with {layout_count} layouts. Use pptx_add_slide_from_template(layout_index=X) to use specific layouts, or call pptx_analyze_template('{template_name}') to see all available layouts with their names and placeholders.",
                 )
 
         # Return PresentationResponse as JSON
@@ -239,7 +239,7 @@ async def pptx_create(
             message=message,
             slide_count=metadata.slide_count,
             is_current=True,
-            template_info=template_info
+            template_info=template_info,
         ).model_dump_json()
     except Exception as e:
         logger.error(f"Failed to create presentation: {e}")
@@ -551,7 +551,6 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
     """
     try:
         import io
-        import json
 
         from chuk_mcp_server import get_artifact_store, has_artifact_store
 
@@ -596,12 +595,13 @@ async def pptx_get_download_url(presentation: str | None = None, expires_in: int
         logger.info(f"Generated presigned URL for {pres_name}")
 
         from .models import DownloadUrlResponse
+
         return DownloadUrlResponse(
             url=url,
             presentation=pres_name,
             artifact_id=artifact_id,
             expires_in=expires_in,
-            message=f"Generated download URL for {pres_name}, expires in {expires_in} seconds"
+            message=f"Generated download URL for {pres_name}, expires in {expires_in} seconds",
         ).model_dump_json()
     except Exception as e:
         logger.error(f"Failed to generate download URL: {e}")

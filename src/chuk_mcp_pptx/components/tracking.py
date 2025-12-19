@@ -8,7 +8,6 @@ Enables component-in-component nesting and querying.
 import logging
 from typing import Any
 from dataclasses import dataclass, field
-from pptx.util import Inches
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +19,16 @@ class ComponentInstance:
 
     Tracks position, relationships, and metadata for composition.
     """
+
     component_id: str
     component_type: str
     slide_index: int
 
     # Position and bounds
-    left: float  # inches
-    top: float  # inches
-    width: float  # inches
-    height: float  # inches
+    left: float | None = None  # inches
+    top: float | None = None  # inches
+    width: float | None = None  # inches
+    height: float | None = None  # inches
 
     # Relationships
     parent_id: str | None = None
@@ -70,10 +70,10 @@ class ComponentTracker:
         slide_index: int,
         component_id: str,
         component_type: str,
-        left: float,
-        top: float,
-        width: float,
-        height: float,
+        left: float | None,
+        top: float | None,
+        width: float | None,
+        height: float | None,
         target_type: str | None = None,
         target_id: Any | None = None,
         parent_id: str | None = None,
@@ -133,28 +133,19 @@ class ComponentTracker:
                 parent.children_ids.append(component_id)
                 logger.debug(f"Registered {component_id} as child of {parent_id}")
 
-        logger.info(f"Registered component: {component_id} ({component_type}) on slide {slide_index}")
+        logger.info(
+            f"Registered component: {component_id} ({component_type}) on slide {slide_index}"
+        )
         return comp_instance
 
     def get(
-        self,
-        presentation: str,
-        slide_index: int,
-        component_id: str
+        self, presentation: str, slide_index: int, component_id: str
     ) -> ComponentInstance | None:
         """Get component instance by ID."""
-        return (
-            self._instances
-            .get(presentation, {})
-            .get(slide_index, {})
-            .get(component_id)
-        )
+        return self._instances.get(presentation, {}).get(slide_index, {}).get(component_id)
 
     def get_children(
-        self,
-        presentation: str,
-        slide_index: int,
-        component_id: str
+        self, presentation: str, slide_index: int, component_id: str
     ) -> list[ComponentInstance]:
         """Get all children of a component."""
         instance = self.get(presentation, slide_index, component_id)
@@ -170,10 +161,7 @@ class ComponentTracker:
         return children
 
     def get_parent(
-        self,
-        presentation: str,
-        slide_index: int,
-        component_id: str
+        self, presentation: str, slide_index: int, component_id: str
     ) -> ComponentInstance | None:
         """Get parent of a component."""
         instance = self.get(presentation, slide_index, component_id)
@@ -182,24 +170,12 @@ class ComponentTracker:
 
         return self.get(presentation, slide_index, instance.parent_id)
 
-    def list_on_slide(
-        self,
-        presentation: str,
-        slide_index: int
-    ) -> list[ComponentInstance]:
+    def list_on_slide(self, presentation: str, slide_index: int) -> list[ComponentInstance]:
         """List all components on a slide."""
-        return list(
-            self._instances
-            .get(presentation, {})
-            .get(slide_index, {})
-            .values()
-        )
+        return list(self._instances.get(presentation, {}).get(slide_index, {}).values())
 
     def compute_absolute_position(
-        self,
-        presentation: str,
-        slide_index: int,
-        component_id: str
+        self, presentation: str, slide_index: int, component_id: str
     ) -> tuple[float, float, float, float] | None:
         """
         Compute absolute position of a component considering parent offsets.
@@ -231,10 +207,7 @@ class ComponentTracker:
         return (left, top, width, height)
 
     def get_bounds(
-        self,
-        presentation: str,
-        slide_index: int,
-        component_id: str
+        self, presentation: str, slide_index: int, component_id: str
     ) -> tuple[float, float, float, float] | None:
         """
         Get component bounds (position + size).
@@ -299,12 +272,7 @@ class ComponentTracker:
         logger.info(f"Updated component: {component_id}")
         return True
 
-    def remove(
-        self,
-        presentation: str,
-        slide_index: int,
-        component_id: str
-    ) -> bool:
+    def remove(self, presentation: str, slide_index: int, component_id: str) -> bool:
         """Remove a component from tracking."""
         instance = self.get(presentation, slide_index, component_id)
         if not instance:

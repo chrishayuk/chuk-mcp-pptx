@@ -223,6 +223,7 @@ def register_layout_tools(mcp, manager):
 
             # Analyze placeholders on the new slide
             from pptx.enum.shapes import PP_PLACEHOLDER
+
             placeholder_info = []
             chart_placeholders = []
             picture_placeholders = []
@@ -234,34 +235,46 @@ def register_layout_tools(mcp, manager):
                 # Identify CHART placeholders
                 if placeholder_type == PP_PLACEHOLDER.CHART:  # 12 = CHART
                     chart_placeholders.append(placeholder_idx)
-                    placeholder_info.append(f"  Placeholder {placeholder_idx}: CHART - Use pptx_add_component(component='ColumnChart/LineChart/etc', target_placeholder={placeholder_idx})")
+                    placeholder_info.append(
+                        f"  Placeholder {placeholder_idx}: CHART - Use pptx_add_component(component='ColumnChart/LineChart/etc', target_placeholder={placeholder_idx})"
+                    )
                 # Identify PICTURE placeholders
                 elif placeholder_type == PP_PLACEHOLDER.PICTURE:  # 18 = PICTURE
                     picture_placeholders.append(placeholder_idx)
-                    placeholder_info.append(f"  Placeholder {placeholder_idx}: PICTURE - Use pptx_add_image(target_placeholder={placeholder_idx})")
+                    placeholder_info.append(
+                        f"  Placeholder {placeholder_idx}: PICTURE - Use pptx_add_image(target_placeholder={placeholder_idx})"
+                    )
                 # Identify other common types
                 elif placeholder_type == PP_PLACEHOLDER.TITLE:
-                    placeholder_info.append(f"  Placeholder {placeholder_idx}: TITLE - Use pptx_populate_placeholder(placeholder_idx={placeholder_idx})")
+                    placeholder_info.append(
+                        f"  Placeholder {placeholder_idx}: TITLE - Use pptx_populate_placeholder(placeholder_idx={placeholder_idx})"
+                    )
                 elif placeholder_type == PP_PLACEHOLDER.SUBTITLE:
-                    placeholder_info.append(f"  Placeholder {placeholder_idx}: SUBTITLE - Use pptx_populate_placeholder(placeholder_idx={placeholder_idx})")
+                    placeholder_info.append(
+                        f"  Placeholder {placeholder_idx}: SUBTITLE - Use pptx_populate_placeholder(placeholder_idx={placeholder_idx})"
+                    )
                 elif placeholder_type == PP_PLACEHOLDER.BODY:
-                    placeholder_info.append(f"  Placeholder {placeholder_idx}: BODY/CONTENT - Use pptx_populate_placeholder(placeholder_idx={placeholder_idx})")
+                    placeholder_info.append(
+                        f"  Placeholder {placeholder_idx}: BODY/CONTENT - Use pptx_populate_placeholder(placeholder_idx={placeholder_idx})"
+                    )
                 else:
-                    placeholder_info.append(f"  Placeholder {placeholder_idx}: Type {placeholder_type}")
+                    placeholder_info.append(
+                        f"  Placeholder {placeholder_idx}: Type {placeholder_type}"
+                    )
 
             # Build response message
             msg = f"Added slide {slide_idx} using layout '{layout_name}'"
             if placeholder_info:
-                msg += f"\n\nAvailable placeholders:\n" + "\n".join(placeholder_info)
+                msg += "\n\nAvailable placeholders:\n" + "\n".join(placeholder_info)
 
             if chart_placeholders:
                 msg += f"\n\n⚠️ IMPORTANT: This layout has CHART placeholder(s) at indices {chart_placeholders}."
-                msg += f"\nWhen adding charts, use target_placeholder parameter instead of left/top/width/height:"
+                msg += "\nWhen adding charts, use target_placeholder parameter instead of left/top/width/height:"
                 msg += f"\n  pptx_add_component(slide_index={slide_idx}, component='ColumnChart', target_placeholder={chart_placeholders[0]}, ...)"
 
             if picture_placeholders:
                 msg += f"\n\n⚠️ IMPORTANT: This layout has PICTURE placeholder(s) at indices {picture_placeholders}."
-                msg += f"\nWhen adding images, use target_placeholder parameter instead of left/top/width/height."
+                msg += "\nWhen adding images, use target_placeholder parameter instead of left/top/width/height."
 
             return SuccessResponse(message=msg).model_dump_json()
 

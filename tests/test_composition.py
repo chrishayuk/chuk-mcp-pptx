@@ -6,7 +6,7 @@ import pytest
 from pptx import Presentation
 from pptx.util import Inches
 
-from chuk_mcp_pptx.composition import (
+from chuk_mcp_pptx.components.composition import (
     ComposableComponent,
     CardHeader,
     CardContent,

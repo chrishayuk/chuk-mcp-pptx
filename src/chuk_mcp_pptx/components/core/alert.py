@@ -193,7 +193,13 @@ class Alert(ComposableComponent):
             self.add_child(self.Description(description, theme))
 
     def render(
-        self, slide, left: float, top: float, width: float = 5.0, height: float = 1.5, placeholder: Optional[Any] = None
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float = 5.0,
+        height: float = 1.5,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
         Render alert to slide.

@@ -133,8 +133,15 @@ def register_universal_component_api(mcp, manager):
         """
         try:
             from ...models import (
-                ErrorResponse, ComponentListResponse, ComponentInfo, ComponentPosition,
-                ComponentTarget, TargetType, PlaceholderStatus, ImageStatus, ValidationWarning
+                ErrorResponse,
+                ComponentListResponse,
+                ComponentInfo,
+                ComponentPosition,
+                ComponentTarget,
+                TargetType,
+                PlaceholderStatus,
+                ImageStatus,
+                ValidationWarning,
             )
             from ...components.tracking import component_tracker
             from ...constants import ErrorMessages
@@ -162,7 +169,9 @@ def register_universal_component_api(mcp, manager):
             component_list = []
             for comp in components:
                 # Convert target_type string to TargetType enum
-                target_type = TargetType(comp.target_type) if comp.target_type else TargetType.FREE_FORM
+                target_type = (
+                    TargetType(comp.target_type) if comp.target_type else TargetType.FREE_FORM
+                )
 
                 component_info = ComponentInfo(
                     id=comp.component_id,
@@ -191,7 +200,7 @@ def register_universal_component_api(mcp, manager):
                 try:
                     idx = shape.placeholder_format.idx
                     ph_type = shape.placeholder_format.type
-                    type_name = ph_type.name if hasattr(ph_type, 'name') else str(ph_type)
+                    type_name = ph_type.name if hasattr(ph_type, "name") else str(ph_type)
 
                     is_empty = True
                     has_text = False
@@ -199,30 +208,41 @@ def register_universal_component_api(mcp, manager):
                     content_preview = None
 
                     # Check for text content
-                    if hasattr(shape, 'text_frame') and hasattr(shape.text_frame, 'text'):
+                    if hasattr(shape, "text_frame") and hasattr(shape.text_frame, "text"):
                         text_content = shape.text_frame.text.strip()
                         if text_content:
                             has_text = True
                             is_empty = False
-                            content_preview = text_content[:50] + "..." if len(text_content) > 50 else text_content
-                    elif hasattr(shape, 'text'):
+                            content_preview = (
+                                text_content[:50] + "..."
+                                if len(text_content) > 50
+                                else text_content
+                            )
+                    elif hasattr(shape, "text"):
                         text_content = shape.text.strip()
                         if text_content:
                             has_text = True
                             is_empty = False
-                            content_preview = text_content[:50] + "..." if len(text_content) > 50 else text_content
+                            content_preview = (
+                                text_content[:50] + "..."
+                                if len(text_content) > 50
+                                else text_content
+                            )
 
                     # Check for image content
                     if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
                         # Check if placeholder contains an image
-                        if hasattr(shape, 'image'):
+                        if hasattr(shape, "image"):
                             has_image = True
                             is_empty = False
                         # Check for picture in placeholder
                         elif len(list(shape.element.iter())) > 1:
                             # Placeholder has child elements, likely not empty
                             for child in shape.element.iter():
-                                if 'pic' in str(child.tag).lower() or 'blip' in str(child.tag).lower():
+                                if (
+                                    "pic" in str(child.tag).lower()
+                                    or "blip" in str(child.tag).lower()
+                                ):
                                     has_image = True
                                     is_empty = False
                                     break
@@ -241,11 +261,13 @@ def register_universal_component_api(mcp, manager):
 
                     # Add warning if empty
                     if is_empty:
-                        warnings.append(ValidationWarning(
-                            type="empty_placeholder",
-                            message=f"Placeholder {idx} ({type_name}: {shape.name}) is empty and needs content",
-                            placeholder_idx=idx,
-                        ))
+                        warnings.append(
+                            ValidationWarning(
+                                type="empty_placeholder",
+                                message=f"Placeholder {idx} ({type_name}: {shape.name}) is empty and needs content",
+                                placeholder_idx=idx,
+                            )
+                        )
 
                 except Exception as e:
                     logger.warning(f"Could not analyze placeholder: {e}")
@@ -273,7 +295,7 @@ def register_universal_component_api(mcp, manager):
 
                         # Try to get image info
                         try:
-                            if hasattr(shape, 'image'):
+                            if hasattr(shape, "image"):
                                 # Image loaded successfully
                                 loaded_successfully = True
                             else:
@@ -287,8 +309,8 @@ def register_universal_component_api(mcp, manager):
                         # Try to get source from component params
                         if comp_id:
                             for comp in components:
-                                if comp.component_id == comp_id and 'image_source' in comp.params:
-                                    source = comp.params['image_source']
+                                if comp.component_id == comp_id and "image_source" in comp.params:
+                                    source = comp.params["image_source"]
                                     break
 
                         image_status = ImageStatus(
@@ -302,11 +324,13 @@ def register_universal_component_api(mcp, manager):
 
                         # Add warning if image failed
                         if not loaded_successfully:
-                            warnings.append(ValidationWarning(
-                                type="missing_image",
-                                message=f"Image failed to load: {error_message or 'Unknown error'}",
-                                component_id=comp_id,
-                            ))
+                            warnings.append(
+                                ValidationWarning(
+                                    type="missing_image",
+                                    message=f"Image failed to load: {error_message or 'Unknown error'}",
+                                    component_id=comp_id,
+                                )
+                            )
 
                     except Exception as e:
                         logger.warning(f"Could not analyze image: {e}")
@@ -328,6 +352,7 @@ def register_universal_component_api(mcp, manager):
         except Exception as e:
             logger.error(f"Failed to list components: {e}")
             from ...models import ErrorResponse
+
             return ErrorResponse(error=str(e)).model_dump_json()
 
     @mcp.tool
@@ -507,9 +532,13 @@ def register_universal_component_api(mcp, manager):
                 try:
                     params = json.loads(params)
                 except json.JSONDecodeError as e:
-                    return ErrorResponse(error=f"Invalid JSON in params: {str(e)}").model_dump_json()
+                    return ErrorResponse(
+                        error=f"Invalid JSON in params: {str(e)}"
+                    ).model_dump_json()
             elif not isinstance(params, dict):
-                return ErrorResponse(error=f"params must be a dict or JSON string, got {type(params).__name__}").model_dump_json()
+                return ErrorResponse(
+                    error=f"params must be a dict or JSON string, got {type(params).__name__}"
+                ).model_dump_json()
 
             # Get presentation
             result = await manager.get(presentation)
@@ -528,7 +557,6 @@ def register_universal_component_api(mcp, manager):
 
             # Determine target and positioning
             target_placeholder_obj = None
-            target_component_obj = None
             final_left, final_top, final_width, final_height = left, top, width, height
 
             # VALIDATION: Check if using free-form positioning for content that should use placeholders
@@ -538,18 +566,18 @@ def register_universal_component_api(mcp, manager):
 
                 # Map component types to placeholder types they should use
                 component_to_placeholder_map = {
-                    'Table': [PP_PLACEHOLDER.TABLE, PP_PLACEHOLDER.OBJECT],
-                    'ColumnChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
-                    'BarChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
-                    'LineChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
-                    'AreaChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
-                    'PieChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
-                    'DoughnutChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
-                    'ScatterChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
-                    'BubbleChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
-                    'WaterfallChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
-                    'SparklineChart': [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
-                    'Image': [PP_PLACEHOLDER.PICTURE, PP_PLACEHOLDER.OBJECT],
+                    "Table": [PP_PLACEHOLDER.TABLE, PP_PLACEHOLDER.OBJECT],
+                    "ColumnChart": [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    "BarChart": [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    "LineChart": [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    "AreaChart": [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    "PieChart": [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    "DoughnutChart": [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    "ScatterChart": [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    "BubbleChart": [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    "WaterfallChart": [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    "SparklineChart": [PP_PLACEHOLDER.CHART, PP_PLACEHOLDER.OBJECT],
+                    "Image": [PP_PLACEHOLDER.PICTURE, PP_PLACEHOLDER.OBJECT],
                 }
 
                 if component in component_to_placeholder_map:
@@ -561,17 +589,23 @@ def register_universal_component_api(mcp, manager):
                         try:
                             ph_type = shape.placeholder_format.type
                             if ph_type in placeholder_types:
-                                available_placeholders.append({
-                                    'idx': shape.placeholder_format.idx,
-                                    'type': ph_type.name if hasattr(ph_type, 'name') else str(ph_type),
-                                    'name': shape.name
-                                })
+                                available_placeholders.append(
+                                    {
+                                        "idx": shape.placeholder_format.idx,
+                                        "type": ph_type.name
+                                        if hasattr(ph_type, "name")
+                                        else str(ph_type),
+                                        "name": shape.name,
+                                    }
+                                )
                         except Exception:
                             continue
 
                     if available_placeholders:
                         # ERROR: They're using free-form positioning when placeholders exist!
-                        ph_list = ", ".join([f"idx={ph['idx']} ({ph['type']})" for ph in available_placeholders])
+                        ph_list = ", ".join(
+                            [f"idx={ph['idx']} ({ph['type']})" for ph in available_placeholders]
+                        )
                         return ErrorResponse(
                             error=f"❌ PLACEHOLDER REQUIRED: Cannot add {component} with free-form positioning (left/top/width/height) "
                             f"because this slide has {len(available_placeholders)} suitable placeholder(s): {ph_list}. "
@@ -595,12 +629,30 @@ def register_universal_component_api(mcp, manager):
                     ).model_dump_json()
 
                 # Use placeholder bounds
-                final_left = target_placeholder_obj.left.inches if hasattr(target_placeholder_obj.left, 'inches') else target_placeholder_obj.left / 914400
-                final_top = target_placeholder_obj.top.inches if hasattr(target_placeholder_obj.top, 'inches') else target_placeholder_obj.top / 914400
-                final_width = target_placeholder_obj.width.inches if hasattr(target_placeholder_obj.width, 'inches') else target_placeholder_obj.width / 914400
-                final_height = target_placeholder_obj.height.inches if hasattr(target_placeholder_obj.height, 'inches') else target_placeholder_obj.height / 914400
+                final_left = (
+                    target_placeholder_obj.left.inches
+                    if hasattr(target_placeholder_obj.left, "inches")
+                    else target_placeholder_obj.left / 914400
+                )
+                final_top = (
+                    target_placeholder_obj.top.inches
+                    if hasattr(target_placeholder_obj.top, "inches")
+                    else target_placeholder_obj.top / 914400
+                )
+                final_width = (
+                    target_placeholder_obj.width.inches
+                    if hasattr(target_placeholder_obj.width, "inches")
+                    else target_placeholder_obj.width / 914400
+                )
+                final_height = (
+                    target_placeholder_obj.height.inches
+                    if hasattr(target_placeholder_obj.height, "inches")
+                    else target_placeholder_obj.height / 914400
+                )
 
-                logger.info(f"Targeting placeholder {target_placeholder}: bounds=({final_left}, {final_top}, {final_width}, {final_height})")
+                logger.info(
+                    f"Targeting placeholder {target_placeholder}: bounds=({final_left}, {final_top}, {final_width}, {final_height})"
+                )
 
             # MODE 2: Target component (composition)
             elif target_component is not None:
@@ -610,7 +662,7 @@ def register_universal_component_api(mcp, manager):
                 parent_tracked = component_tracker.get(
                     presentation=metadata.name,
                     slide_index=slide_index,
-                    component_id=target_component
+                    component_id=target_component,
                 )
 
                 if not parent_tracked:
@@ -636,6 +688,7 @@ def register_universal_component_api(mcp, manager):
 
                 # Check if parent is a Stack - if so, use its distribute logic
                 from ...components.core.stack import Stack
+
                 if parent_instance and isinstance(parent_instance, Stack):
                     # Get current child count for this stack
                     children = component_tracker.get_children(
@@ -649,7 +702,7 @@ def register_universal_component_api(mcp, manager):
                         left=parent_left,
                         top=parent_top,
                         container_width=parent_width,
-                        container_height=parent_height
+                        container_height=parent_height,
                     )
 
                     # Use the last position (for the new child)
@@ -684,12 +737,13 @@ def register_universal_component_api(mcp, manager):
             # MODE 3: Target layout (grid/flex positioning)
             elif target_layout is not None:
                 from ...components.tracking import component_tracker
-                from ...models import LayoutType
+                from ...models import LayoutType, TargetType
 
                 # Get existing components in this layout on this slide
                 all_components = component_tracker.list_on_slide(metadata.name, slide_index)
                 layout_components = [
-                    c for c in all_components
+                    c
+                    for c in all_components
                     if c.target_type == TargetType.LAYOUT.value and c.target_id == target_layout
                 ]
 
@@ -729,7 +783,7 @@ def register_universal_component_api(mcp, manager):
                     margin_top = 2.0
 
                     # Calculate X position based on existing components
-                    offset_x = sum(c.width + gap for c in layout_components)
+                    offset_x = sum((c.width or 0) + gap for c in layout_components)
 
                     final_left = margin_left + offset_x
                     final_top = top if top is not None else margin_top
@@ -743,7 +797,7 @@ def register_universal_component_api(mcp, manager):
                     margin_top = 2.0
 
                     # Calculate Y position based on existing components
-                    offset_y = sum(c.height + gap for c in layout_components)
+                    offset_y = sum((c.height or 0) + gap for c in layout_components)
 
                     final_left = left if left is not None else margin_left
                     final_top = margin_top + offset_y
@@ -769,10 +823,7 @@ def register_universal_component_api(mcp, manager):
 
             # Resolve design system with priority hierarchy
             design_system = resolve_design_system(
-                slide=slide,
-                placeholder=target_placeholder_obj,
-                theme=theme,
-                params=params
+                slide=slide, placeholder=target_placeholder_obj, theme=theme, params=params
             )
 
             # Get component class from registry
@@ -784,48 +835,49 @@ def register_universal_component_api(mcp, manager):
 
             # Build comprehensive theme object with all design tokens
             theme_obj = {
-                'colors': {
-                    'primary': design_system.primary_color,
-                    'secondary': design_system.secondary_color,
-                    'background': design_system.background_color,
-                    'text': design_system.text_color,
-                    'border': design_system.border_color,
+                "colors": {
+                    "primary": design_system.primary_color,
+                    "secondary": design_system.secondary_color,
+                    "background": design_system.background_color,
+                    "text": design_system.text_color,
+                    "border": design_system.border_color,
                 },
-                'typography': {
-                    'font_family': design_system.font_family,
-                    'font_size': design_system.font_size,
-                    'font_bold': design_system.font_bold,
-                    'font_italic': design_system.font_italic,
+                "typography": {
+                    "font_family": design_system.font_family,
+                    "font_size": design_system.font_size,
+                    "font_bold": design_system.font_bold,
+                    "font_italic": design_system.font_italic,
                 },
-                'spacing': {
-                    'padding': design_system.padding,
-                    'margin': design_system.margin,
-                    'gap': design_system.gap,
+                "spacing": {
+                    "padding": design_system.padding,
+                    "margin": design_system.margin,
+                    "gap": design_system.gap,
                 },
-                'borders': {
-                    'radius': design_system.border_radius,
-                    'width': design_system.border_width,
+                "borders": {
+                    "radius": design_system.border_radius,
+                    "width": design_system.border_width,
                 },
                 # Also expose as flat keys for easy access via get_theme_attr()
-                'font_family': design_system.font_family,
-                'font_size': design_system.font_size,
-                'padding': design_system.padding,
-                'margin': design_system.margin,
-                'gap': design_system.gap,
-                'border_radius': design_system.border_radius,
-                'border_width': design_system.border_width,
+                "font_family": design_system.font_family,
+                "font_size": design_system.font_size,
+                "padding": design_system.padding,
+                "margin": design_system.margin,
+                "gap": design_system.gap,
+                "border_radius": design_system.border_radius,
+                "border_width": design_system.border_width,
             }
 
             # Merge user params with theme object
             component_params = {
                 **params,  # User params take priority
-                'theme': theme_obj,  # Pass theme object for components that support it
+                "theme": theme_obj,  # Pass theme object for components that support it
             }
 
             # Get component's __init__ signature to filter params
             import inspect
+
             sig = inspect.signature(component_class.__init__)
-            accepted_params = set(sig.parameters.keys()) - {'self'}
+            accepted_params = set(sig.parameters.keys()) - {"self"}
 
             # Filter component_params to only include accepted parameters
             filtered_params = {k: v for k, v in component_params.items() if k in accepted_params}
@@ -838,26 +890,32 @@ def register_universal_component_api(mcp, manager):
 
             # Validate and adjust position to fit within slide bounds
             # This prevents overlapping with title areas and slide boundaries
-            if final_left is not None and final_top is not None and final_width is not None and final_height is not None:
+            if (
+                final_left is not None
+                and final_top is not None
+                and final_width is not None
+                and final_height is not None
+            ):
                 from ...layout.helpers import validate_position
+
                 final_left, final_top, final_width, final_height = validate_position(
                     final_left, final_top, final_width, final_height
                 )
 
             # Prepare render kwargs
             render_kwargs = {
-                'left': final_left,  # Pass as float - components handle Inches() conversion
-                'top': final_top,
-                'width': final_width,
-                'height': final_height
+                "left": final_left,  # Pass as float - components handle Inches() conversion
+                "top": final_top,
+                "width": final_width,
+                "height": final_height,
             }
 
             # If targeting a placeholder, pass it to the render method (if component supports it)
             if target_placeholder_obj is not None:
                 # Check if render method accepts 'placeholder' parameter
                 sig = inspect.signature(component_instance.render)
-                if 'placeholder' in sig.parameters:
-                    render_kwargs['placeholder'] = target_placeholder_obj
+                if "placeholder" in sig.parameters:
+                    render_kwargs["placeholder"] = target_placeholder_obj
 
             render_result = component_instance.render(slide, **render_kwargs)
 
@@ -879,6 +937,8 @@ def register_universal_component_api(mcp, manager):
 
                 # Determine target type using enum
                 from ...models import TargetType
+
+                target_id_value: str | int | None = None
                 if target_placeholder is not None:
                     target_type_value = TargetType.PLACEHOLDER.value
                     target_id_value = target_placeholder
@@ -890,7 +950,6 @@ def register_universal_component_api(mcp, manager):
                     target_id_value = target_layout
                 else:
                     target_type_value = TargetType.FREE_FORM.value
-                    target_id_value = None
 
                 # Register component instance
                 component_tracker.register(
@@ -937,12 +996,13 @@ def register_universal_component_api(mcp, manager):
                 slide_index=slide_index,
                 component=component,
                 message=message,
-                variant=params.get('variant'),
+                variant=params.get("variant"),
             ).model_dump_json()
 
         except Exception as e:
             logger.error(f"Failed to add component: {e}", exc_info=True)
             from ...models import ErrorResponse
+
             return ErrorResponse(error=str(e)).model_dump_json()
 
     @mcp.tool
@@ -1019,9 +1079,13 @@ def register_universal_component_api(mcp, manager):
                 try:
                     params = json.loads(params)
                 except json.JSONDecodeError as e:
-                    return ErrorResponse(error=f"Invalid JSON in params: {str(e)}").model_dump_json()
+                    return ErrorResponse(
+                        error=f"Invalid JSON in params: {str(e)}"
+                    ).model_dump_json()
             elif not isinstance(params, dict):
-                return ErrorResponse(error=f"params must be a dict or JSON string, got {type(params).__name__}").model_dump_json()
+                return ErrorResponse(
+                    error=f"params must be a dict or JSON string, got {type(params).__name__}"
+                ).model_dump_json()
 
             # Get presentation
             result = await manager.get(presentation)
@@ -1040,9 +1104,7 @@ def register_universal_component_api(mcp, manager):
 
             # Get existing component
             component_instance = component_tracker.get(
-                presentation=metadata.name,
-                slide_index=slide_index,
-                component_id=component_id
+                presentation=metadata.name, slide_index=slide_index, component_id=component_id
             )
 
             if not component_instance:
@@ -1087,35 +1149,32 @@ def register_universal_component_api(mcp, manager):
             from ...themes.design_system import resolve_design_system
 
             design_system = resolve_design_system(
-                slide=slide,
-                placeholder=None,
-                theme=component_instance.theme,
-                params=merged_params
+                slide=slide, placeholder=None, theme=component_instance.theme, params=merged_params
             )
 
             component_params = {
-                'bg_color': design_system.background_color,
-                'text_color': design_system.text_color,
-                'border_color': design_system.border_color,
-                'font_family': design_system.font_family,
-                'font_size': design_system.font_size,
+                "bg_color": design_system.background_color,
+                "text_color": design_system.text_color,
+                "border_color": design_system.border_color,
+                "font_family": design_system.font_family,
+                "font_size": design_system.font_size,
                 **merged_params,
-                'theme': {
-                    'colors': {
-                        'primary': design_system.primary_color,
-                        'secondary': design_system.secondary_color,
-                        'background': design_system.background_color,
-                        'text': design_system.text_color,
+                "theme": {
+                    "colors": {
+                        "primary": design_system.primary_color,
+                        "secondary": design_system.secondary_color,
+                        "background": design_system.background_color,
+                        "text": design_system.text_color,
                     },
-                    'typography': {
-                        'font_family': design_system.font_family,
-                        'font_size': design_system.font_size,
+                    "typography": {
+                        "font_family": design_system.font_family,
+                        "font_size": design_system.font_size,
                     },
-                    'spacing': {
-                        'padding': design_system.padding,
-                        'margin': design_system.margin,
-                    }
-                }
+                    "spacing": {
+                        "padding": design_system.padding,
+                        "margin": design_system.margin,
+                    },
+                },
             }
 
             new_component = component_class(**component_params)
@@ -1124,7 +1183,7 @@ def register_universal_component_api(mcp, manager):
                 left=Inches(new_left),
                 top=Inches(new_top),
                 width=Inches(new_width),
-                height=Inches(new_height)
+                height=Inches(new_height),
             )
 
             # Update tracker with new values
@@ -1164,12 +1223,13 @@ def register_universal_component_api(mcp, manager):
                 slide_index=slide_index,
                 component=component_instance.component_type,
                 message=message,
-                variant=merged_params.get('variant'),
+                variant=merged_params.get("variant"),
             ).model_dump_json()
 
         except Exception as e:
             logger.error(f"Failed to update component: {e}", exc_info=True)
             from ...models import ErrorResponse
+
             return ErrorResponse(error=str(e)).model_dump_json()
 
     return {

@@ -172,8 +172,11 @@ class ChartComponent(ComposableComponent):
         if bounds is not None:
             left, top, width, height = bounds
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"Chart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+            logger.info(
+                f"Chart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+            )
 
         # Delete placeholder after extracting bounds
         self._delete_placeholder_if_needed(placeholder)

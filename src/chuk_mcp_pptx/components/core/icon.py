@@ -289,7 +289,9 @@ class IconList(Component):
         """Get font family from theme."""
         return self.get_theme_attr("font_family", "Calibri")
 
-    def render(self, slide, left: float, top: float, width: float = 6.0, placeholder: Optional[Any] = None) -> list:
+    def render(
+        self, slide, left: float, top: float, width: float = 6.0, placeholder: Optional[Any] = None
+    ) -> list:
         """
         Render icon list to slide.
 

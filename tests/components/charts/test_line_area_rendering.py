@@ -34,8 +34,8 @@ class TestLineChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.has_title
-        assert result.chart_title.text_frame.text == "Monthly Revenue"
+        assert result.chart.has_title
+        assert result.chart.chart_title.text_frame.text == "Monthly Revenue"
 
     def test_render_multiple_series(self, slide):
         """Test rendering with multiple data series."""
@@ -44,13 +44,13 @@ class TestLineChartRendering:
             series={"Revenue": [100, 120, 110], "Costs": [80, 90, 85]},
         )
         result = chart.render(slide)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_line_variant(self, slide):
         """Test line variant rendering."""
         chart = LineChart(categories=["A", "B"], series={"S1": [10, 20]}, variant="line")
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.LINE_MARKERS
+        assert result.chart.chart_type == XL_CHART_TYPE.LINE_MARKERS
 
     def test_render_smooth_variant(self, slide):
         """Test smooth variant rendering."""
@@ -63,7 +63,7 @@ class TestLineChartRendering:
         """Test area variant rendering."""
         chart = LineChart(categories=["A", "B"], series={"S1": [10, 20]}, variant="area")
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.AREA
+        assert result.chart.chart_type == XL_CHART_TYPE.AREA
 
     def test_render_smooth_area_variant(self, slide):
         """Test smooth area variant rendering."""
@@ -71,14 +71,14 @@ class TestLineChartRendering:
             categories=["A", "B", "C"], series={"S1": [10, 20, 15]}, variant="smooth_area"
         )
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.AREA
+        assert result.chart.chart_type == XL_CHART_TYPE.AREA
 
     def test_render_with_default_style(self, slide):
         """Test rendering with default style."""
         chart = LineChart(categories=["A"], series={"S1": [10]}, style="default")
         result = chart.render(slide)
         assert result is not None
-        assert result.has_legend
+        assert result.chart.has_legend
 
     def test_render_with_minimal_style(self, slide):
         """Test rendering with minimal style."""
@@ -119,7 +119,7 @@ class TestLineChartRendering:
             categories=["A", "B", "C"], series={"Revenue": [100, 120, 110], "Costs": [80, 90, 85]}
         )
         result = chart.render(slide)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_with_markers(self, slide):
         """Test rendering with markers."""
@@ -141,7 +141,7 @@ class TestLineChartRendering:
         for position in positions:
             chart = LineChart(categories=["A"], series={"S1": [10]}, legend=position)
             result = chart.render(slide)
-            assert result.has_legend
+            assert result.chart.has_legend
 
     def test_render_without_legend(self, slide):
         """Test rendering without legend."""
@@ -179,7 +179,7 @@ class TestAreaChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.chart_type == XL_CHART_TYPE.AREA
+        assert result.chart.chart_type == XL_CHART_TYPE.AREA
 
     def test_render_stacked_variant(self, slide):
         """Test stacked area chart."""
@@ -187,19 +187,19 @@ class TestAreaChartRendering:
             categories=["A", "B"], series={"S1": [10, 20], "S2": [5, 10]}, variant="stacked"
         )
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.AREA_STACKED
+        assert result.chart.chart_type == XL_CHART_TYPE.AREA_STACKED
 
     def test_render_stacked100_variant(self, slide):
         """Test 100% stacked area chart."""
         chart = AreaChart(categories=["A", "B"], series={"S1": [10, 20]}, variant="stacked100")
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.AREA_STACKED_100
+        assert result.chart.chart_type == XL_CHART_TYPE.AREA_STACKED_100
 
     def test_render_with_multiple_series(self, slide):
         """Test area chart with multiple series."""
         chart = AreaChart(categories=["A", "B"], series={"Q1": [10, 20], "Q2": [15, 25]})
         result = chart.render(slide)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_with_theme(self, slide):
         """Test rendering with custom theme."""

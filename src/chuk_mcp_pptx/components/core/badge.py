@@ -275,7 +275,15 @@ class DotBadge(Component):
         self.variant = variant
         self.size = size
 
-    def render(self, slide, left: float, top: float, width: Optional[float] = None, height: Optional[float] = None, placeholder: Optional[Any] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
+    ) -> Any:
         """
         Render dot badge or replace a placeholder.
 

@@ -3,7 +3,6 @@ MCP tools for component registry discovery and schema access.
 Enables LLMs to discover and understand available components.
 """
 
-import asyncio
 import json
 
 from ...components.registry import registry

@@ -37,20 +37,24 @@ def register_import_tools(mcp, manager, template_manager):
             )
         """
         try:
-            from ...models import ErrorResponse, SuccessResponse
+            from ...models import ErrorResponse
 
             success = await manager.import_template(file_path, template_name)
             if success:
                 # Get template info by loading the analyze module
                 from .analyze import register_analyze_tools
+
                 analyze_tools = register_analyze_tools(mcp, manager, template_manager)
                 template_info = await analyze_tools["pptx_analyze_template"](template_name)
                 return template_info
             else:
-                return ErrorResponse(error=f"Failed to import template from {file_path}").model_dump_json()
+                return ErrorResponse(
+                    error=f"Failed to import template from {file_path}"
+                ).model_dump_json()
         except Exception as e:
             logger.error(f"Failed to import template: {e}")
             from ...models import ErrorResponse
+
             return ErrorResponse(error=str(e)).model_dump_json()
 
     @mcp.tool
@@ -80,7 +84,9 @@ def register_import_tools(mcp, manager, template_manager):
             # Get template data from template manager
             template_data = await template_manager.get_template_data(template_name)
             if not template_data:
-                return ErrorResponse(error=f"Built-in template not found: {template_name}").model_dump_json()
+                return ErrorResponse(
+                    error=f"Built-in template not found: {template_name}"
+                ).model_dump_json()
 
             # Import into artifact store
             from chuk_mcp_server import NamespaceType, StorageScope
@@ -112,8 +118,7 @@ def register_import_tools(mcp, manager, template_manager):
             # Write template data
             await store.write_namespace(namespace_info.namespace_id, data=template_data)
 
-            # Get template metadata
-            tmpl_meta = template_manager.get_template_metadata(template_name)
+            # Get layout count from loaded presentation
             layout_count = len(prs.slide_layouts) if prs.slide_layouts else 0
 
             return SuccessResponse(
@@ -122,6 +127,7 @@ def register_import_tools(mcp, manager, template_manager):
         except Exception as e:
             logger.error(f"Failed to get builtin template: {e}")
             from ...models import ErrorResponse
+
             return ErrorResponse(error=str(e)).model_dump_json()
 
     return {

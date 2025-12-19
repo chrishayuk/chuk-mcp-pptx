@@ -14,7 +14,9 @@ class BuiltinTemplateInfo(BaseModel):
     name: str = Field(..., description="Template identifier (e.g., 'brand_proposal')")
     display_name: str = Field(..., description="Human-readable name")
     description: str = Field(..., description="Template description")
-    category: str = Field(..., description="Template category (business, basic, technology, education)")
+    category: str = Field(
+        ..., description="Template category (business, basic, technology, education)"
+    )
     layout_count: int = Field(..., description="Number of slide layouts", ge=0)
     tags: list[str] = Field(default_factory=list, description="Search tags")
     is_builtin: bool = Field(default=True, description="Always true for builtin templates")
@@ -110,9 +112,7 @@ class PresentationTemplateAnalysis(BaseModel):
     name: str = Field(..., description="Template name")
     slide_count: int = Field(..., description="Number of slides in template", ge=0)
     layout_count: int = Field(..., description="Number of slide layouts", ge=0)
-    layouts: list[LayoutInfo] = Field(
-        default_factory=list, description="Available slide layouts"
-    )
+    layouts: list[LayoutInfo] = Field(default_factory=list, description="Available slide layouts")
     master_count: int = Field(default=1, description="Number of slide masters", ge=1)
     has_theme: bool = Field(default=False, description="Whether template has custom theme")
 
@@ -140,9 +140,7 @@ class LayoutGroup(BaseModel):
 
     base_name: str = Field(..., description="Base layout name without variant number")
     base_layout: LayoutVariant = Field(..., description="Primary/base layout")
-    variants: list[LayoutVariant] = Field(
-        default_factory=list, description="Layout variants"
-    )
+    variants: list[LayoutVariant] = Field(default_factory=list, description="Layout variants")
     total_count: int = Field(..., description="Total layouts in group (base + variants)")
     placeholder_signature: str = Field(..., description="Placeholder pattern signature")
 
@@ -155,9 +153,7 @@ class TemplateLayoutVariantsAnalysis(BaseModel):
 
     total_layouts: int = Field(..., description="Total number of layouts")
     unique_groups: int = Field(..., description="Number of unique layout groups")
-    layout_groups: list[LayoutGroup] = Field(
-        default_factory=list, description="Grouped layouts"
-    )
+    layout_groups: list[LayoutGroup] = Field(default_factory=list, description="Grouped layouts")
     ungrouped_layouts: list[LayoutVariant] = Field(
         default_factory=list, description="Layouts that don't fit any group"
     )

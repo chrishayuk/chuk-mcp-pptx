@@ -15,9 +15,6 @@ def semantic_tools(mock_mcp_server, mock_presentation_manager):
     return tools
 
 
-# ThemeManager doesn't need to be mocked - it works fine in tests
-
-
 class TestCreateQuickDeck:
     """Test pptx_create_quick_deck tool."""
 
@@ -60,215 +57,29 @@ class TestCreateQuickDeck:
         assert prs is not None
         assert metadata.name == "new_deck"
 
-
-class TestAddMetricsDashboard:
-    """Test pptx_add_metrics_dashboard tool."""
-
     @pytest.mark.asyncio
-    async def test_add_metrics_dashboard_grid_layout(
+    async def test_create_quick_deck_with_all_parameters(
         self, semantic_tools, mock_presentation_manager
     ):
-        """Test adding metrics dashboard with grid layout."""
-        metrics = [
-            {"label": "Revenue", "value": "$2.5M"},
-            {"label": "Users", "value": "45K"},
-            {"label": "NPS", "value": "72"},
-            {"label": "MRR", "value": "$180K"},
-        ]
-        result = await semantic_tools["pptx_add_metrics_dashboard"](
-            title="Q4 Metrics", metrics=metrics, layout="grid"
+        """Test creating quick deck with all parameters."""
+        result = await semantic_tools["pptx_create_quick_deck"](
+            name="full_deck",
+            title="Full Featured Deck",
+            subtitle="With All Options",
+            theme="ocean-dark",
         )
         assert isinstance(result, str)
-        assert "4" in result or "metrics" in result.lower()
+        assert "ocean-dark" in result or "theme" in result.lower()
 
     @pytest.mark.asyncio
-    async def test_add_metrics_dashboard_row_layout(
-        self, semantic_tools, mock_presentation_manager
-    ):
-        """Test adding metrics dashboard with row layout."""
-        metrics = [{"label": "Revenue", "value": "$2.5M"}, {"label": "Users", "value": "45K"}]
-        result = await semantic_tools["pptx_add_metrics_dashboard"](
-            title="Key Metrics", metrics=metrics, layout="row"
+    async def test_create_quick_deck_default_theme(self, semantic_tools, mock_presentation_manager):
+        """Test creating quick deck uses dark-violet as default theme."""
+        result = await semantic_tools["pptx_create_quick_deck"](
+            name="default_theme_deck", title="Default Theme"
         )
         assert isinstance(result, str)
-
-    @pytest.mark.asyncio
-    async def test_add_metrics_dashboard_with_changes(
-        self, semantic_tools, mock_presentation_manager
-    ):
-        """Test metrics with change and trend data."""
-        metrics = [
-            {"label": "Revenue", "value": "$2.5M", "change": "+12%", "trend": "up"},
-            {"label": "Users", "value": "45K", "change": "-3%", "trend": "down"},
-        ]
-        result = await semantic_tools["pptx_add_metrics_dashboard"](
-            title="Metrics", metrics=metrics
-        )
-        assert isinstance(result, str)
-
-    @pytest.mark.asyncio
-    async def test_add_metrics_dashboard_with_theme(
-        self, semantic_tools, mock_presentation_manager
-    ):
-        """Test metrics dashboard with custom theme."""
-        metrics = [{"label": "Test", "value": "100"}]
-        result = await semantic_tools["pptx_add_metrics_dashboard"](
-            title="Metrics", metrics=metrics, theme="corporate"
-        )
-        assert isinstance(result, str)
-
-
-class TestAddContentGrid:
-    """Test pptx_add_content_grid tool."""
-
-    @pytest.mark.asyncio
-    async def test_add_content_grid_cards(self, semantic_tools, mock_presentation_manager):
-        """Test adding content grid with card items."""
-        items = [
-            {"title": "Fast", "description": "Lightning quick"},
-            {"title": "Secure", "description": "Enterprise-grade security"},
-            {"title": "Scalable", "description": "Grows with you"},
-            {"title": "Reliable", "description": "99.9% uptime"},
-        ]
-        result = await semantic_tools["pptx_add_content_grid"](
-            title="Features", items=items, item_type="card", columns=2
-        )
-        assert isinstance(result, str)
-        assert "4" in result or "card" in result.lower()
-
-    @pytest.mark.asyncio
-    async def test_add_content_grid_tiles(self, semantic_tools, mock_presentation_manager):
-        """Test adding content grid with tile items."""
-        items = [{"label": "Metric 1", "value": "100"}, {"label": "Metric 2", "value": "200"}]
-        result = await semantic_tools["pptx_add_content_grid"](
-            title="Metrics", items=items, item_type="tile", columns=2
-        )
-        assert isinstance(result, str)
-
-    @pytest.mark.asyncio
-    async def test_add_content_grid_buttons(self, semantic_tools, mock_presentation_manager):
-        """Test adding content grid with button items."""
-        items = [{"text": "Action 1"}, {"text": "Action 2"}, {"text": "Action 3"}]
-        result = await semantic_tools["pptx_add_content_grid"](
-            title="Actions", items=items, item_type="button", columns=3
-        )
-        assert isinstance(result, str)
-
-    @pytest.mark.asyncio
-    async def test_add_content_grid_column_clamping(
-        self, semantic_tools, mock_presentation_manager
-    ):
-        """Test that columns are clamped to 2-4."""
-        items = [{"title": "Test", "description": "Test"}]
-
-        # Test with columns=1 (should clamp to 2)
-        result = await semantic_tools["pptx_add_content_grid"](title="Test", items=items, columns=1)
-        assert isinstance(result, str)
-
-        # Test with columns=5 (should clamp to 4)
-        result = await semantic_tools["pptx_add_content_grid"](title="Test", items=items, columns=5)
-        assert isinstance(result, str)
-
-
-class TestAddTimelineSlide:
-    """Test pptx_add_timeline_slide tool."""
-
-    @pytest.mark.asyncio
-    async def test_add_timeline_horizontal(self, semantic_tools, mock_presentation_manager):
-        """Test adding horizontal timeline."""
-        events = [
-            {"date": "Q1", "description": "Beta Launch"},
-            {"date": "Q2", "description": "Public Release"},
-            {"date": "Q3", "description": "Enterprise Features"},
-            {"date": "Q4", "description": "Global Expansion"},
-        ]
-        result = await semantic_tools["pptx_add_timeline_slide"](
-            title="Roadmap 2024", events=events, orientation="horizontal"
-        )
-        assert isinstance(result, str)
-        assert "4" in result or "events" in result.lower()
-
-    @pytest.mark.asyncio
-    async def test_add_timeline_vertical(self, semantic_tools, mock_presentation_manager):
-        """Test adding vertical timeline."""
-        events = [
-            {"date": "2020", "description": "Founded"},
-            {"date": "2021", "description": "Series A"},
-            {"date": "2022", "description": "Product Launch"},
-        ]
-        result = await semantic_tools["pptx_add_timeline_slide"](
-            title="Company History", events=events, orientation="vertical"
-        )
-        assert isinstance(result, str)
-
-    @pytest.mark.asyncio
-    async def test_add_timeline_with_theme(self, semantic_tools, mock_presentation_manager):
-        """Test adding timeline with custom theme."""
-        events = [{"date": "Now", "description": "Current"}]
-        result = await semantic_tools["pptx_add_timeline_slide"](
-            title="Timeline", events=events, theme="corporate"
-        )
-        assert isinstance(result, str)
-
-
-class TestAddComparisonSlide:
-    """Test pptx_add_comparison_slide tool."""
-
-    @pytest.mark.asyncio
-    async def test_add_comparison_slide_basic(self, semantic_tools, mock_presentation_manager):
-        """Test adding basic comparison slide."""
-        result = await semantic_tools["pptx_add_comparison_slide"](
-            title="Build vs Buy",
-            left_title="Build In-House",
-            left_items=["Full control", "Custom features", "Higher cost"],
-            right_title="Buy Solution",
-            right_items=["Quick deployment", "Lower cost", "Less customization"],
-        )
-        assert isinstance(result, str)
-        assert (
-            "Build In-House" in result or "Buy Solution" in result or "comparison" in result.lower()
-        )
-
-    @pytest.mark.asyncio
-    async def test_add_comparison_slide_empty_items(
-        self, semantic_tools, mock_presentation_manager
-    ):
-        """Test comparison slide with empty item lists."""
-        result = await semantic_tools["pptx_add_comparison_slide"](
-            title="Comparison",
-            left_title="Option A",
-            left_items=[],
-            right_title="Option B",
-            right_items=[],
-        )
-        assert isinstance(result, str)
-
-    @pytest.mark.asyncio
-    async def test_add_comparison_slide_with_theme(self, semantic_tools, mock_presentation_manager):
-        """Test comparison slide with custom theme."""
-        result = await semantic_tools["pptx_add_comparison_slide"](
-            title="Comparison",
-            left_title="Left",
-            left_items=["Item 1"],
-            right_title="Right",
-            right_items=["Item 1"],
-            theme="dark-violet",
-        )
-        assert isinstance(result, str)
-
-    @pytest.mark.asyncio
-    async def test_add_comparison_slide_many_items(self, semantic_tools, mock_presentation_manager):
-        """Test comparison slide with many items."""
-        left_items = [f"Left item {i}" for i in range(10)]
-        right_items = [f"Right item {i}" for i in range(10)]
-        result = await semantic_tools["pptx_add_comparison_slide"](
-            title="Detailed Comparison",
-            left_title="Option A",
-            left_items=left_items,
-            right_title="Option B",
-            right_items=right_items,
-        )
-        assert isinstance(result, str)
+        # dark-violet is the default theme
+        assert "dark-violet" in result
 
 
 class TestIntegration:
@@ -279,10 +90,6 @@ class TestIntegration:
         """Test that all expected tools are registered."""
         expected_tools = [
             "pptx_create_quick_deck",
-            "pptx_add_metrics_dashboard",
-            "pptx_add_content_grid",
-            "pptx_add_timeline_slide",
-            "pptx_add_comparison_slide",
         ]
 
         for tool_name in expected_tools:
@@ -290,63 +97,31 @@ class TestIntegration:
             assert callable(semantic_tools[tool_name]), f"Tool {tool_name} not callable"
 
     @pytest.mark.asyncio
-    async def test_workflow_create_deck_with_slides(
-        self, semantic_tools, mock_presentation_manager
-    ):
-        """Test complete workflow: create deck → add metrics → add comparison."""
-        # Create quick deck
-        create_result = await semantic_tools["pptx_create_quick_deck"](
-            name="workflow_test", title="Test Deck", subtitle="Testing workflow"
+    async def test_workflow_create_multiple_decks(self, semantic_tools, mock_presentation_manager):
+        """Test creating multiple decks."""
+        # Create first deck
+        result1 = await semantic_tools["pptx_create_quick_deck"](
+            name="workflow_test_1", title="Test Deck 1", subtitle="First deck"
         )
-        assert isinstance(create_result, str)
+        assert isinstance(result1, str)
 
-        # Add metrics dashboard
-        metrics = [{"label": "Revenue", "value": "$2.5M"}, {"label": "Users", "value": "45K"}]
-        metrics_result = await semantic_tools["pptx_add_metrics_dashboard"](
-            title="Metrics", metrics=metrics
+        # Create second deck
+        result2 = await semantic_tools["pptx_create_quick_deck"](
+            name="workflow_test_2", title="Test Deck 2", subtitle="Second deck"
         )
-        assert isinstance(metrics_result, str)
+        assert isinstance(result2, str)
 
-        # Add comparison slide
-        comparison_result = await semantic_tools["pptx_add_comparison_slide"](
-            title="Options",
-            left_title="Option A",
-            left_items=["Pro 1", "Pro 2"],
-            right_title="Option B",
-            right_items=["Pro 1", "Pro 2"],
-        )
-        assert isinstance(comparison_result, str)
+        # Verify both exist
+        prs1, _ = await mock_presentation_manager.get("workflow_test_1")
+        prs2, _ = await mock_presentation_manager.get("workflow_test_2")
+        assert prs1 is not None
+        assert prs2 is not None
 
     @pytest.mark.asyncio
-    async def test_semantic_tools_are_high_level(self, semantic_tools):
-        """Test that semantic tools provide high-level abstractions."""
-        # All tools should accept simple parameters and handle layout automatically
+    async def test_semantic_tools_return_strings(self, semantic_tools):
+        """Test that all semantic tools return string results."""
         tool_names = list(semantic_tools.keys())
 
-        # Should have tools for complete slide creation
-        assert any("dashboard" in name for name in tool_names)
-        assert any("grid" in name for name in tool_names)
-        assert any("timeline" in name for name in tool_names)
-        assert any("comparison" in name for name in tool_names)
-
-
-class TestGridUtilities:
-    """Test grid utility functions used internally."""
-
-    @pytest.mark.asyncio
-    async def test_grid_positioning_consistent(self, semantic_tools, mock_presentation_manager):
-        """Test that grid-based layouts are consistent."""
-        # Add multiple dashboards and verify they work consistently
-        metrics = [{"label": "Test", "value": "100"}]
-
-        result1 = await semantic_tools["pptx_add_metrics_dashboard"](
-            title="Dashboard 1", metrics=metrics
-        )
-
-        result2 = await semantic_tools["pptx_add_metrics_dashboard"](
-            title="Dashboard 2", metrics=metrics
-        )
-
-        # Both should succeed
-        assert isinstance(result1, str)
-        assert isinstance(result2, str)
+        # All registered tools should be callable
+        for name in tool_names:
+            assert callable(semantic_tools[name])

@@ -90,6 +90,9 @@ python_version = "3.11"
 ignore_missing_imports = true
 check_untyped_defs = false
 disallow_untyped_defs = false
+exclude = [
+    "mlx",
+]
 
 # NOTE: Component type system needs refactoring to properly support Theme objects
 # Currently components expect dict[str, Any] but we're migrating to Theme class

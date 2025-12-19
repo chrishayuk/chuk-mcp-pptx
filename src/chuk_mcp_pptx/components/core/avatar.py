@@ -162,7 +162,14 @@ class Avatar(Component):
         """Get font family from theme."""
         return self.get_theme_attr("font_family", "Calibri")
 
-    def render(self, slide, left: float, top: float, diameter: Optional[float] = None, placeholder: Optional[Any] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        diameter: Optional[float] = None,
+        placeholder: Optional[Any] = None,
+    ) -> Any:
         """
         Render avatar to slide.
 
@@ -312,7 +319,9 @@ class AvatarWithLabel(Component):
         """Get font family from theme."""
         return self.get_theme_attr("font_family", "Calibri")
 
-    def render(self, slide, left: float, top: float, width: float = 3.0, placeholder: Optional[Any] = None) -> list:
+    def render(
+        self, slide, left: float, top: float, width: float = 3.0, placeholder: Optional[Any] = None
+    ) -> list:
         """
         Render avatar with label to slide.
 

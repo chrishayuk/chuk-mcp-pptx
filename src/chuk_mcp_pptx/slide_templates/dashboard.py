@@ -7,7 +7,7 @@ Provides templates for metric dashboards and KPI displays.
 from typing import List, Dict, Any, Optional
 
 from .base import SlideTemplate
-from .components.registry import template, TemplateCategory, TemplateProp
+from .registry import template, TemplateCategory, TemplateProp
 
 
 @template(

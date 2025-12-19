@@ -92,14 +92,18 @@ def register_workflow_tools(mcp, manager, template_manager):
             # Get current presentation
             result = await manager.get(presentation)
             if not result:
-                from ...models import ErrorResponse; return ErrorResponse(error="Presentation not found").model_dump_json()
+                from ...models import ErrorResponse
+            return ErrorResponse(error="Presentation not found").model_dump_json()
 
             prs, metadata = result
 
             # When created from template, presentation already has all layouts
             # No need to load template separately - just use the presentation's layouts
             if layout_index < 0 or layout_index >= len(prs.slide_layouts):
-                from ...models import ErrorResponse; return ErrorResponse(error=f"Invalid layout index: {layout_index} (presentation has {len(prs.slide_layouts)} layouts)").model_dump_json()
+                from ...models import ErrorResponse
+            return ErrorResponse(
+                error=f"Invalid layout index: {layout_index} (presentation has {len(prs.slide_layouts)} layouts)"
+            ).model_dump_json()
 
             layout = prs.slide_layouts[layout_index]
 
@@ -114,7 +118,9 @@ def register_workflow_tools(mcp, manager, template_manager):
                     placeholders.append(
                         PlaceholderInfo(
                             idx=shape.placeholder_format.idx,
-                            type=shape.placeholder_format.type.name if hasattr(shape.placeholder_format.type, 'name') else str(shape.placeholder_format.type),
+                            type=shape.placeholder_format.type.name
+                            if hasattr(shape.placeholder_format.type, "name")
+                            else str(shape.placeholder_format.type),
                             name=shape.name,
                         )
                     )
@@ -123,14 +129,20 @@ def register_workflow_tools(mcp, manager, template_manager):
 
             # Create guidance message with explicit placeholder requirements
             if placeholders:
-                placeholder_list = ", ".join([f"idx={p.idx} {p.name} (type: {p.type})" for p in placeholders])
+                placeholder_list = ", ".join(
+                    [f"idx={p.idx} {p.name} (type: {p.type})" for p in placeholders]
+                )
 
                 # Count placeholder types
-                text_placeholders = [p for p in placeholders if p.type in ('TITLE', 'SUBTITLE', 'BODY')]
-                picture_placeholders = [p for p in placeholders if p.type == 'PICTURE']
-                chart_placeholders = [p for p in placeholders if p.type == 'CHART']
-                table_placeholders = [p for p in placeholders if p.type == 'TABLE']
-                object_placeholders = [p for p in placeholders if p.type == 'OBJECT']  # Generic content placeholder
+                text_placeholders = [
+                    p for p in placeholders if p.type in ("TITLE", "SUBTITLE", "BODY")
+                ]
+                picture_placeholders = [p for p in placeholders if p.type == "PICTURE"]
+                chart_placeholders = [p for p in placeholders if p.type == "CHART"]
+                table_placeholders = [p for p in placeholders if p.type == "TABLE"]
+                object_placeholders = [
+                    p for p in placeholders if p.type == "OBJECT"
+                ]  # Generic content placeholder
 
                 guidance_parts = [
                     f"✅ Slide {slide_index} added with layout '{layout.name}'.",
@@ -139,9 +151,7 @@ def register_workflow_tools(mcp, manager, template_manager):
 
                 if text_placeholders:
                     text_ids = ", ".join([str(p.idx) for p in text_placeholders])
-                    guidance_parts.append(
-                        f"⚠️ REQUIRED NEXT STEPS:"
-                    )
+                    guidance_parts.append("⚠️ REQUIRED NEXT STEPS:")
                     guidance_parts.append(
                         f"   1. Call pptx_populate_placeholder() for EACH text placeholder: {text_ids}"
                     )
@@ -161,7 +171,7 @@ def register_workflow_tools(mcp, manager, template_manager):
                         f"      OR: await pptx_add_component(slide_index={slide_index}, component='ColumnChart', target_placeholder={chart_placeholders[0].idx}, params={{...}})"
                     )
                     guidance_parts.append(
-                        f"      ❌ DO NOT use left/top/width/height (creates overlays!)"
+                        "      ❌ DO NOT use left/top/width/height (creates overlays!)"
                     )
 
                 if table_placeholders:
@@ -176,7 +186,7 @@ def register_workflow_tools(mcp, manager, template_manager):
                         f"      OR: await pptx_add_component(slide_index={slide_index}, component='Table', target_placeholder={table_placeholders[0].idx}, params={{...}})"
                     )
                     guidance_parts.append(
-                        f"      ❌ DO NOT use left/top/width/height (creates overlays!)"
+                        "      ❌ DO NOT use left/top/width/height (creates overlays!)"
                     )
 
                 if object_placeholders:
@@ -188,16 +198,16 @@ def register_workflow_tools(mcp, manager, template_manager):
                         f"      ⚠️ ANALYZE THE LAYOUT FIRST: Look at the layout name '{layout.name}' to understand what content makes sense"
                     )
                     guidance_parts.append(
-                        f"      • Agenda/List layouts → Use text bullets, NOT tables"
+                        "      • Agenda/List layouts → Use text bullets, NOT tables"
                     )
                     guidance_parts.append(
-                        f"      • Data/Chart layouts → Use charts or tables with actual data"
+                        "      • Data/Chart layouts → Use charts or tables with actual data"
                     )
                     guidance_parts.append(
-                        f"      • Content layouts → Use text, bullets, or simple visuals"
+                        "      • Content layouts → Use text, bullets, or simple visuals"
                     )
                     guidance_parts.append(
-                        f"      ✅ Populate with: pptx_populate_placeholder(placeholder_idx=X, content='text' OR {{'type': 'Table/Chart', ...}})"
+                        "      ✅ Populate with: pptx_populate_placeholder(placeholder_idx=X, content='text' OR {'type': 'Table/Chart', ...})"
                     )
 
                 if picture_placeholders:
@@ -210,34 +220,24 @@ def register_workflow_tools(mcp, manager, template_manager):
                     f"   🔍 CRITICAL - VERIFY AFTER POPULATING: Call pptx_list_slide_components(slide_index={slide_index})"
                 )
                 guidance_parts.append(
-                    f"      This command shows which placeholders are still empty and need content"
+                    "      This command shows which placeholders are still empty and need content"
                 )
                 guidance_parts.append(
-                    f"      ⚠️ EVERY placeholder MUST be filled - empty placeholders show 'Click to add' text in the final presentation"
+                    "      ⚠️ EVERY placeholder MUST be filled - empty placeholders show 'Click to add' text in the final presentation"
                 )
                 guidance_parts.append(
-                    f"🚫 DO NOT use pptx_add_text_box or free-form positioning - it will overlay the placeholders and break the template design!"
+                    "🚫 DO NOT use pptx_add_text_box or free-form positioning - it will overlay the placeholders and break the template design!"
                 )
 
                 # Add verification reminder at the end
+                guidance_parts.append("\n⚠️ MANDATORY VERIFICATION STEP:")
                 guidance_parts.append(
-                    f"\n⚠️ MANDATORY VERIFICATION STEP:"
+                    "   After populating ALL placeholders on this slide, you MUST call:"
                 )
-                guidance_parts.append(
-                    f"   After populating ALL placeholders on this slide, you MUST call:"
-                )
-                guidance_parts.append(
-                    f"   pptx_list_slide_components(slide_index={slide_index})"
-                )
-                guidance_parts.append(
-                    f"   Check the response to ensure:"
-                )
-                guidance_parts.append(
-                    f"   • No empty placeholders remain"
-                )
-                guidance_parts.append(
-                    f"   • All images loaded successfully"
-                )
+                guidance_parts.append(f"   pptx_list_slide_components(slide_index={slide_index})")
+                guidance_parts.append("   Check the response to ensure:")
+                guidance_parts.append("   • No empty placeholders remain")
+                guidance_parts.append("   • All images loaded successfully")
                 guidance_parts.append(
                     f"   • Content is appropriate for the layout ('{layout.name}')"
                 )
@@ -274,7 +274,9 @@ def register_workflow_tools(mcp, manager, template_manager):
 
         except Exception as e:
             logger.error(f"Failed to add slide from template: {e}")
-            from ...models import ErrorResponse; return ErrorResponse(error=str(e)).model_dump_json()
+            from ...models import ErrorResponse
+
+            return ErrorResponse(error=str(e)).model_dump_json()
 
     return {
         "pptx_add_slide_from_template": pptx_add_slide_from_template,

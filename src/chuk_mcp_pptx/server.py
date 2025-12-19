@@ -60,7 +60,9 @@ def _init_artifact_store() -> bool:
         if artifacts_path:
             path_obj = Path(artifacts_path)
             path_obj.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Initializing artifact store with filesystem provider (path: {artifacts_path})")
+            logger.info(
+                f"Initializing artifact store with filesystem provider (path: {artifacts_path})"
+            )
         else:
             logger.warning(
                 "Filesystem provider configured but CHUK_ARTIFACTS_PATH not set. "
@@ -79,7 +81,7 @@ def _init_artifact_store() -> bool:
         }
 
         # Add provider-specific kwargs
-        if provider == "s3":
+        if provider == "s3" and bucket:
             store_kwargs["bucket"] = bucket
         elif provider == "filesystem" and artifacts_path:
             # Note: chuk-artifacts may expect 'bucket' param for filesystem too

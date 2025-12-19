@@ -70,7 +70,13 @@ class CodeBlock(Component):
         return self.hex_to_rgb(hex_color)
 
     def render(
-        self, slide, left: float, top: float, width: float = 6.0, height: float = 3.0, placeholder: Optional[Any] = None
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float = 6.0,
+        height: float = 3.0,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
         Render code block to slide or replace a placeholder.
@@ -165,7 +171,13 @@ class InlineCode(Component):
         self.code = code
 
     def render(
-        self, slide, left: float, top: float, width: Optional[float] = None, height: float = 0.4, placeholder: Optional[Any] = None
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: Optional[float] = None,
+        height: float = 0.4,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """
         Render inline code to slide or replace a placeholder.
@@ -242,7 +254,13 @@ class Terminal(CodeBlock):
         self.prompt = prompt
 
     def render(
-        self, slide, left: float, top: float, width: float = 6.0, height: float = 3.0, placeholder: Optional[Any] = None
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float = 6.0,
+        height: float = 3.0,
+        placeholder: Optional[Any] = None,
     ) -> Any:
         """Render terminal output or replace a placeholder."""
         # If placeholder provided, extract bounds and delete it

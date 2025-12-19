@@ -67,7 +67,7 @@ class TestGaugeChart:
         chart = GaugeChart(value=60, min_value=0, max_value=100, title="Progress")
         result = chart.render(slide)
         assert result is not None
-        assert result.chart_type == XL_CHART_TYPE.DOUGHNUT
+        assert result.chart.chart_type == XL_CHART_TYPE.DOUGHNUT
 
     def test_render_half_full(self, slide):
         """Test rendering at 50%."""
@@ -105,7 +105,7 @@ class TestGaugeChart:
         """Test that gauge hides legend."""
         chart = GaugeChart(value=50)
         result = chart.render(slide)
-        assert result.has_legend is False
+        assert result.chart.has_legend is False
 
     def test_render_applies_colors(self, slide):
         """Test that gauge applies success/muted colors."""

@@ -34,8 +34,8 @@ class TestColumnChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.has_title
-        assert result.chart_title.text_frame.text == "Quarterly Revenue"
+        assert result.chart.has_title
+        assert result.chart.chart_title.text_frame.text == "Quarterly Revenue"
 
     def test_render_multiple_series(self, slide):
         """Test rendering with multiple data series."""
@@ -44,13 +44,13 @@ class TestColumnChartRendering:
             series={"Revenue": [100, 120, 110], "Costs": [80, 90, 85]},
         )
         result = chart.render(slide)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_clustered_variant(self, slide):
         """Test clustered variant rendering."""
         chart = ColumnChart(categories=["A", "B"], series={"S1": [10, 20]}, variant="clustered")
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.COLUMN_CLUSTERED
+        assert result.chart.chart_type == XL_CHART_TYPE.COLUMN_CLUSTERED
 
     def test_render_stacked_variant(self, slide):
         """Test stacked variant rendering."""
@@ -58,7 +58,7 @@ class TestColumnChartRendering:
             categories=["A", "B"], series={"S1": [10, 20], "S2": [5, 10]}, variant="stacked"
         )
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.COLUMN_STACKED
+        assert result.chart.chart_type == XL_CHART_TYPE.COLUMN_STACKED
 
     def test_render_stacked100_variant(self, slide):
         """Test stacked100 variant rendering."""
@@ -66,7 +66,7 @@ class TestColumnChartRendering:
             categories=["A", "B"], series={"S1": [10, 20], "S2": [5, 10]}, variant="stacked100"
         )
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.COLUMN_STACKED_100
+        assert result.chart.chart_type == XL_CHART_TYPE.COLUMN_STACKED_100
 
     def test_render_with_default_style(self, slide):
         """Test rendering with default style."""
@@ -74,7 +74,7 @@ class TestColumnChartRendering:
         result = chart.render(slide)
         assert result is not None
         # Default style shows legend
-        assert result.has_legend
+        assert result.chart.has_legend
 
     def test_render_with_minimal_style(self, slide):
         """Test rendering with minimal style."""
@@ -88,7 +88,7 @@ class TestColumnChartRendering:
         result = chart.render(slide)
         assert result is not None
         # Detailed style shows values on bars
-        assert result.plots[0].has_data_labels
+        assert result.chart.plots[0].has_data_labels
 
     def test_render_custom_position(self, slide):
         """Test rendering at custom position."""
@@ -118,7 +118,7 @@ class TestColumnChartRendering:
         for position in positions:
             chart = ColumnChart(categories=["A"], series={"S1": [10]}, legend=position)
             result = chart.render(slide)
-            assert result.has_legend
+            assert result.chart.has_legend
 
     def test_render_without_legend(self, slide):
         """Test rendering without legend - variant affects legend position."""
@@ -134,7 +134,7 @@ class TestColumnChartRendering:
         chart = ColumnChart(categories=["A"], series={"S1": [10]})
         result = chart.render(slide)
         # Title should not be set
-        assert not result.has_title or result.chart_title.text_frame.text == ""
+        assert not result.chart.has_title or result.chart.chart_title.text_frame.text == ""
 
 
 class TestBarChartRendering:
@@ -160,25 +160,25 @@ class TestBarChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.chart_type == XL_CHART_TYPE.BAR_CLUSTERED
+        assert result.chart.chart_type == XL_CHART_TYPE.BAR_CLUSTERED
 
     def test_render_clustered_variant(self, slide):
         """Test clustered bar chart."""
         chart = BarChart(categories=["A"], series={"S1": [10]}, variant="clustered")
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.BAR_CLUSTERED
+        assert result.chart.chart_type == XL_CHART_TYPE.BAR_CLUSTERED
 
     def test_render_stacked_variant(self, slide):
         """Test stacked bar chart."""
         chart = BarChart(categories=["A"], series={"S1": [10], "S2": [5]}, variant="stacked")
         result = chart.render(slide)
-        assert result.chart_type == XL_CHART_TYPE.BAR_STACKED
+        assert result.chart.chart_type == XL_CHART_TYPE.BAR_STACKED
 
     def test_render_with_multiple_series(self, slide):
         """Test bar chart with multiple series."""
         chart = BarChart(categories=["A", "B"], series={"Q1": [10, 20], "Q2": [15, 25]})
         result = chart.render(slide)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
 
 class TestWaterfallChartRendering:
@@ -204,14 +204,14 @@ class TestWaterfallChartRendering:
         )
         result = chart.render(slide)
         assert result is not None
-        assert result.has_title
+        assert result.chart.has_title
 
     def test_render_positive_negative_values(self, slide):
         """Test waterfall with positive and negative values."""
         chart = WaterfallChart(categories=["A", "B", "C"], values=[100, 50, -30])
         result = chart.render(slide)
         # Should have 2 series (base + values)
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_with_data_labels(self, slide):
         """Test waterfall renders successfully (data labels removed to prevent corruption)."""
@@ -219,7 +219,7 @@ class TestWaterfallChartRendering:
         result = chart.render(slide)
         # Verify chart was created successfully
         assert result is not None
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_colors_positive_negative(self, slide):
         """Test that colors differentiate positive/negative."""
@@ -229,7 +229,7 @@ class TestWaterfallChartRendering:
         result = chart.render(slide)
         # Verify chart was created successfully
         assert result is not None
-        assert len(result.series) == 2
+        assert len(result.chart.series) == 2
 
     def test_render_custom_position_and_size(self, slide):
         """Test waterfall with custom position and size."""
@@ -257,7 +257,7 @@ class TestChartVariantPropsApplication:
         chart = ColumnChart(categories=["A", "B"], series={"S1": [10, 20]}, style="default")
         result = chart.render(slide)
         # Gap width should be applied
-        assert hasattr(result.plots[0], "gap_width")
+        assert hasattr(result.chart.plots[0], "gap_width")
 
     def test_overlap_applied_to_stacked(self, slide):
         """Test overlap is applied to stacked charts."""
@@ -266,14 +266,14 @@ class TestChartVariantPropsApplication:
         )
         result = chart.render(slide)
         # Stacked charts should have overlap
-        if hasattr(result.plots[0], "overlap"):
-            assert result.plots[0].overlap == 100
+        if hasattr(result.chart.plots[0], "overlap"):
+            assert result.chart.plots[0].overlap == 100
 
     def test_data_labels_shown_for_detailed_style(self, slide):
         """Test data labels are shown for detailed style."""
         chart = ColumnChart(categories=["A"], series={"S1": [10]}, style="detailed", legend="none")
         result = chart.render(slide)
-        assert result.plots[0].has_data_labels
+        assert result.chart.plots[0].has_data_labels
 
 
 class TestChartEdgeCases:

@@ -42,7 +42,9 @@ class PresentationMetadata(BaseModel):
     vfs_path: str | None = Field(default=None, description="Artifact URI for storage")
     namespace_id: str | None = Field(default=None, description="Namespace ID in artifact store")
     is_saved: bool = Field(default=False, description="Whether saved to artifact store")
-    template_path: str | None = Field(default=None, description="Path to template file if created from template")
+    template_path: str | None = Field(
+        default=None, description="Path to template file if created from template"
+    )
     slides: list[SlideMetadata] = Field(default_factory=list, description="Metadata for each slide")
 
     class Config:

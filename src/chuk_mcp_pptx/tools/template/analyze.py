@@ -107,7 +107,10 @@ def register_analyze_tools(mcp, manager, template_manager):
                 result = await manager.get(template_name)
                 if not result:
                     from ...models import ErrorResponse
-                    return ErrorResponse(error=f"Template not found: {template_name}").model_dump_json()
+
+                    return ErrorResponse(
+                        error=f"Template not found: {template_name}"
+                    ).model_dump_json()
                 prs, metadata = result
 
             # Analyze layouts
@@ -147,6 +150,7 @@ def register_analyze_tools(mcp, manager, template_manager):
         except Exception as e:
             logger.error(f"Failed to analyze template: {e}")
             from ...models import ErrorResponse
+
             return ErrorResponse(error=str(e)).model_dump_json()
 
     @mcp.tool
@@ -181,7 +185,10 @@ def register_analyze_tools(mcp, manager, template_manager):
                 result = await manager.get(template_name)
                 if not result:
                     from ...models import ErrorResponse
-                    return ErrorResponse(error=f"Template not found: {template_name}").model_dump_json()
+
+                    return ErrorResponse(
+                        error=f"Template not found: {template_name}"
+                    ).model_dump_json()
                 prs, metadata = result
 
             # Analyze layout variants
@@ -191,6 +198,7 @@ def register_analyze_tools(mcp, manager, template_manager):
         except Exception as e:
             logger.error(f"Failed to analyze template variants: {e}")
             from ...models import ErrorResponse
+
             return ErrorResponse(error=str(e)).model_dump_json()
 
     return {

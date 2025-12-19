@@ -87,7 +87,15 @@ class ContentGrid(Component):
         self.item_type = item_type
         self.columns = min(max(columns, 2), 4)  # Clamp to 2-4
 
-    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None):
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ):
         """
         Render content grid using Grid system.
 

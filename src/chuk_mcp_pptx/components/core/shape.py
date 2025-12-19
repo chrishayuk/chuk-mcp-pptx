@@ -143,7 +143,15 @@ class Shape(Component):
         self.line_color = line_color
         self.line_width = line_width
 
-    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> Any:
         """
         Render shape to slide or replace a placeholder.
 

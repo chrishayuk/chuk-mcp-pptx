@@ -107,8 +107,11 @@ class FunnelChart(ChartComponent):
         if bounds is not None:
             left, top, width, height = bounds
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"FunnelChart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+            logger.info(
+                f"FunnelChart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+            )
 
         # Delete placeholder after extracting bounds
         self._delete_placeholder_if_needed(placeholder)
@@ -361,8 +364,11 @@ class GanttChart(ChartComponent):
         if bounds is not None:
             left, top, width, height = bounds
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"GanttChart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+            logger.info(
+                f"GanttChart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+            )
 
         # Delete placeholder after extracting bounds
         self._delete_placeholder_if_needed(placeholder)
@@ -531,8 +537,11 @@ class HeatmapChart(ChartComponent):
         if bounds is not None:
             left, top, width, height = bounds
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"HeatmapChart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+            logger.info(
+                f"HeatmapChart targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+            )
 
         # Delete placeholder after extracting bounds
         self._delete_placeholder_if_needed(placeholder)

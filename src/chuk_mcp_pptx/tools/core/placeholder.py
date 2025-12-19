@@ -168,7 +168,7 @@ def register_placeholder_tools(mcp, manager):
             if isinstance(content, str):
                 # Try to parse as JSON - if it looks like a dict/object
                 content_stripped = content.strip()
-                if content_stripped.startswith('{') and content_stripped.endswith('}'):
+                if content_stripped.startswith("{") and content_stripped.endswith("}"):
                     try:
                         parsed_content = json.loads(content)
                         logger.info(f"Parsed JSON string content into dict: {parsed_content}")
@@ -182,16 +182,18 @@ def register_placeholder_tools(mcp, manager):
             # SMART ROUTING: If content is a dict, handle structured content (tables, charts, images)
             if isinstance(parsed_content, dict):
                 # Extract component type and params
-                component_type = parsed_content.get('type')
+                component_type = parsed_content.get("type")
                 if not component_type:
                     return ErrorResponse(
                         error="Dict content must include 'type' field (e.g., 'Table', 'ColumnChart', 'Image')"
                     ).model_dump_json()
 
                 # Build params dict (everything except 'type')
-                params = {k: v for k, v in parsed_content.items() if k != 'type'}
+                params = {k: v for k, v in parsed_content.items() if k != "type"}
 
-                logger.info(f"Smart routing: Detected structured content for {component_type}, rendering to placeholder {placeholder_idx}")
+                logger.info(
+                    f"Smart routing: Detected structured content for {component_type}, rendering to placeholder {placeholder_idx}"
+                )
 
                 # Get presentation
                 result = await manager.get(presentation)
@@ -238,8 +240,9 @@ def register_placeholder_tools(mcp, manager):
 
                     # Filter params to only include valid parameters for this component
                     import inspect
+
                     sig = inspect.signature(component_class.__init__)
-                    valid_params = set(sig.parameters.keys()) - {'self'}
+                    valid_params = set(sig.parameters.keys()) - {"self"}
 
                     # Filter out invalid params and warn about them
                     filtered_params = {}
@@ -251,7 +254,9 @@ def register_placeholder_tools(mcp, manager):
                             invalid_params.append(key)
 
                     if invalid_params:
-                        logger.warning(f"Ignoring invalid parameters for {component_type}: {invalid_params}")
+                        logger.warning(
+                            f"Ignoring invalid parameters for {component_type}: {invalid_params}"
+                        )
 
                     # Instantiate component with filtered params (validation happens in __init__)
                     component_instance = component_class(**filtered_params)
@@ -269,7 +274,7 @@ def register_placeholder_tools(mcp, manager):
                         top=top,
                         width=width,
                         height=height,
-                        placeholder=placeholder
+                        placeholder=placeholder,
                     )
 
                     # Track component
@@ -291,12 +296,15 @@ def register_placeholder_tools(mcp, manager):
                     await manager.update(presentation)
 
                     from ...models import SuccessResponse
+
                     return SuccessResponse(
                         message=f"Populated placeholder {placeholder_idx} with {component_type} on slide {slide_index}"
                     ).model_dump_json()
 
                 except Exception as e:
-                    logger.error(f"Failed to render {component_type} to placeholder: {e}", exc_info=True)
+                    logger.error(
+                        f"Failed to render {component_type} to placeholder: {e}", exc_info=True
+                    )
                     return ErrorResponse(
                         error=f"Failed to render {component_type}: {str(e)}"
                     ).model_dump_json()
@@ -343,9 +351,9 @@ def register_placeholder_tools(mcp, manager):
 
             # For TITLE (1), SUBTITLE (3), or simple text placeholders
             if placeholder_type in (1, 3):  # TITLE or SUBTITLE
-                if hasattr(placeholder, 'text_frame'):
+                if hasattr(placeholder, "text_frame"):
                     placeholder.text_frame.text = content
-                elif hasattr(placeholder, 'text'):
+                elif hasattr(placeholder, "text"):
                     placeholder.text = content
                 else:
                     return ErrorResponse(
@@ -355,7 +363,7 @@ def register_placeholder_tools(mcp, manager):
 
             # For BODY (2) or OBJECT (7) - content placeholders that can have bullets
             elif placeholder_type in (2, 7):  # BODY or OBJECT
-                if not hasattr(placeholder, 'text_frame'):
+                if not hasattr(placeholder, "text_frame"):
                     return ErrorResponse(
                         error=f"Placeholder {placeholder_idx} does not have a text frame"
                     ).model_dump_json()
@@ -364,7 +372,7 @@ def register_placeholder_tools(mcp, manager):
                 text_frame.clear()  # Clear existing content
 
                 # Split content by newlines to create bullet points
-                lines = content.split('\\n')
+                lines = content.split("\\n")
                 for idx, line in enumerate(lines):
                     if idx == 0:
                         # Use existing first paragraph
@@ -380,15 +388,15 @@ def register_placeholder_tools(mcp, manager):
             elif placeholder_type in (12, 14, 18):  # CHART, TABLE, PICTURE
                 # These placeholders can have text content too (caption, title, etc.)
                 # Try to populate as text if they have a text_frame
-                if hasattr(placeholder, 'text_frame'):
+                if hasattr(placeholder, "text_frame"):
                     text_frame = placeholder.text_frame
                     text_frame.text = content
-                elif hasattr(placeholder, 'text'):
+                elif hasattr(placeholder, "text"):
                     placeholder.text = content
                 else:
                     # Only error if we truly can't add text
-                    type_names = {12: 'CHART', 14: 'TABLE', 18: 'PICTURE'}
-                    type_name = type_names.get(placeholder_type, 'content')
+                    type_names = {12: "CHART", 14: "TABLE", 18: "PICTURE"}
+                    type_name = type_names.get(placeholder_type, "content")
                     return ErrorResponse(
                         error=f"Placeholder {placeholder_idx} is a {type_name} placeholder without text capability. "
                         f"Use dict content: pptx_populate_placeholder(placeholder_idx={placeholder_idx}, "
@@ -398,9 +406,9 @@ def register_placeholder_tools(mcp, manager):
             # Other placeholder types
             else:
                 # Try to populate as text
-                if hasattr(placeholder, 'text_frame'):
+                if hasattr(placeholder, "text_frame"):
                     placeholder.text_frame.text = content
-                elif hasattr(placeholder, 'text'):
+                elif hasattr(placeholder, "text"):
                     placeholder.text = content
                 else:
                     return ErrorResponse(
@@ -414,6 +422,7 @@ def register_placeholder_tools(mcp, manager):
             pres_name = presentation or manager.get_current_name() or "presentation"
 
             from ...models import SuccessResponse
+
             return SuccessResponse(
                 message=f"Populated placeholder {placeholder_idx} on slide {slide_index} in {pres_name}"
             ).model_dump_json()
@@ -421,6 +430,7 @@ def register_placeholder_tools(mcp, manager):
         except Exception as e:
             logger.error(f"Failed to populate placeholder: {e}", exc_info=True)
             from ...models import ErrorResponse
+
             return ErrorResponse(error=str(e)).model_dump_json()
 
     return {

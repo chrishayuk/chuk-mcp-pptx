@@ -6,10 +6,15 @@ Provides async MCP tools for managing and applying themes to presentations.
 Consolidates all theme-related functionality including design tokens.
 """
 
-import asyncio
 import json
 from ...tokens.colors import PALETTE, get_semantic_tokens
-from ...tokens.typography import FONT_FAMILIES, FONT_SIZES, FONT_WEIGHTS, LINE_HEIGHTS, get_text_style
+from ...tokens.typography import (
+    FONT_FAMILIES,
+    FONT_SIZES,
+    FONT_WEIGHTS,
+    LINE_HEIGHTS,
+    get_text_style,
+)
 from ...tokens.spacing import SPACING, PADDING, MARGINS, RADIUS
 
 from ...constants import (
@@ -93,7 +98,6 @@ def register_theme_tools(mcp, manager):
             )
 
         return json.dumps(info, indent=2)
-
 
     @mcp.tool
     async def pptx_create_custom_theme(
@@ -197,7 +201,6 @@ def register_theme_tools(mcp, manager):
             theme_config["warning"] = font_warning
 
         return json.dumps(theme_config, indent=2)
-
 
     @mcp.tool
     async def pptx_apply_theme(
@@ -374,7 +377,6 @@ def register_theme_tools(mcp, manager):
 
         return json.dumps(PALETTE, indent=2)
 
-
     @mcp.tool
     async def pptx_get_semantic_colors(primary_hue: str = "blue", mode: str = "dark") -> str:
         """
@@ -401,7 +403,6 @@ def register_theme_tools(mcp, manager):
         except Exception as e:
             return json.dumps({"error": str(e)}, indent=2)
 
-
     @mcp.tool
     async def pptx_get_typography_tokens() -> str:
         """
@@ -425,7 +426,6 @@ def register_theme_tools(mcp, manager):
             "line_heights": LINE_HEIGHTS,
         }
         return json.dumps(tokens, indent=2)
-
 
     @mcp.tool
     async def pptx_get_text_style(variant: str = "body") -> str:
@@ -453,7 +453,6 @@ def register_theme_tools(mcp, manager):
         except ValueError as e:
             return json.dumps({"error": str(e)}, indent=2)
 
-
     @mcp.tool
     async def pptx_get_spacing_tokens() -> str:
         """
@@ -477,7 +476,6 @@ def register_theme_tools(mcp, manager):
             "radius": RADIUS,
         }
         return json.dumps(tokens, indent=2)
-
 
     @mcp.tool
     async def pptx_get_all_tokens() -> str:
@@ -511,7 +509,6 @@ def register_theme_tools(mcp, manager):
             },
         }
         return json.dumps(tokens, indent=2)
-
 
     # Return all tools
     return {

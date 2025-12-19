@@ -6,11 +6,10 @@ Provides video insertion with poster frames and playback options.
 """
 
 from typing import Optional, Dict, Any
-from pptx.util import Inches, Pt
+from pptx.util import Inches
 from pathlib import Path
 import base64
 import io
-import asyncio
 
 from ..base import Component
 from ..registry import component, ComponentCategory, prop, example
@@ -108,7 +107,9 @@ class Video(Component):
         if not video_source:
             raise ValueError("Video requires 'video_source' (URL or file path)")
         if not isinstance(video_source, str):
-            raise TypeError(f"Video 'video_source' must be a string, got {type(video_source).__name__}")
+            raise TypeError(
+                f"Video 'video_source' must be a string, got {type(video_source).__name__}"
+            )
 
         self.video_source = video_source
         self.poster_image = poster_image

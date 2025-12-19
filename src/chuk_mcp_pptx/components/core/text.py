@@ -129,7 +129,15 @@ class TextBox(Component):
         """Get font family from theme."""
         return self.get_theme_attr("font_family", "Calibri")
 
-    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> Any:
         """
         Render text box to slide or populate a placeholder.
 
@@ -145,7 +153,7 @@ class TextBox(Component):
             Text box shape object
         """
         # Use placeholder if provided, otherwise create new textbox
-        if placeholder is not None and hasattr(placeholder, 'text_frame'):
+        if placeholder is not None and hasattr(placeholder, "text_frame"):
             text_box = placeholder
         else:
             # Delete placeholder if it exists but doesn't have text_frame
@@ -322,7 +330,15 @@ class BulletList(Component):
         """Get font family from theme."""
         return self.get_theme_attr("font_family", "Calibri")
 
-    def render(self, slide, left: float, top: float, width: float, height: float, placeholder: Optional[Any] = None) -> Any:
+    def render(
+        self,
+        slide,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+        placeholder: Optional[Any] = None,
+    ) -> Any:
         """
         Render bullet list to slide or populate a placeholder.
 
@@ -338,7 +354,7 @@ class BulletList(Component):
             Text box shape object
         """
         # Use placeholder if provided, otherwise create new textbox
-        if placeholder is not None and hasattr(placeholder, 'text_frame'):
+        if placeholder is not None and hasattr(placeholder, "text_frame"):
             text_box = placeholder
         else:
             # Delete placeholder if it exists but doesn't have text_frame

@@ -161,7 +161,9 @@ class Image(Component):
         if not image_source:
             raise ValueError("Image requires 'image_source' (URL or file path)")
         if not isinstance(image_source, str):
-            raise TypeError(f"Image 'image_source' must be a string, got {type(image_source).__name__}")
+            raise TypeError(
+                f"Image 'image_source' must be a string, got {type(image_source).__name__}"
+            )
 
         self.image_source = image_source
         self.shadow = shadow
@@ -231,14 +233,17 @@ class Image(Component):
             # Handle HTTP/HTTPS URLs
             if self.image_source.startswith(("http://", "https://")):
                 import urllib.request
+
                 try:
-                    # Download image from URL
-                    with urllib.request.urlopen(self.image_source) as response:
+                    # Download image from URL - scheme already validated above (http/https only)
+                    with urllib.request.urlopen(self.image_source) as response:  # nosec B310
                         image_data = response.read()
                     image_stream = io.BytesIO(image_data)
                     image_source_for_insertion = image_stream
                 except Exception as e:
-                    raise FileNotFoundError(f"Could not download image from URL: {self.image_source}. Error: {str(e)}")
+                    raise FileNotFoundError(
+                        f"Could not download image from URL: {self.image_source}. Error: {str(e)}"
+                    )
 
             # Handle base64 image data
             elif self.image_source.startswith("data:image/"):

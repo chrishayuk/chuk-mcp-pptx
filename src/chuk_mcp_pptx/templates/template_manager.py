@@ -9,7 +9,6 @@ import asyncio
 import io
 import logging
 from pathlib import Path
-from typing import Any
 from pydantic import BaseModel, Field
 from pptx import Presentation
 
@@ -52,9 +51,11 @@ class TemplateManager:
         logger.info(f"Templates directory absolute path: {self.templates_dir.absolute()}")
         if self.templates_dir.exists():
             template_files = list(self.templates_dir.glob("*.pptx"))
-            logger.info(f"Found {len(template_files)} template files: {[f.name for f in template_files]}")
+            logger.info(
+                f"Found {len(template_files)} template files: {[f.name for f in template_files]}"
+            )
         else:
-            logger.error(f"Templates directory does not exist!")
+            logger.error("Templates directory does not exist!")
             logger.error(f"__file__ = {__file__}")
             logger.error(f"Parent directory contents: {list(Path(__file__).parent.iterdir())}")
 
@@ -70,10 +71,11 @@ class TemplateManager:
         # Strategy 2: Use importlib.resources (works for installed packages)
         try:
             import importlib.resources as resources
-            if hasattr(resources, 'files'):
+
+            if hasattr(resources, "files"):
                 # Python 3.9+
-                templates_ref = resources.files('chuk_mcp_pptx') / 'templates' / 'builtin'
-                if hasattr(templates_ref, 'as_posix'):
+                templates_ref = resources.files("chuk_mcp_pptx") / "templates" / "builtin"
+                if hasattr(templates_ref, "as_posix"):
                     templates_dir = Path(str(templates_ref))
                     if templates_dir.exists():
                         return templates_dir
@@ -82,8 +84,9 @@ class TemplateManager:
 
         # Strategy 3: Fallback to package location
         import chuk_mcp_pptx
+
         pkg_dir = Path(chuk_mcp_pptx.__file__).parent
-        templates_dir = pkg_dir / 'templates' / 'builtin'
+        templates_dir = pkg_dir / "templates" / "builtin"
         if templates_dir.exists():
             return templates_dir
 

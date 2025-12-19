@@ -287,6 +287,7 @@ registry = ComponentRegistry()
 
 # Helper functions for universal component API
 
+
 def get_component_class(name: str) -> Type | None:
     """
     Get component class by name from the registry.

@@ -12,7 +12,7 @@ Templates are discovered via decorators and can be:
 All templates use Grid-based positioning (no hardcoded inches).
 """
 
-from .components.registry import (
+from .registry import (
     template,
     TemplateCategory,
     TemplateProp,

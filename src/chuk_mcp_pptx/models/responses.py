@@ -11,6 +11,7 @@ from enum import Enum
 
 class TargetType(str, Enum):
     """Component target types for placement."""
+
     PLACEHOLDER = "placeholder"
     COMPONENT = "component"
     LAYOUT = "layout"
@@ -19,6 +20,7 @@ class TargetType(str, Enum):
 
 class LayoutType(str, Enum):
     """Layout region types."""
+
     GRID = "grid"
     FLEX_ROW = "flex-row"
     FLEX_COLUMN = "flex-column"
@@ -152,7 +154,9 @@ class ComponentTarget(BaseModel):
     """Target information for component placement."""
 
     type: TargetType = Field(..., description="Target type")
-    id: int | str | None = Field(None, description="Target identifier (placeholder idx, component_id, or layout name)")
+    id: int | str | None = Field(
+        None, description="Target identifier (placeholder idx, component_id, or layout name)"
+    )
 
     class Config:
         extra = "forbid"
@@ -192,7 +196,9 @@ class ImageStatus(BaseModel):
     """Status of an image on a slide."""
 
     component_id: str = Field(..., description="Component ID of the image")
-    placeholder_idx: int | None = Field(None, description="Placeholder index if image is in placeholder")
+    placeholder_idx: int | None = Field(
+        None, description="Placeholder index if image is in placeholder"
+    )
     loaded_successfully: bool = Field(..., description="Whether image loaded without errors")
     error_message: str | None = Field(None, description="Error message if image failed to load")
     source: str | None = Field(None, description="Image source (path or URL)")
@@ -204,7 +210,9 @@ class ImageStatus(BaseModel):
 class ValidationWarning(BaseModel):
     """Validation warning for slide content."""
 
-    type: Literal["empty_placeholder", "missing_image", "layout_mismatch"] = Field(..., description="Warning type")
+    type: Literal["empty_placeholder", "missing_image", "layout_mismatch"] = Field(
+        ..., description="Warning type"
+    )
     message: str = Field(..., description="Warning message")
     placeholder_idx: int | None = Field(None, description="Placeholder index if applicable")
     component_id: str | None = Field(None, description="Component ID if applicable")
@@ -219,10 +227,18 @@ class ComponentListResponse(BaseModel):
     slide_index: int = Field(..., description="Slide index", ge=0)
     component_count: int = Field(..., description="Number of components", ge=0)
     components: list[ComponentInfo] = Field(..., description="List of components")
-    placeholders: list[PlaceholderStatus] = Field(default_factory=list, description="Status of all placeholders on slide")
-    images: list[ImageStatus] = Field(default_factory=list, description="Status of all images on slide")
-    warnings: list[ValidationWarning] = Field(default_factory=list, description="Validation warnings for this slide")
-    validation_passed: bool = Field(default=True, description="Whether slide passed all validation checks")
+    placeholders: list[PlaceholderStatus] = Field(
+        default_factory=list, description="Status of all placeholders on slide"
+    )
+    images: list[ImageStatus] = Field(
+        default_factory=list, description="Status of all images on slide"
+    )
+    warnings: list[ValidationWarning] = Field(
+        default_factory=list, description="Validation warnings for this slide"
+    )
+    validation_passed: bool = Field(
+        default=True, description="Whether slide passed all validation checks"
+    )
 
     class Config:
         extra = "forbid"
@@ -336,7 +352,9 @@ class TemplateMetadataResponse(BaseModel):
 class TemplateListResponse(BaseModel):
     """Response model for listing templates."""
 
-    templates: list[TemplateMetadataResponse] = Field(..., description="List of available templates")
+    templates: list[TemplateMetadataResponse] = Field(
+        ..., description="List of available templates"
+    )
     total: int = Field(..., description="Total number of templates", ge=0)
     builtin_count: int = Field(..., description="Number of built-in templates", ge=0)
     custom_count: int = Field(..., description="Number of custom templates", ge=0)

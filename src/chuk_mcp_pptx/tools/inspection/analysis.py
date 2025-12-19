@@ -7,7 +7,6 @@ and making intelligent adjustments to fix positioning issues.
 
 from __future__ import annotations
 
-import asyncio
 from pptx.util import Inches
 from pptx.enum.shapes import MSO_SHAPE_TYPE, PP_PLACEHOLDER
 

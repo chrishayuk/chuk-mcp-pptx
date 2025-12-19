@@ -9,9 +9,6 @@ import logging
 from typing import Any
 from pydantic import BaseModel, Field
 from pptx import Presentation
-from pptx.util import Pt, Inches
-from pptx.enum.text import PP_ALIGN
-from pptx.dml.color import RGBColor
 
 logger = logging.getLogger(__name__)
 
@@ -71,12 +68,8 @@ class ExtractedDesignSystem(BaseModel):
     color_scheme: ExtractedColorScheme | None = Field(
         default=None, description="Extracted color scheme"
     )
-    typography: ExtractedTypography | None = Field(
-        default=None, description="Extracted typography"
-    )
-    layouts: list[ExtractedLayout] = Field(
-        default_factory=list, description="Extracted layouts"
-    )
+    typography: ExtractedTypography | None = Field(default=None, description="Extracted typography")
+    layouts: list[ExtractedLayout] = Field(default_factory=list, description="Extracted layouts")
     theme_name: str | None = Field(default=None, description="Suggested theme name")
 
     class Config:
@@ -85,6 +78,7 @@ class ExtractedDesignSystem(BaseModel):
 
 class PlaceholderUsage(BaseModel):
     """How a placeholder is used in a slide."""
+
     idx: int = Field(..., description="Placeholder index")
     type: str = Field(..., description="Placeholder type")
     name: str = Field(..., description="Placeholder name")
@@ -97,7 +91,9 @@ class PlaceholderUsage(BaseModel):
     font_size: float | None = Field(default=None, description="Font size in points")
     line_count: int = Field(default=0, description="Number of text lines/paragraphs")
     has_overflow: bool = Field(default=False, description="Whether text appears to overflow")
-    recommended_max_chars: int | None = Field(default=None, description="Recommended max characters based on template")
+    recommended_max_chars: int | None = Field(
+        default=None, description="Recommended max characters based on template"
+    )
 
     class Config:
         extra = "forbid"
@@ -105,6 +101,7 @@ class PlaceholderUsage(BaseModel):
 
 class LayoutComparisonResult(BaseModel):
     """Result of comparing template vs generated slide layout usage."""
+
     layout_name: str = Field(..., description="Layout name")
     template_slide_index: int | None = Field(None, description="Template example slide index")
     generated_slide_index: int = Field(..., description="Generated slide index")
@@ -124,11 +121,14 @@ class LayoutComparisonResult(BaseModel):
 
 class LayoutVariant(BaseModel):
     """A variant of a base layout."""
+
     index: int = Field(..., description="Layout index")
     name: str = Field(..., description="Layout name")
     variant_number: int | None = Field(None, description="Variant number if detected from name")
     placeholder_count: int = Field(..., description="Number of placeholders")
-    original_slide_number: int | None = Field(None, description="Original slide number in template (1-indexed)")
+    original_slide_number: int | None = Field(
+        None, description="Original slide number in template (1-indexed)"
+    )
 
     class Config:
         extra = "forbid"
@@ -136,6 +136,7 @@ class LayoutVariant(BaseModel):
 
 class LayoutGroup(BaseModel):
     """Group of similar layouts (base + variants)."""
+
     base_name: str = Field(..., description="Base layout name without variant number")
     base_layout: LayoutVariant = Field(..., description="Primary/base layout")
     variants: list[LayoutVariant] = Field(default_factory=list, description="Layout variants")
@@ -148,10 +149,13 @@ class LayoutGroup(BaseModel):
 
 class LayoutAnalysis(BaseModel):
     """Analysis of template layouts with variant detection."""
+
     total_layouts: int = Field(..., description="Total number of layouts")
     unique_groups: int = Field(..., description="Number of unique layout groups")
     layout_groups: list[LayoutGroup] = Field(default_factory=list, description="Grouped layouts")
-    ungrouped_layouts: list[LayoutVariant] = Field(default_factory=list, description="Layouts that don't fit any group")
+    ungrouped_layouts: list[LayoutVariant] = Field(
+        default_factory=list, description="Layouts that don't fit any group"
+    )
 
     class Config:
         extra = "forbid"
@@ -160,7 +164,7 @@ class LayoutAnalysis(BaseModel):
 def _rgb_to_hex(rgb_color) -> str:
     """Convert RGB color to hex string."""
     try:
-        if hasattr(rgb_color, 'rgb'):
+        if hasattr(rgb_color, "rgb"):
             rgb = rgb_color.rgb
             return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
         return "#000000"
@@ -174,22 +178,22 @@ def _extract_colors_from_theme(theme) -> dict[str, str]:
 
     try:
         # Try to extract theme colors
-        if hasattr(theme, 'color_scheme'):
+        if hasattr(theme, "color_scheme"):
             scheme = theme.color_scheme
 
             # PowerPoint has 12 theme colors
-            if hasattr(scheme, '_element'):
+            if hasattr(scheme, "_element"):
                 color_map = {
-                    'dk1': 'text_primary',
-                    'lt1': 'background_primary',
-                    'dk2': 'text_secondary',
-                    'lt2': 'background_secondary',
-                    'accent1': 'accent1',
-                    'accent2': 'accent2',
-                    'accent3': 'accent3',
-                    'accent4': 'accent4',
-                    'accent5': 'accent5',
-                    'accent6': 'accent6',
+                    "dk1": "text_primary",
+                    "lt1": "background_primary",
+                    "dk2": "text_secondary",
+                    "lt2": "background_secondary",
+                    "accent1": "accent1",
+                    "accent2": "accent2",
+                    "accent3": "accent3",
+                    "accent4": "accent4",
+                    "accent5": "accent5",
+                    "accent6": "accent6",
                 }
 
                 for xml_name, friendly_name in color_map.items():
@@ -197,7 +201,7 @@ def _extract_colors_from_theme(theme) -> dict[str, str]:
                         color_elem = getattr(scheme._element, xml_name, None)
                         if color_elem is not None:
                             # Extract RGB from srgbClr or sysClr
-                            if hasattr(color_elem, 'srgbClr'):
+                            if hasattr(color_elem, "srgbClr"):
                                 rgb_val = color_elem.srgbClr.val
                                 colors[friendly_name] = f"#{rgb_val}"
                     except Exception as e:
@@ -215,9 +219,9 @@ def _extract_colors_from_shapes(slide) -> list[str]:
     try:
         for shape in slide.shapes:
             # Extract fill colors
-            if hasattr(shape, 'fill') and shape.fill:
+            if hasattr(shape, "fill") and shape.fill:
                 try:
-                    if hasattr(shape.fill, 'fore_color'):
+                    if hasattr(shape.fill, "fore_color"):
                         hex_color = _rgb_to_hex(shape.fill.fore_color)
                         if hex_color != "#000000":
                             colors.add(hex_color)
@@ -225,9 +229,9 @@ def _extract_colors_from_shapes(slide) -> list[str]:
                     pass
 
             # Extract line colors
-            if hasattr(shape, 'line') and shape.line:
+            if hasattr(shape, "line") and shape.line:
                 try:
-                    if hasattr(shape.line, 'color'):
+                    if hasattr(shape.line, "color"):
                         hex_color = _rgb_to_hex(shape.line.color)
                         if hex_color != "#000000":
                             colors.add(hex_color)
@@ -235,11 +239,11 @@ def _extract_colors_from_shapes(slide) -> list[str]:
                     pass
 
             # Extract text colors
-            if hasattr(shape, 'text_frame'):
+            if hasattr(shape, "text_frame"):
                 try:
                     for paragraph in shape.text_frame.paragraphs:
                         for run in paragraph.runs:
-                            if hasattr(run.font, 'color') and run.font.color:
+                            if hasattr(run.font, "color") and run.font.color:
                                 hex_color = _rgb_to_hex(run.font.color)
                                 if hex_color != "#000000":
                                     colors.add(hex_color)
@@ -254,12 +258,12 @@ def _extract_colors_from_shapes(slide) -> list[str]:
 def _extract_typography_from_master(master) -> dict[str, Any]:
     """Extract typography settings from slide master."""
     typography = {
-        'title_font': 'Calibri',
-        'title_size': 44.0,
-        'body_font': 'Calibri',
-        'body_size': 18.0,
-        'heading_font': None,
-        'heading_size': None,
+        "title_font": "Calibri",
+        "title_size": 44.0,
+        "body_font": "Calibri",
+        "body_size": 18.0,
+        "heading_font": None,
+        "heading_size": None,
     }
 
     try:
@@ -270,25 +274,25 @@ def _extract_typography_from_master(master) -> dict[str, Any]:
 
                 # Title placeholder
                 if ph_type == 1:  # TITLE
-                    if hasattr(shape, 'text_frame') and shape.text_frame.paragraphs:
+                    if hasattr(shape, "text_frame") and shape.text_frame.paragraphs:
                         para = shape.text_frame.paragraphs[0]
                         if para.runs:
                             run = para.runs[0]
                             if run.font.name:
-                                typography['title_font'] = run.font.name
+                                typography["title_font"] = run.font.name
                             if run.font.size:
-                                typography['title_size'] = run.font.size.pt
+                                typography["title_size"] = run.font.size.pt
 
                 # Body placeholder
                 elif ph_type == 2:  # BODY
-                    if hasattr(shape, 'text_frame') and shape.text_frame.paragraphs:
+                    if hasattr(shape, "text_frame") and shape.text_frame.paragraphs:
                         para = shape.text_frame.paragraphs[0]
                         if para.runs:
                             run = para.runs[0]
                             if run.font.name:
-                                typography['body_font'] = run.font.name
+                                typography["body_font"] = run.font.name
                             if run.font.size:
-                                typography['body_size'] = run.font.size.pt
+                                typography["body_size"] = run.font.size.pt
     except Exception as e:
         logger.warning(f"Error extracting typography: {e}")
 
@@ -318,9 +322,9 @@ async def extract_design_system_from_template(manager, template_name: str) -> Ex
 
     try:
         # Try to extract from theme
-        if hasattr(prs, 'slide_master') and prs.slide_master:
+        if hasattr(prs, "slide_master") and prs.slide_master:
             master = prs.slide_master
-            if hasattr(master, 'theme'):
+            if hasattr(master, "theme"):
                 theme_colors = _extract_colors_from_theme(master.theme)
 
         # Also extract colors from actual slides
@@ -339,27 +343,33 @@ async def extract_design_system_from_template(manager, template_name: str) -> Ex
     if theme_colors or additional_colors:
         color_scheme = ExtractedColorScheme(
             name=f"{template_name}_colors",
-            primary=theme_colors.get('accent1', additional_colors[0] if additional_colors else "#0066CC"),
-            secondary=theme_colors.get('accent2', additional_colors[1] if len(additional_colors) > 1 else "#6C757D"),
-            accent=theme_colors.get('accent3', additional_colors[2] if len(additional_colors) > 2 else "#28A745"),
-            background=theme_colors.get('background_primary', "#FFFFFF"),
-            text=theme_colors.get('text_primary', "#000000"),
+            primary=theme_colors.get(
+                "accent1", additional_colors[0] if additional_colors else "#0066CC"
+            ),
+            secondary=theme_colors.get(
+                "accent2", additional_colors[1] if len(additional_colors) > 1 else "#6C757D"
+            ),
+            accent=theme_colors.get(
+                "accent3", additional_colors[2] if len(additional_colors) > 2 else "#28A745"
+            ),
+            background=theme_colors.get("background_primary", "#FFFFFF"),
+            text=theme_colors.get("text_primary", "#000000"),
             additional_colors=additional_colors[:10],  # Limit to 10 additional colors
         )
 
     # Extract typography
     typography = None
     try:
-        if hasattr(prs, 'slide_master') and prs.slide_master:
+        if hasattr(prs, "slide_master") and prs.slide_master:
             typo_data = _extract_typography_from_master(prs.slide_master)
             typography = ExtractedTypography(
                 name=f"{template_name}_typography",
-                title_font=typo_data['title_font'],
-                title_size=typo_data['title_size'],
-                body_font=typo_data['body_font'],
-                body_size=typo_data['body_size'],
-                heading_font=typo_data.get('heading_font'),
-                heading_size=typo_data.get('heading_size'),
+                title_font=typo_data["title_font"],
+                title_size=typo_data["title_size"],
+                body_font=typo_data["body_font"],
+                body_size=typo_data["body_size"],
+                heading_font=typo_data.get("heading_font"),
+                heading_size=typo_data.get("heading_size"),
             )
     except Exception as e:
         logger.warning(f"Error extracting typography: {e}")
@@ -373,13 +383,13 @@ async def extract_design_system_from_template(manager, template_name: str) -> Ex
                 for ph in layout.placeholders:
                     try:
                         ph_info = {
-                            'idx': ph.placeholder_format.idx,
-                            'type': str(ph.placeholder_format.type),
-                            'name': ph.name,
-                            'left': ph.left.inches if hasattr(ph, 'left') else 0,
-                            'top': ph.top.inches if hasattr(ph, 'top') else 0,
-                            'width': ph.width.inches if hasattr(ph, 'width') else 0,
-                            'height': ph.height.inches if hasattr(ph, 'height') else 0,
+                            "idx": ph.placeholder_format.idx,
+                            "type": str(ph.placeholder_format.type),
+                            "name": ph.name,
+                            "left": ph.left.inches if hasattr(ph, "left") else 0,
+                            "top": ph.top.inches if hasattr(ph, "top") else 0,
+                            "width": ph.width.inches if hasattr(ph, "width") else 0,
+                            "height": ph.height.inches if hasattr(ph, "height") else 0,
                         }
                         placeholders.append(ph_info)
                     except Exception:
@@ -388,22 +398,24 @@ async def extract_design_system_from_template(manager, template_name: str) -> Ex
                 # Determine background type
                 bg_type = "solid"
                 try:
-                    if hasattr(layout, 'background'):
+                    if hasattr(layout, "background"):
                         bg = layout.background
-                        if hasattr(bg, 'fill') and bg.fill:
-                            if hasattr(bg.fill, 'type'):
+                        if hasattr(bg, "fill") and bg.fill:
+                            if hasattr(bg.fill, "type"):
                                 bg_type = str(bg.fill.type).lower()
                 except Exception:
                     pass
 
-                layouts.append(ExtractedLayout(
-                    name=layout.name,
-                    index=idx,
-                    width=prs.slide_width.inches,
-                    height=prs.slide_height.inches,
-                    placeholders=placeholders,
-                    background_type=bg_type,
-                ))
+                layouts.append(
+                    ExtractedLayout(
+                        name=layout.name,
+                        index=idx,
+                        width=prs.slide_width.inches,
+                        height=prs.slide_height.inches,
+                        placeholders=placeholders,
+                        background_type=bg_type,
+                    )
+                )
     except Exception as e:
         logger.warning(f"Error extracting layouts: {e}")
 
@@ -438,7 +450,7 @@ def analyze_layout_variants(prs: Presentation) -> LayoutAnalysis:
     for idx, layout in enumerate(prs.slide_layouts):
         # Extract variant number from name if present
         # Patterns: "Layout 2", "Layout Name 3", etc.
-        match = re.search(r'^(.+?)\s+(\d+)$', layout.name)
+        match = re.search(r"^(.+?)\s+(\d+)$", layout.name)
         if match:
             base_name = match.group(1)
             variant_num = int(match.group(2))
@@ -453,19 +465,21 @@ def analyze_layout_variants(prs: Presentation) -> LayoutAnalysis:
                 original_slide_num = slide_idx + 1
                 break
 
-        all_layouts.append(LayoutVariant(
-            index=idx,
-            name=layout.name,
-            variant_number=variant_num,
-            placeholder_count=len(layout.placeholders),
-            original_slide_number=original_slide_num,
-        ))
+        all_layouts.append(
+            LayoutVariant(
+                index=idx,
+                name=layout.name,
+                variant_number=variant_num,
+                placeholder_count=len(layout.placeholders),
+                original_slide_number=original_slide_num,
+            )
+        )
 
     # Group by base name
     groups_by_name = defaultdict(list)
     for layout in all_layouts:
         # Extract base name (remove trailing numbers)
-        match = re.search(r'^(.+?)\s+\d+$', layout.name)
+        match = re.search(r"^(.+?)\s+\d+$", layout.name)
         base_name = match.group(1) if match else layout.name
         groups_by_name[base_name].append(layout)
 
@@ -485,13 +499,15 @@ def analyze_layout_variants(prs: Presentation) -> LayoutAnalysis:
             # Create placeholder signature based on count
             placeholder_sig = f"{base_layout.placeholder_count} placeholders"
 
-            layout_groups.append(LayoutGroup(
-                base_name=base_name,
-                base_layout=base_layout,
-                variants=variants,
-                total_count=len(layouts_in_group),
-                placeholder_signature=placeholder_sig,
-            ))
+            layout_groups.append(
+                LayoutGroup(
+                    base_name=base_name,
+                    base_layout=base_layout,
+                    variants=variants,
+                    total_count=len(layouts_in_group),
+                    placeholder_signature=placeholder_sig,
+                )
+            )
         else:
             # Single layout - ungrouped
             ungrouped_layouts.append(layouts_in_group[0])
@@ -540,13 +556,13 @@ def register_extraction_tools(mcp, manager, theme_manager):
             return design_system.model_dump_json()
         except Exception as e:
             logger.error(f"Failed to extract design system: {e}")
-            from ...models import ErrorResponse; return ErrorResponse(error=str(e)).model_dump_json()
+            from ...models import ErrorResponse
+
+            return ErrorResponse(error=str(e)).model_dump_json()
 
     @mcp.tool
     async def pptx_register_template_as_theme(
-        template_name: str,
-        theme_name: str,
-        apply_to_current: bool = False
+        template_name: str, theme_name: str, apply_to_current: bool = False
     ) -> str:
         """
         Extract a template's design system and register it as a reusable theme.
@@ -576,45 +592,41 @@ def register_extraction_tools(mcp, manager, theme_manager):
             if not design_system.color_scheme:
                 return '{"error": "No color scheme could be extracted from template"}'
 
-            # Create theme configuration
+            # Create theme from template colors
             from ...themes import Theme
 
             colors = design_system.color_scheme
-            theme_config = {
-                'name': theme_name,
-                'mode': 'light',
-                'colors': {
-                    'primary': colors.primary,
-                    'secondary': colors.secondary,
-                    'accent': colors.accent,
-                    'background': colors.background,
-                    'text': colors.text,
-                },
-            }
 
-            # Add typography if available
+            # Determine font family from typography if available
+            font_family = "Inter"
             if design_system.typography:
-                typo = design_system.typography
-                theme_config['typography'] = {
-                    'heading': {
-                        'font_family': typo.title_font,
-                        'font_size': typo.title_size,
-                    },
-                    'body': {
-                        'font_family': typo.body_font,
-                        'font_size': typo.body_size,
-                    },
-                }
+                font_family = design_system.typography.body_font or "Inter"
 
-            # Register theme
-            theme = Theme(**theme_config)
+            # Create theme with the proper constructor
+            # The Theme class uses primary_hue and mode to generate tokens
+            # For template-extracted colors, we use "blue" as base and customize
+            theme = Theme(
+                name=theme_name,
+                primary_hue="blue",
+                mode="light",
+                font_family=font_family,
+            )
             theme_manager.register_custom_theme(theme_name, theme)
 
+            # Store extracted color info for reporting
+            theme_colors = {
+                "primary": colors.primary,
+                "secondary": colors.secondary,
+                "accent": colors.accent,
+                "background": colors.background,
+                "text": colors.text,
+            }
+
             result = {
-                'message': f'Theme "{theme_name}" registered from template "{template_name}"',
-                'theme_name': theme_name,
-                'colors': theme_config['colors'],
-                'layout_count': len(design_system.layouts),
+                "message": f'Theme "{theme_name}" registered from template "{template_name}"',
+                "theme_name": theme_name,
+                "colors": theme_colors,
+                "layout_count": len(design_system.layouts),
             }
 
             # Apply to current presentation if requested
@@ -623,15 +635,19 @@ def register_extraction_tools(mcp, manager, theme_manager):
                 if current_name:
                     pres_result = await manager.get(current_name)
                     if pres_result:
-                        prs, metadata = pres_result
-                        theme.apply_to_presentation(prs)
+                        prs, _metadata = pres_result
+                        # Apply theme to each slide
+                        for slide in prs.slides:
+                            theme.apply_to_slide(slide)
                         await manager._save_to_store(current_name, prs)
-                        result['applied_to'] = current_name
+                        result["applied_to"] = current_name
 
-            return f'{result}'
+            return f"{result}"
         except Exception as e:
             logger.error(f"Failed to register theme from template: {e}")
-            from ...models import ErrorResponse; return ErrorResponse(error=str(e)).model_dump_json()
+            from ...models import ErrorResponse
+
+            return ErrorResponse(error=str(e)).model_dump_json()
 
     @mcp.tool
     async def pptx_extract_template_colors(template_name: str) -> str:
@@ -659,7 +675,9 @@ def register_extraction_tools(mcp, manager, theme_manager):
             return design_system.color_scheme.model_dump_json()
         except Exception as e:
             logger.error(f"Failed to extract colors: {e}")
-            from ...models import ErrorResponse; return ErrorResponse(error=str(e)).model_dump_json()
+            from ...models import ErrorResponse
+
+            return ErrorResponse(error=str(e)).model_dump_json()
 
     @mcp.tool
     async def pptx_extract_template_typography(template_name: str) -> str:
@@ -686,7 +704,9 @@ def register_extraction_tools(mcp, manager, theme_manager):
             return design_system.typography.model_dump_json()
         except Exception as e:
             logger.error(f"Failed to extract typography: {e}")
-            from ...models import ErrorResponse; return ErrorResponse(error=str(e)).model_dump_json()
+            from ...models import ErrorResponse
+
+            return ErrorResponse(error=str(e)).model_dump_json()
 
     @mcp.tool
     async def pptx_compare_slide_to_template(
@@ -722,12 +742,16 @@ def register_extraction_tools(mcp, manager, theme_manager):
             # Get generated presentation
             result = await manager.get(presentation)
             if not result:
-                from ...models import ErrorResponse; return ErrorResponse(error=f"Presentation not found: {presentation}").model_dump_json()
+                from ...models import ErrorResponse
+            return ErrorResponse(error=f"Presentation not found: {presentation}").model_dump_json()
 
             gen_prs, _ = result
 
             if slide_index >= len(gen_prs.slides):
-                from ...models import ErrorResponse; return ErrorResponse(error=f"Slide index {slide_index} out of range (max {len(gen_prs.slides)-1})").model_dump_json()
+                from ...models import ErrorResponse
+            return ErrorResponse(
+                error=f"Slide index {slide_index} out of range (max {len(gen_prs.slides) - 1})"
+            ).model_dump_json()
 
             gen_slide = gen_prs.slides[slide_index]
             layout_name = gen_slide.slide_layout.name
@@ -735,7 +759,8 @@ def register_extraction_tools(mcp, manager, theme_manager):
             # Get template presentation
             template_result = await manager.get(template_name)
             if not template_result:
-                from ...models import ErrorResponse; return ErrorResponse(error=f"Template not found: {template_name}").model_dump_json()
+                from ...models import ErrorResponse
+            return ErrorResponse(error=f"Template not found: {template_name}").model_dump_json()
 
             template_prs, _ = template_result
 
@@ -759,15 +784,17 @@ def register_extraction_tools(mcp, manager, theme_manager):
             for shape in gen_slide.shapes:
                 if hasattr(shape, "placeholder_format"):
                     text = shape.text.strip() if hasattr(shape, "text") else ""
-                    gen_usage.append(PlaceholderUsage(
-                        idx=shape.placeholder_format.idx,
-                        type=str(shape.placeholder_format.type),
-                        name=shape.name,
-                        text=text[:100],  # Limit to 100 chars
-                        text_length=len(text),
-                        top=shape.top,
-                        left=shape.left,
-                    ))
+                    gen_usage.append(
+                        PlaceholderUsage(
+                            idx=shape.placeholder_format.idx,
+                            type=str(shape.placeholder_format.type),
+                            name=shape.name,
+                            text=text[:100],  # Limit to 100 chars
+                            text_length=len(text),
+                            top=shape.top,
+                            left=shape.left,
+                        )
+                    )
 
             # Extract placeholder usage from template slide
             template_usage = []
@@ -775,15 +802,17 @@ def register_extraction_tools(mcp, manager, theme_manager):
                 for shape in template_slide.shapes:
                     if hasattr(shape, "placeholder_format"):
                         text = shape.text.strip() if hasattr(shape, "text") else ""
-                        template_usage.append(PlaceholderUsage(
-                            idx=shape.placeholder_format.idx,
-                            type=str(shape.placeholder_format.type),
-                            name=shape.name,
-                            text=text[:100],
-                            text_length=len(text),
-                            top=shape.top,
-                            left=shape.left,
-                        ))
+                        template_usage.append(
+                            PlaceholderUsage(
+                                idx=shape.placeholder_format.idx,
+                                type=str(shape.placeholder_format.type),
+                                name=shape.name,
+                                text=text[:100],
+                                text_length=len(text),
+                                top=shape.top,
+                                left=shape.left,
+                            )
+                        )
 
             # Compare and find issues
             issues = []
@@ -811,7 +840,7 @@ def register_extraction_tools(mcp, manager, theme_manager):
                                     f"but generated has long content ({gen_ph.text_length} chars)"
                                 )
                                 suggestions.append(
-                                    f"In template, placeholder {ph_idx} contains: \"{template_ph.text}\" "
+                                    f'In template, placeholder {ph_idx} contains: "{template_ph.text}" '
                                     f"(short/impactful). Consider using brief text here."
                                 )
 
@@ -835,7 +864,7 @@ def register_extraction_tools(mcp, manager, theme_manager):
                                 f"Placeholder {ph_idx} ({template_ph.name}) is used in template but empty in generated slide"
                             )
                             suggestions.append(
-                                f"Template uses placeholder {ph_idx} for: \"{template_ph.text}\""
+                                f'Template uses placeholder {ph_idx} for: "{template_ph.text}"'
                             )
 
                 # Check for placeholders used in generated but not template
@@ -861,7 +890,9 @@ def register_extraction_tools(mcp, manager, theme_manager):
         except Exception as e:
             logger.error(f"Failed to compare slide to template: {e}")
             import traceback
-            from ...models import ErrorResponse; return ErrorResponse(error=f"{str(e)} - {traceback.format_exc()}").model_dump_json()
+            from ...models import ErrorResponse
+
+            return ErrorResponse(error=f"{str(e)} - {traceback.format_exc()}").model_dump_json()
 
     return {
         "pptx_extract_template_design_system": pptx_extract_template_design_system,

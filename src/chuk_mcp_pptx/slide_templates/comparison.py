@@ -7,7 +7,7 @@ Provides templates for side-by-side comparisons.
 from typing import List, Dict, Any, Optional
 
 from .base import SlideTemplate
-from .components.registry import template, TemplateCategory, TemplateProp
+from .registry import template, TemplateCategory, TemplateProp
 
 
 @template(

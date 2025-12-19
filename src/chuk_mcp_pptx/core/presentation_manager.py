@@ -349,6 +349,7 @@ class PresentationManager:
         if template_name:
             # First check builtin templates via TemplateManager
             from ..templates import TemplateManager
+
             template_manager = TemplateManager()
             template_data = await template_manager.get_template_data(template_name)
 
@@ -365,7 +366,9 @@ class PresentationManager:
                     rId = prs.slides._sldIdLst[slide_idx].rId
                     prs.part.drop_rel(rId)
                     del prs.slides._sldIdLst[slide_idx]
-                logger.info(f"Removed {len(slide_ids_to_remove)} template slides, keeping only layouts")
+                logger.info(
+                    f"Removed {len(slide_ids_to_remove)} template slides, keeping only layouts"
+                )
             else:
                 # Fallback to artifact store template
                 template_data = await self._load_template_from_store(template_name)
@@ -373,7 +376,9 @@ class PresentationManager:
                     # Create presentation from template bytes
                     buffer = io.BytesIO(template_data)
                     prs = await asyncio.to_thread(Presentation, buffer)
-                    logger.info(f"Created presentation from artifact store template: {template_name}")
+                    logger.info(
+                        f"Created presentation from artifact store template: {template_name}"
+                    )
 
                     # Remove all existing slides from the template - we only want the layouts/master
                     slide_ids_to_remove = list(range(len(prs.slides) - 1, -1, -1))
@@ -381,10 +386,14 @@ class PresentationManager:
                         rId = prs.slides._sldIdLst[slide_idx].rId
                         prs.part.drop_rel(rId)
                         del prs.slides._sldIdLst[slide_idx]
-                    logger.info(f"Removed {len(slide_ids_to_remove)} template slides, keeping only layouts")
+                    logger.info(
+                        f"Removed {len(slide_ids_to_remove)} template slides, keeping only layouts"
+                    )
                 else:
                     # Fallback to blank presentation if template not found
-                    logger.warning(f"Template {template_name} not found in builtin or artifact store, creating blank presentation")
+                    logger.warning(
+                        f"Template {template_name} not found in builtin or artifact store, creating blank presentation"
+                    )
                     prs = Presentation()
         else:
             # Create blank presentation
@@ -401,7 +410,9 @@ class PresentationManager:
                 if store:
                     try:
                         await store.delete_namespace(old_namespace_id)
-                        logger.info(f"Deleted old artifact for presentation '{name}' ({old_namespace_id})")
+                        logger.info(
+                            f"Deleted old artifact for presentation '{name}' ({old_namespace_id})"
+                        )
                     except Exception as e:
                         logger.warning(f"Could not delete old artifact: {e}")
                 # Remove from namespace tracking
@@ -754,14 +765,14 @@ class PresentationManager:
                 try:
                     if hasattr(shape, "has_chart") and shape.has_chart:
                         slide_meta.has_chart = True
-                except:
+                except Exception:
                     pass
 
                 # Check for tables - has_table raises exception on non-table shapes
                 try:
                     if hasattr(shape, "has_table") and shape.has_table:
                         slide_meta.has_table = True
-                except:
+                except Exception:
                     pass
 
                 # Check for images by shape type
@@ -828,7 +839,9 @@ class PresentationManager:
             )
             self._metadata[name] = metadata
 
-            logger.info(f"Imported presentation: {name}" + (" (as template)" if as_template else ""))
+            logger.info(
+                f"Imported presentation: {name}" + (" (as template)" if as_template else "")
+            )
             return True
         except Exception as e:
             logger.error(f"Failed to import from base64: {e}")

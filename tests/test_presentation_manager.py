@@ -249,8 +249,8 @@ class TestGetPresentation:
         assert "test" in manager._metadata
 
 
-class TestGetPresentationSync:
-    """Tests for synchronous presentation retrieval."""
+class TestGetPresentationAsync:
+    """Tests for async presentation retrieval."""
 
     @pytest.mark.asyncio
     async def test_get_presentation_exists(self) -> None:
@@ -258,14 +258,14 @@ class TestGetPresentationSync:
         manager = PresentationManager()
         await manager.create(name="test")
 
-        prs = manager.get_presentation(name="test")
+        prs = await manager.get_presentation(name="test")
         assert prs is not None
 
     @pytest.mark.asyncio
     async def test_get_presentation_not_exists(self) -> None:
         """Test getting presentation object when it doesn't exist."""
         manager = PresentationManager()
-        prs = manager.get_presentation(name="nonexistent")
+        prs = await manager.get_presentation(name="nonexistent")
         assert prs is None
 
     @pytest.mark.asyncio
@@ -274,13 +274,14 @@ class TestGetPresentationSync:
         manager = PresentationManager()
         await manager.create(name="test")
 
-        prs = manager.get_presentation()
+        prs = await manager.get_presentation()
         assert prs is not None
 
-    def test_get_presentation_no_current(self) -> None:
+    @pytest.mark.asyncio
+    async def test_get_presentation_no_current(self) -> None:
         """Test getting presentation when no current is set."""
         manager = PresentationManager()
-        prs = manager.get_presentation()
+        prs = await manager.get_presentation()
         assert prs is None
 
 
@@ -293,7 +294,7 @@ class TestGetMetadata:
         manager = PresentationManager()
         await manager.create(name="test")
 
-        metadata = manager.get_metadata(name="test")
+        metadata = await manager.get_metadata(name="test")
         assert metadata is not None
         assert isinstance(metadata, PresentationMetadata)
         assert metadata.name == "test"
@@ -302,7 +303,7 @@ class TestGetMetadata:
     async def test_get_metadata_not_exists(self) -> None:
         """Test getting metadata when it doesn't exist."""
         manager = PresentationManager()
-        metadata = manager.get_metadata(name="nonexistent")
+        metadata = await manager.get_metadata(name="nonexistent")
         assert metadata is None
 
     @pytest.mark.asyncio
@@ -311,14 +312,15 @@ class TestGetMetadata:
         manager = PresentationManager()
         await manager.create(name="test")
 
-        metadata = manager.get_metadata()
+        metadata = await manager.get_metadata()
         assert metadata is not None
         assert metadata.name == "test"
 
-    def test_get_metadata_no_current(self) -> None:
+    @pytest.mark.asyncio
+    async def test_get_metadata_no_current(self) -> None:
         """Test getting metadata when no current is set."""
         manager = PresentationManager()
-        metadata = manager.get_metadata()
+        metadata = await manager.get_metadata()
         assert metadata is None
 
 
@@ -545,7 +547,7 @@ class TestUpdateSlideMetadata:
         prs = manager._presentations["test"]
         prs.slides.add_slide(prs.slide_layouts[0])
 
-        manager.update_slide_metadata(slide_index=0)
+        await manager.update_slide_metadata(slide_index=0)
 
         metadata = manager._metadata["test"]
         assert len(metadata.slides) >= 1
@@ -556,7 +558,7 @@ class TestUpdateSlideMetadata:
         """Test slide metadata update with no current presentation."""
         manager = PresentationManager()
         # Should not raise
-        manager.update_slide_metadata(slide_index=0)
+        await manager.update_slide_metadata(slide_index=0)
 
     @pytest.mark.asyncio
     async def test_update_slide_metadata_expands_list(self) -> None:
@@ -569,7 +571,7 @@ class TestUpdateSlideMetadata:
         for _ in range(3):
             prs.slides.add_slide(prs.slide_layouts[0])
 
-        manager.update_slide_metadata(slide_index=2)
+        await manager.update_slide_metadata(slide_index=2)
 
         metadata = manager._metadata["test"]
         assert len(metadata.slides) >= 3
@@ -784,7 +786,6 @@ class TestArtifactStoreIntegration:
         import io
 
         manager = PresentationManager()
-        manager._namespace_ids["stored_pres"] = "ns-stored-789"
 
         # Create actual PPTX data
         prs = PptxPresentation()
@@ -793,7 +794,13 @@ class TestArtifactStoreIntegration:
         buffer.seek(0)
         pptx_data = buffer.read()
 
+        # Create mock namespace info
+        mock_ns_info = MagicMock()
+        mock_ns_info.name = "presentations/stored_pres"
+        mock_ns_info.namespace_id = "ns-stored-789"
+
         mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(return_value=[mock_ns_info])
         mock_store.read_namespace = AsyncMock(return_value=pptx_data)
 
         with patch.object(manager, "_get_store", return_value=mock_store):
@@ -886,7 +893,6 @@ class TestArtifactStoreIntegration:
         import io
 
         manager = PresentationManager()
-        manager._namespace_ids["external_pres"] = "ns-external-444"
 
         # Create actual PPTX data
         prs = PptxPresentation()
@@ -895,7 +901,13 @@ class TestArtifactStoreIntegration:
         buffer.seek(0)
         pptx_data = buffer.read()
 
+        # Create mock namespace info
+        mock_ns_info = MagicMock()
+        mock_ns_info.name = "presentations/external_pres"
+        mock_ns_info.namespace_id = "ns-external-444"
+
         mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(return_value=[mock_ns_info])
         mock_store.read_namespace = AsyncMock(return_value=pptx_data)
 
         with patch.object(manager, "_get_store", return_value=mock_store):
@@ -935,8 +947,9 @@ class TestEdgeCases:
         assert before <= metadata.created_at <= after
         assert before <= metadata.modified_at <= after
 
-    def test_presentation_not_in_metadata(self) -> None:
-        """Test handling when presentation exists but metadata doesn't."""
+    @pytest.mark.asyncio
+    async def test_presentation_not_in_metadata(self) -> None:
+        """Test handling when presentation exists but metadata doesn't - should create metadata."""
         manager = PresentationManager()
         # This shouldn't happen normally, but test the handling
         from pptx import Presentation
@@ -944,9 +957,10 @@ class TestEdgeCases:
         manager._presentations["orphan"] = Presentation()
         manager._current_presentation = "orphan"
 
-        # get_metadata should return None
-        metadata = manager.get_metadata(name="orphan")
-        assert metadata is None
+        # get_metadata should now create metadata if presentation exists
+        metadata = await manager.get_metadata(name="orphan")
+        assert metadata is not None  # Metadata is created for existing presentations
+        assert metadata.name == "orphan"
 
     @pytest.mark.asyncio
     async def test_slide_metadata_index_bounds(self) -> None:
@@ -955,7 +969,7 @@ class TestEdgeCases:
         await manager.create(name="test")
 
         # Update with high index - should expand list
-        manager.update_slide_metadata(slide_index=10)
+        await manager.update_slide_metadata(slide_index=10)
 
         metadata = manager._metadata["test"]
         # List should be expanded but slide won't exist

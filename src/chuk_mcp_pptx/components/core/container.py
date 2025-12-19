@@ -71,7 +71,13 @@ class Container(Component):
         self.padding = padding
         self.center = center
 
-    def render(self, slide, top: float = 0, height: Optional[float] = None, placeholder: Optional[Any] = None):
+    def render(
+        self,
+        slide,
+        top: float = 0,
+        height: Optional[float] = None,
+        placeholder: Optional[Any] = None,
+    ):
         """
         Render container and return its bounds.
 
@@ -95,7 +101,9 @@ class Container(Component):
         # Delete placeholder after extracting bounds
         self._delete_placeholder_if_needed(placeholder)
 
-        container_width = width if width is not None else CONTAINERS.get(self.size, CONTAINERS["lg"])
+        container_width = (
+            width if width is not None else CONTAINERS.get(self.size, CONTAINERS["lg"])
+        )
         padding_value = PADDING.get(self.padding, PADDING["md"])
 
         # Center horizontally if requested (only if not using placeholder bounds)

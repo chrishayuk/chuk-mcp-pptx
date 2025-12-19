@@ -215,8 +215,11 @@ class Card(ComposableComponent):
         if bounds is not None:
             left, top, width, height = bounds
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"Card targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+            logger.info(
+                f"Card targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+            )
 
         # Delete placeholder after extracting bounds
         self._delete_placeholder_if_needed(placeholder)
@@ -295,7 +298,7 @@ class Card(ComposableComponent):
         # Note: PowerPoint rounded rectangles have built-in radius, but we can adjust
         try:
             # Attempt to set corner radius if shape supports it
-            if hasattr(shape, 'adjustments') and len(shape.adjustments) > 0:
+            if hasattr(shape, "adjustments") and len(shape.adjustments) > 0:
                 radius = self.get_border_radius("md")
                 # Convert points to adjustment value (0-1 scale)
                 shape.adjustments[0] = min(0.5, radius / 100)
@@ -440,8 +443,11 @@ class MetricCard(Card):
         if bounds is not None:
             left, top, width, height = bounds
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"MetricCard targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})")
+            logger.info(
+                f"MetricCard targeting placeholder - using bounds: ({left:.2f}, {top:.2f}, {width:.2f}, {height:.2f})"
+            )
 
         # Delete placeholder after extracting bounds
         self._delete_placeholder_if_needed(placeholder)

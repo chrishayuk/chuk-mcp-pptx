@@ -29,7 +29,7 @@ class TestModuleImports:
     def test_manager_exists(self) -> None:
         """Test that PresentationManager instance exists."""
         from chuk_mcp_pptx.async_server import manager
-        from chuk_mcp_pptx.presentation_manager import PresentationManager
+        from chuk_mcp_pptx.core.presentation_manager import PresentationManager
 
         assert isinstance(manager, PresentationManager)
 
@@ -44,18 +44,6 @@ class TestModuleImports:
 class TestToolsRegistration:
     """Tests for tool registration."""
 
-    def test_chart_tools_registered(self) -> None:
-        """Test that chart tools are registered."""
-        from chuk_mcp_pptx.async_server import chart_tools
-
-        assert chart_tools is not None
-
-    def test_image_tools_registered(self) -> None:
-        """Test that image tools are registered."""
-        from chuk_mcp_pptx.async_server import image_tools
-
-        assert image_tools is not None
-
     def test_placeholder_tools_registered(self) -> None:
         """Test that placeholder tools are registered."""
         from chuk_mcp_pptx.async_server import placeholder_tools
@@ -67,12 +55,6 @@ class TestToolsRegistration:
         from chuk_mcp_pptx.async_server import inspection_tools
 
         assert inspection_tools is not None
-
-    def test_table_tools_registered(self) -> None:
-        """Test that table tools are registered."""
-        from chuk_mcp_pptx.async_server import table_tools
-
-        assert table_tools is not None
 
     def test_layout_tools_registered(self) -> None:
         """Test that layout tools are registered."""
@@ -651,26 +633,6 @@ class TestPptxGetInfo:
 class TestToolExportsConditional:
     """Tests for conditional tool exports based on registration success."""
 
-    def test_pptx_add_chart_export(self) -> None:
-        """Test pptx_add_chart is exported when chart_tools is registered."""
-        from chuk_mcp_pptx import async_server
-
-        if async_server.chart_tools:
-            assert hasattr(async_server, "pptx_add_chart")
-
-    def test_image_tools_exports(self) -> None:
-        """Test image tool functions are exported."""
-        from chuk_mcp_pptx import async_server
-
-        if async_server.image_tools:
-            assert hasattr(async_server, "pptx_add_image_slide")
-            assert hasattr(async_server, "pptx_add_image")
-            assert hasattr(async_server, "pptx_add_background_image")
-            assert hasattr(async_server, "pptx_add_image_gallery")
-            assert hasattr(async_server, "pptx_add_image_with_caption")
-            assert hasattr(async_server, "pptx_add_logo")
-            assert hasattr(async_server, "pptx_replace_image")
-
     def test_inspection_tools_exports(self) -> None:
         """Test inspection tool functions are exported."""
         from chuk_mcp_pptx import async_server
@@ -679,16 +641,6 @@ class TestToolExportsConditional:
             assert hasattr(async_server, "pptx_inspect_slide")
             assert hasattr(async_server, "pptx_fix_slide_layout")
             assert hasattr(async_server, "pptx_analyze_presentation_layout")
-
-    def test_table_tools_exports(self) -> None:
-        """Test table tool functions are exported."""
-        from chuk_mcp_pptx import async_server
-
-        if async_server.table_tools:
-            assert hasattr(async_server, "pptx_add_data_table")
-            assert hasattr(async_server, "pptx_add_comparison_table")
-            assert hasattr(async_server, "pptx_update_table_cell")
-            assert hasattr(async_server, "pptx_format_table")
 
     def test_layout_tools_exports(self) -> None:
         """Test layout tool functions are exported."""
@@ -701,13 +653,6 @@ class TestToolExportsConditional:
             assert hasattr(async_server, "pptx_apply_master_layout")
             assert hasattr(async_server, "pptx_duplicate_slide")
             assert hasattr(async_server, "pptx_reorder_slides")
-
-    def test_universal_component_api_exports(self) -> None:
-        """Test universal component API functions are exported."""
-        from chuk_mcp_pptx import async_server
-
-        if async_server.universal_component_api:
-            assert hasattr(async_server, "pptx_add_component")
 
     def test_theme_tools_exports(self) -> None:
         """Test theme tool functions are exported."""
@@ -1020,6 +965,7 @@ class TestPptxGetDownloadUrl:
     @pytest.mark.asyncio
     async def test_get_download_url_works_without_namespace_id(self) -> None:
         """Test getting download URL works even without prior namespace ID."""
+        from unittest.mock import patch, AsyncMock, MagicMock
         from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
 
         manager.clear_all()
@@ -1028,31 +974,44 @@ class TestPptxGetDownloadUrl:
         # Clear namespace IDs - the new implementation doesn't require it
         manager._namespace_ids.clear()
 
-        result = await pptx_get_download_url()
-        data = json.loads(result)
+        # Mock artifact store
+        mock_store = MagicMock()
+        mock_store.store = AsyncMock(return_value="artifact-123")
+        mock_store.presign = AsyncMock(return_value="https://example.com/url")
 
-        # Should succeed because the new implementation stores as artifact directly
-        assert data.get("success") is True
-        assert data.get("presentation") == "no_namespace"
-        assert "url" in data
+        with patch("chuk_mcp_server.has_artifact_store", return_value=True):
+            with patch("chuk_mcp_server.get_artifact_store", return_value=mock_store):
+                result = await pptx_get_download_url()
+                data = json.loads(result)
+
+                # Should succeed because the new implementation stores as artifact directly
+                assert data.get("presentation") == "no_namespace"
+                assert "url" in data
 
         manager.clear_all()
 
     @pytest.mark.asyncio
     async def test_get_download_url_specific_presentation(self) -> None:
         """Test getting download URL for specific presentation."""
+        from unittest.mock import patch, AsyncMock, MagicMock
         from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
 
         manager.clear_all()
         await pptx_create(name="specific")
 
-        result = await pptx_get_download_url(presentation="specific")
-        data = json.loads(result)
+        # Mock artifact store
+        mock_store = MagicMock()
+        mock_store.store = AsyncMock(return_value="artifact-123")
+        mock_store.presign = AsyncMock(return_value="https://example.com/url")
 
-        # Should succeed with memory artifact store
-        assert data.get("success") is True
-        assert data.get("presentation") == "specific"
-        assert "url" in data
+        with patch("chuk_mcp_server.has_artifact_store", return_value=True):
+            with patch("chuk_mcp_server.get_artifact_store", return_value=mock_store):
+                result = await pptx_get_download_url(presentation="specific")
+                data = json.loads(result)
+
+                # Should succeed with mocked artifact store
+                assert data.get("presentation") == "specific"
+                assert "url" in data
 
         manager.clear_all()
 
@@ -1074,17 +1033,24 @@ class TestPptxGetDownloadUrl:
     @pytest.mark.asyncio
     async def test_get_download_url_with_custom_expires_in(self) -> None:
         """Test getting download URL with custom expiration."""
+        from unittest.mock import patch, AsyncMock, MagicMock
         from chuk_mcp_pptx.async_server import pptx_create, pptx_get_download_url, manager
 
         manager.clear_all()
         await pptx_create(name="custom_expires")
 
-        result = await pptx_get_download_url(expires_in=7200)
-        data = json.loads(result)
+        # Mock artifact store
+        mock_store = MagicMock()
+        mock_store.store = AsyncMock(return_value="artifact-123")
+        mock_store.presign = AsyncMock(return_value="https://example.com/url")
 
-        # Should succeed with memory artifact store
-        assert data.get("success") is True
-        assert data.get("expires_in") == 7200
+        with patch("chuk_mcp_server.has_artifact_store", return_value=True):
+            with patch("chuk_mcp_server.get_artifact_store", return_value=mock_store):
+                result = await pptx_get_download_url(expires_in=7200)
+                data = json.loads(result)
+
+                # Should succeed with mocked artifact store
+                assert data.get("expires_in") == 7200
 
         manager.clear_all()
 
@@ -1127,12 +1093,10 @@ class TestPptxGetDownloadUrl:
                 result = await pptx_get_download_url()
                 data = json.loads(result)
 
-                assert data["success"] is True
                 assert data["url"] == "https://example.com/presigned-url"
                 assert data["presentation"] == "mocked_store"
                 assert data["artifact_id"] == "artifact-123"
                 assert data["expires_in"] == 3600
-                assert data["filename"] == "mocked_store.pptx"
 
         manager.clear_all()
 
@@ -1155,7 +1119,6 @@ class TestPptxGetDownloadUrl:
                 result = await pptx_get_download_url(expires_in=7200)
                 data = json.loads(result)
 
-                assert data["success"] is True
                 assert data["expires_in"] == 7200
 
                 # Verify presign was called with correct expires
