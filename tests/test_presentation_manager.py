@@ -950,17 +950,23 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_presentation_not_in_metadata(self) -> None:
         """Test handling when presentation exists but metadata doesn't - should create metadata."""
+        from unittest.mock import patch, MagicMock
+
         manager = PresentationManager()
         # This shouldn't happen normally, but test the handling
         from pptx import Presentation
 
         manager._presentations["orphan"] = Presentation()
+        manager._metadata.pop("orphan", None)  # Ensure no metadata
         manager._current_presentation = "orphan"
+        manager._cache_timestamps["orphan"] = float("inf")  # Mark cache as valid
 
-        # get_metadata should now create metadata if presentation exists
-        metadata = await manager.get_metadata(name="orphan")
-        assert metadata is not None  # Metadata is created for existing presentations
-        assert metadata.name == "orphan"
+        # Mock the store to return None (no artifact store available)
+        with patch.object(manager, "_get_store", return_value=None):
+            # get_metadata should now create metadata if presentation exists in cache
+            metadata = await manager.get_metadata(name="orphan")
+            assert metadata is not None  # Metadata is created for existing presentations
+            assert metadata.name == "orphan"
 
     @pytest.mark.asyncio
     async def test_slide_metadata_index_bounds(self) -> None:
