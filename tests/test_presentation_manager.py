@@ -980,3 +980,695 @@ class TestEdgeCases:
         metadata = manager._metadata["test"]
         # List should be expanded but slide won't exist
         assert len(metadata.slides) >= 11
+
+
+class TestFindNamespaceInStore:
+    """Tests for _find_namespace_in_store method."""
+
+    @pytest.mark.asyncio
+    async def test_find_namespace_no_store(self) -> None:
+        """Test finding namespace when no store is available."""
+        manager = PresentationManager()
+
+        with patch.object(manager, "_get_store", return_value=None):
+            result = await manager._find_namespace_in_store("test")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_find_namespace_found(self) -> None:
+        """Test finding an existing namespace."""
+        manager = PresentationManager()
+
+        mock_ns_info = MagicMock()
+        mock_ns_info.name = "presentations/test"
+        mock_ns_info.namespace_id = "ns-found-123"
+
+        mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(return_value=[mock_ns_info])
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager._find_namespace_in_store("test")
+            assert result == "ns-found-123"
+
+    @pytest.mark.asyncio
+    async def test_find_namespace_not_found(self) -> None:
+        """Test finding a namespace that doesn't exist."""
+        manager = PresentationManager()
+
+        mock_ns_info = MagicMock()
+        mock_ns_info.name = "presentations/other"
+        mock_ns_info.namespace_id = "ns-other-456"
+
+        mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(return_value=[mock_ns_info])
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager._find_namespace_in_store("test")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_find_namespace_exception(self) -> None:
+        """Test finding namespace handles exceptions."""
+        manager = PresentationManager()
+
+        mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(side_effect=Exception("Network error"))
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager._find_namespace_in_store("test")
+            assert result is None
+
+
+class TestLoadFromStoreCaching:
+    """Tests for _load_from_store caching behavior."""
+
+    @pytest.mark.asyncio
+    async def test_load_from_store_uses_cache_when_valid(self) -> None:
+        """Test that load uses cache when valid."""
+        from pptx import Presentation as PptxPresentation
+
+        manager = PresentationManager()
+        prs = PptxPresentation()
+        manager._presentations["cached"] = prs
+        manager._cache_timestamps["cached"] = float("inf")  # Always valid
+
+        mock_store = MagicMock()
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager._load_from_store("cached")
+            assert result == prs
+            # Should not call store methods
+            mock_store.list_namespaces.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_load_from_store_force_refresh_bypasses_cache(self) -> None:
+        """Test that force_refresh bypasses cache."""
+        from pptx import Presentation as PptxPresentation
+        import io
+
+        manager = PresentationManager()
+        old_prs = PptxPresentation()
+        manager._presentations["cached"] = old_prs
+        manager._cache_timestamps["cached"] = float("inf")  # Valid cache
+
+        # Create fresh PPTX data
+        new_prs = PptxPresentation()
+        buffer = io.BytesIO()
+        new_prs.save(buffer)
+        buffer.seek(0)
+        pptx_data = buffer.read()
+
+        mock_ns_info = MagicMock()
+        mock_ns_info.name = "presentations/cached"
+        mock_ns_info.namespace_id = "ns-cached-123"
+
+        mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(return_value=[mock_ns_info])
+        mock_store.read_namespace = AsyncMock(return_value=pptx_data)
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager._load_from_store("cached", force_refresh=True)
+            assert result is not None
+            mock_store.list_namespaces.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_load_from_store_exception_handling(self) -> None:
+        """Test that load handles exceptions gracefully."""
+        manager = PresentationManager()
+
+        mock_ns_info = MagicMock()
+        mock_ns_info.name = "presentations/error"
+        mock_ns_info.namespace_id = "ns-error-123"
+
+        mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(return_value=[mock_ns_info])
+        mock_store.read_namespace = AsyncMock(side_effect=Exception("Read error"))
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager._load_from_store("error")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_load_from_store_data_none(self) -> None:
+        """Test load when store returns None data."""
+        manager = PresentationManager()
+
+        mock_ns_info = MagicMock()
+        mock_ns_info.name = "presentations/empty"
+        mock_ns_info.namespace_id = "ns-empty-123"
+
+        mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(return_value=[mock_ns_info])
+        mock_store.read_namespace = AsyncMock(return_value=None)
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager._load_from_store("empty")
+            assert result is None
+
+
+class TestLoadTemplateFromStore:
+    """Tests for _load_template_from_store method."""
+
+    @pytest.mark.asyncio
+    async def test_load_template_no_store(self) -> None:
+        """Test loading template when no store is available."""
+        manager = PresentationManager()
+
+        with patch.object(manager, "_get_store", return_value=None):
+            result = await manager._load_template_from_store("template")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_load_template_from_namespace(self) -> None:
+        """Test loading template from existing namespace."""
+        manager = PresentationManager()
+        manager._namespace_ids["my_template"] = "ns-template-123"
+
+        mock_store = MagicMock()
+        mock_store.read_namespace = AsyncMock(return_value=b"template data")
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager._load_template_from_store("my_template")
+            assert result == b"template data"
+
+    @pytest.mark.asyncio
+    async def test_load_template_not_found(self) -> None:
+        """Test loading template that doesn't exist."""
+        manager = PresentationManager()
+
+        mock_store = MagicMock()
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager._load_template_from_store("unknown_template")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_load_template_exception(self) -> None:
+        """Test loading template handles exceptions."""
+        manager = PresentationManager()
+        manager._namespace_ids["error_template"] = "ns-error-123"
+
+        mock_store = MagicMock()
+        mock_store.read_namespace = AsyncMock(side_effect=Exception("Read error"))
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager._load_template_from_store("error_template")
+            assert result is None
+
+
+class TestCreateWithTemplate:
+    """Tests for create method with templates."""
+
+    @pytest.mark.asyncio
+    async def test_create_with_builtin_template(self) -> None:
+        """Test creating presentation from builtin template."""
+        from pptx import Presentation as PptxPresentation
+        import io
+
+        manager = PresentationManager()
+
+        # Create mock template data
+        prs = PptxPresentation()
+        prs.slides.add_slide(prs.slide_layouts[0])  # Add a slide
+        buffer = io.BytesIO()
+        prs.save(buffer)
+        buffer.seek(0)
+        template_data = buffer.read()
+
+        mock_template_manager = MagicMock()
+        mock_template_manager.get_template_data = AsyncMock(return_value=template_data)
+
+        with patch("chuk_mcp_pptx.templates.TemplateManager", return_value=mock_template_manager):
+            metadata = await manager.create(name="from_template", template_name="modern")
+
+        assert metadata.name == "from_template"
+        assert metadata.slide_count == 0  # Slides removed from template
+        mock_template_manager.get_template_data.assert_called_once_with("modern")
+
+    @pytest.mark.asyncio
+    async def test_create_with_artifact_store_template(self) -> None:
+        """Test creating presentation from artifact store template."""
+        from pptx import Presentation as PptxPresentation
+        import io
+
+        manager = PresentationManager()
+
+        # Create mock template data
+        prs = PptxPresentation()
+        prs.slides.add_slide(prs.slide_layouts[0])  # Add a slide
+        buffer = io.BytesIO()
+        prs.save(buffer)
+        buffer.seek(0)
+        template_data = buffer.read()
+
+        mock_template_manager = MagicMock()
+        mock_template_manager.get_template_data = AsyncMock(return_value=None)  # Not builtin
+
+        with patch("chuk_mcp_pptx.templates.TemplateManager", return_value=mock_template_manager):
+            with patch.object(manager, "_load_template_from_store", new_callable=AsyncMock, return_value=template_data):
+                metadata = await manager.create(name="from_store_template", template_name="custom")
+
+        assert metadata.name == "from_store_template"
+        assert metadata.slide_count == 0  # Slides removed from template
+
+    @pytest.mark.asyncio
+    async def test_create_with_template_not_found_fallback(self) -> None:
+        """Test creating presentation falls back to blank when template not found."""
+        manager = PresentationManager()
+
+        mock_template_manager = MagicMock()
+        mock_template_manager.get_template_data = AsyncMock(return_value=None)
+
+        with patch("chuk_mcp_pptx.templates.TemplateManager", return_value=mock_template_manager):
+            with patch.object(manager, "_load_template_from_store", new_callable=AsyncMock, return_value=None):
+                metadata = await manager.create(name="blank_fallback", template_name="nonexistent")
+
+        assert metadata.name == "blank_fallback"
+        assert metadata.slide_count == 0
+
+    @pytest.mark.asyncio
+    async def test_create_overwrite_with_namespace(self) -> None:
+        """Test creating presentation that overwrites existing with namespace."""
+        manager = PresentationManager()
+        await manager.create(name="existing")
+        manager._namespace_ids["existing"] = "ns-existing-123"
+
+        mock_store = MagicMock()
+        mock_store.delete_namespace = AsyncMock(return_value=None)
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            await manager.create(name="existing")
+
+        mock_store.delete_namespace.assert_called_once_with("ns-existing-123")
+
+    @pytest.mark.asyncio
+    async def test_create_overwrite_delete_fails(self) -> None:
+        """Test creating presentation when old namespace delete fails."""
+        manager = PresentationManager()
+        await manager.create(name="existing")
+        manager._namespace_ids["existing"] = "ns-existing-123"
+
+        mock_store = MagicMock()
+        mock_store.delete_namespace = AsyncMock(side_effect=Exception("Delete error"))
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            # Should not raise, just warn
+            metadata = await manager.create(name="existing")
+            assert metadata.name == "existing"
+
+
+class TestUpdateAdvanced:
+    """Additional tests for update method."""
+
+    @pytest.mark.asyncio
+    async def test_update_without_metadata(self) -> None:
+        """Test update when metadata doesn't exist."""
+        from pptx import Presentation as PptxPresentation
+
+        manager = PresentationManager()
+        manager._presentations["orphan"] = PptxPresentation()
+        manager._current_presentation = "orphan"
+        # No metadata entry
+
+        with patch.object(manager, "_get_store", return_value=None):
+            result = await manager.update(name="orphan")
+            # Should return False since _save_to_store returns False without store
+            assert result is False
+
+    @pytest.mark.asyncio
+    async def test_update_with_successful_save(self) -> None:
+        """Test update updates cache timestamp on success."""
+        import time
+
+        manager = PresentationManager()
+        await manager.create(name="test")
+
+        original_timestamp = manager._cache_timestamps.get("test", 0)
+        time.sleep(0.01)
+
+        # Mock successful save
+        with patch.object(manager, "_save_to_store", new_callable=AsyncMock, return_value=True):
+            result = await manager.update(name="test")
+            assert result is True
+
+        new_timestamp = manager._cache_timestamps.get("test", 0)
+        assert new_timestamp >= original_timestamp
+
+
+class TestDeleteAdvanced:
+    """Additional tests for delete method."""
+
+    @pytest.mark.asyncio
+    async def test_delete_cleans_up_all_data(self) -> None:
+        """Test delete cleans up all cached data."""
+        manager = PresentationManager()
+        await manager.create(name="test")
+        manager._namespace_ids["test"] = "ns-test-123"
+
+        await manager.delete(name="test")
+
+        assert "test" not in manager._presentations
+        assert "test" not in manager._metadata
+        assert "test" not in manager._cache_timestamps
+        assert "test" not in manager._namespace_ids
+
+    @pytest.mark.asyncio
+    async def test_delete_selects_next_current(self) -> None:
+        """Test delete selects next presentation as current."""
+        manager = PresentationManager()
+        await manager.create(name="first")
+        await manager.create(name="second")
+        await manager.create(name="third")
+
+        # Set "second" as current
+        await manager.set_current("second")
+        assert manager._current_presentation == "second"
+
+        await manager.delete(name="second")
+
+        # Should pick one of the remaining
+        assert manager._current_presentation in ["first", "third"]
+
+
+class TestListPresentationsAdvanced:
+    """Additional tests for list_presentations method."""
+
+    @pytest.mark.asyncio
+    async def test_list_presentations_from_artifact_store(self) -> None:
+        """Test listing presentations from artifact store."""
+        from pptx import Presentation as PptxPresentation
+        import io
+
+        manager = PresentationManager()
+
+        # Create PPTX data
+        prs = PptxPresentation()
+        buffer = io.BytesIO()
+        prs.save(buffer)
+        buffer.seek(0)
+        pptx_data = buffer.read()
+
+        mock_ns_info1 = MagicMock()
+        mock_ns_info1.name = "presentations/pres1"
+        mock_ns_info1.namespace_id = "ns-pres1-123"
+
+        mock_ns_info2 = MagicMock()
+        mock_ns_info2.name = "presentations/pres2"
+        mock_ns_info2.namespace_id = "ns-pres2-456"
+
+        mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(return_value=[mock_ns_info1, mock_ns_info2])
+        mock_store.read_namespace = AsyncMock(return_value=pptx_data)
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            response = await manager.list_presentations()
+
+        assert response.total == 2
+        names = {p.name for p in response.presentations}
+        assert names == {"pres1", "pres2"}
+
+    @pytest.mark.asyncio
+    async def test_list_presentations_filters_templates(self) -> None:
+        """Test that list_presentations filters out templates."""
+        from pptx import Presentation as PptxPresentation
+        import io
+
+        manager = PresentationManager()
+
+        # Create PPTX data
+        prs = PptxPresentation()
+        buffer = io.BytesIO()
+        prs.save(buffer)
+        buffer.seek(0)
+        pptx_data = buffer.read()
+
+        mock_ns_pres = MagicMock()
+        mock_ns_pres.name = "presentations/my_pres"
+        mock_ns_pres.namespace_id = "ns-pres-123"
+
+        mock_ns_template = MagicMock()
+        mock_ns_template.name = "presentations/templates/my_template"
+        mock_ns_template.namespace_id = "ns-template-456"
+
+        mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(return_value=[mock_ns_pres, mock_ns_template])
+        mock_store.read_namespace = AsyncMock(return_value=pptx_data)
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            response = await manager.list_presentations()
+
+        assert response.total == 1
+        assert response.presentations[0].name == "my_pres"
+
+    @pytest.mark.asyncio
+    async def test_list_presentations_exception_fallback(self) -> None:
+        """Test list_presentations falls back to memory on exception."""
+        manager = PresentationManager()
+        await manager.create(name="local_pres")
+
+        mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(side_effect=Exception("Network error"))
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            response = await manager.list_presentations()
+
+        # Should fallback to memory-only listing
+        assert response.total == 1
+        assert response.presentations[0].name == "local_pres"
+
+    @pytest.mark.asyncio
+    async def test_list_presentations_no_store(self) -> None:
+        """Test list_presentations with no artifact store."""
+        manager = PresentationManager()
+        await manager.create(name="memory_pres")
+
+        with patch.object(manager, "_get_store", return_value=None):
+            response = await manager.list_presentations()
+
+        assert response.total == 1
+        assert response.presentations[0].name == "memory_pres"
+
+
+class TestSetCurrentAdvanced:
+    """Additional tests for set_current method."""
+
+    @pytest.mark.asyncio
+    async def test_set_current_loads_from_store(self) -> None:
+        """Test that set_current loads from store when not in memory."""
+        from pptx import Presentation as PptxPresentation
+        import io
+
+        manager = PresentationManager()
+
+        # Create PPTX data
+        prs = PptxPresentation()
+        buffer = io.BytesIO()
+        prs.save(buffer)
+        buffer.seek(0)
+        pptx_data = buffer.read()
+
+        mock_ns_info = MagicMock()
+        mock_ns_info.name = "presentations/external"
+        mock_ns_info.namespace_id = "ns-external-123"
+
+        mock_store = MagicMock()
+        mock_store.list_namespaces = AsyncMock(return_value=[mock_ns_info])
+        mock_store.read_namespace = AsyncMock(return_value=pptx_data)
+
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager.set_current("external")
+
+        assert result is True
+        assert manager._current_presentation == "external"
+        assert "external" in manager._presentations
+
+
+class TestUpdateSlideMetadataAdvanced:
+    """Additional tests for update_slide_metadata method."""
+
+    @pytest.mark.asyncio
+    async def test_update_slide_metadata_with_title(self) -> None:
+        """Test slide metadata update detects title."""
+        manager = PresentationManager()
+        await manager.create(name="test")
+
+        # Add a slide with a title
+        prs = manager._presentations["test"]
+        slide = prs.slides.add_slide(prs.slide_layouts[0])  # Title slide layout
+
+        # Set title text if title shape exists
+        if slide.shapes.title:
+            slide.shapes.title.text = "Test Title"
+
+        await manager.update_slide_metadata(slide_index=0)
+
+        metadata = manager._metadata["test"]
+        assert len(metadata.slides) >= 1
+        slide_meta = metadata.slides[0]
+        assert slide_meta.shape_count > 0
+
+    @pytest.mark.asyncio
+    async def test_update_slide_metadata_get_returns_none(self) -> None:
+        """Test slide metadata update when get returns None."""
+        manager = PresentationManager()
+        manager._current_presentation = "nonexistent"
+
+        # Should not raise
+        await manager.update_slide_metadata(slide_index=0)
+
+
+class TestExportImportAdvanced:
+    """Additional tests for export and import methods."""
+
+    @pytest.mark.asyncio
+    async def test_export_base64_exception(self) -> None:
+        """Test export_base64 handles exceptions."""
+        manager = PresentationManager()
+        await manager.create(name="test")
+
+        # Replace presentation with a mock that raises on save
+        mock_prs = MagicMock()
+        mock_prs.save.side_effect = Exception("Save error")
+        manager._presentations["test"] = mock_prs
+
+        result = await manager.export_base64(name="test")
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_import_base64_as_template(self) -> None:
+        """Test import_base64 with as_template=True."""
+        manager = PresentationManager()
+        await manager.create(name="original")
+
+        exported = await manager.export_base64(name="original")
+        assert exported is not None
+
+        # Import as template
+        result = await manager.import_base64(data=exported, name="template_import", as_template=True)
+        assert result is True
+        assert "template_import" in manager._presentations
+        # Should NOT set as current
+        assert manager._current_presentation != "template_import"
+
+
+class TestImportTemplate:
+    """Tests for import_template method."""
+
+    @pytest.mark.asyncio
+    async def test_import_template_no_store(self) -> None:
+        """Test import_template when no store is available."""
+        manager = PresentationManager()
+
+        with patch.object(manager, "_get_store", return_value=None):
+            result = await manager.import_template("/fake/path.pptx", "my_template")
+            assert result is False
+
+    @pytest.mark.asyncio
+    async def test_import_template_success(self) -> None:
+        """Test successful template import."""
+        from pptx import Presentation as PptxPresentation
+        import io
+        import tempfile
+        import os
+
+        manager = PresentationManager()
+
+        # Create a real PPTX file
+        prs = PptxPresentation()
+        prs.slides.add_slide(prs.slide_layouts[0])
+
+        with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as f:
+            prs.save(f.name)
+            temp_path = f.name
+
+        try:
+            mock_namespace_info = MagicMock()
+            mock_namespace_info.namespace_id = "ns-template-new-123"
+
+            mock_store = MagicMock()
+            mock_store.create_namespace = AsyncMock(return_value=mock_namespace_info)
+            mock_store.write_namespace = AsyncMock(return_value=None)
+
+            with patch.object(manager, "_get_store", return_value=mock_store):
+                result = await manager.import_template(temp_path, "imported_template")
+
+            assert result is True
+            assert "imported_template" in manager._presentations
+            assert manager._namespace_ids["imported_template"] == "ns-template-new-123"
+        finally:
+            os.unlink(temp_path)
+
+    @pytest.mark.asyncio
+    async def test_import_template_file_not_found(self) -> None:
+        """Test import_template with non-existent file."""
+        manager = PresentationManager()
+
+        mock_store = MagicMock()
+        with patch.object(manager, "_get_store", return_value=mock_store):
+            result = await manager.import_template("/nonexistent/file.pptx", "template")
+            assert result is False
+
+    @pytest.mark.asyncio
+    async def test_import_template_exception(self) -> None:
+        """Test import_template handles exceptions."""
+        import tempfile
+        import os
+        from pptx import Presentation as PptxPresentation
+
+        manager = PresentationManager()
+
+        # Create a real PPTX file
+        prs = PptxPresentation()
+        with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as f:
+            prs.save(f.name)
+            temp_path = f.name
+
+        try:
+            mock_store = MagicMock()
+            mock_store.create_namespace = AsyncMock(side_effect=Exception("Store error"))
+
+            with patch.object(manager, "_get_store", return_value=mock_store):
+                result = await manager.import_template(temp_path, "error_template")
+                assert result is False
+        finally:
+            os.unlink(temp_path)
+
+
+class TestCacheTTL:
+    """Tests for cache TTL behavior."""
+
+    def test_cache_ttl_constant(self) -> None:
+        """Test CACHE_TTL constant is set."""
+        assert PresentationManager.CACHE_TTL == 60
+
+    def test_is_cache_valid_no_timestamp(self) -> None:
+        """Test cache validity when no timestamp exists."""
+        manager = PresentationManager()
+        assert manager._is_cache_valid("nonexistent") is False
+
+    def test_is_cache_valid_expired(self) -> None:
+        """Test cache validity when cache is expired."""
+        import time
+
+        manager = PresentationManager()
+        manager._cache_timestamps["old"] = time.time() - 100  # 100 seconds ago
+
+        assert manager._is_cache_valid("old") is False
+
+    def test_is_cache_valid_fresh(self) -> None:
+        """Test cache validity when cache is fresh."""
+        import time
+
+        manager = PresentationManager()
+        manager._cache_timestamps["fresh"] = time.time()  # Just now
+
+        assert manager._is_cache_valid("fresh") is True
+
+    def test_update_cache_timestamp(self) -> None:
+        """Test updating cache timestamp."""
+        import time
+
+        manager = PresentationManager()
+        before = time.time()
+        manager._update_cache_timestamp("test")
+        after = time.time()
+
+        assert before <= manager._cache_timestamps["test"] <= after

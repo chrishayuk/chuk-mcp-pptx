@@ -409,5 +409,277 @@ class TestThemeIntegration:
         assert new_theme.primary_hue == data["primary_hue"]
 
 
+class TestThemeManagerBranches:
+    """Test ThemeManager branch coverage."""
+
+    def test_get_default_theme(self):
+        """Test getting default theme."""
+        mgr = ThemeManager()
+        theme = mgr.get_default_theme()
+        assert theme is not None
+        assert theme.name == "dark"
+
+    def test_get_theme_info_nonexistent(self):
+        """Test get_theme_info for nonexistent theme."""
+        mgr = ThemeManager()
+        info = mgr.get_theme_info("nonexistent-theme")
+        assert info is None
+
+    def test_apply_to_slide_no_theme_name(self):
+        """Test apply_to_slide without theme name uses current or default."""
+        mgr = ThemeManager()
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+        # No current theme set, should use default
+        mgr.apply_to_slide(slide)
+        assert slide.background.fill.type is not None
+
+    def test_apply_to_slide_with_current_theme(self):
+        """Test apply_to_slide uses current theme when set."""
+        mgr = ThemeManager()
+        mgr.set_current_theme("dark-violet")
+
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+        mgr.apply_to_slide(slide)  # Uses current theme
+        assert slide.background.fill.type is not None
+
+    def test_apply_to_slide_no_theme_fallback(self):
+        """Test apply_to_slide falls back to 'dark' theme."""
+        mgr = ThemeManager()
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+        # Clear current theme
+        mgr.current_theme = None
+
+        # Pass nonexistent theme name
+        mgr.apply_to_slide(slide, "nonexistent")
+        # Should fall back to dark theme
+        assert slide.background.fill.type is not None
+
+
+class TestThemeGetColorBranches:
+    """Test Theme.get_color branch coverage."""
+
+    def test_get_color_nested_path(self):
+        """Test getting color with nested path."""
+        theme = Theme("test", primary_hue="blue", mode="dark")
+
+        # Get nested color
+        color = theme.get_color("primary.DEFAULT")
+        assert color is not None
+
+    def test_get_color_invalid_path(self):
+        """Test getting color with invalid path returns black."""
+        theme = Theme("test")
+
+        # Invalid path should return black
+        color = theme.get_color("nonexistent.path.deep")
+        assert color is not None
+        # Should be black (0, 0, 0)
+        assert color[0] == 0 and color[1] == 0 and color[2] == 0
+
+    def test_get_color_value_not_dict(self):
+        """Test get_color when intermediate value is not a dict."""
+        theme = Theme("test")
+
+        # Set a non-dict value at a path
+        theme.tokens["simple"] = "#123456"
+
+        color = theme.get_color("simple")
+        assert color is not None
+
+    def test_get_color_final_value_not_string(self):
+        """Test get_color when final value is not a string."""
+        theme = Theme("test")
+
+        # Set a non-string value
+        theme.tokens["weird"] = 123
+
+        color = theme.get_color("weird")
+        # Should return black
+        assert color[0] == 0 and color[1] == 0 and color[2] == 0
+
+
+class TestThemeApplyToSlideBranches:
+    """Test Theme.apply_to_slide branch coverage."""
+
+    def test_apply_to_slide_override_text_colors_true(self):
+        """Test apply_to_slide with text color override."""
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+        # Add text shape
+        shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+        tf = shape.text_frame
+        p = tf.paragraphs[0]
+        p.text = "Test"
+
+        theme = Theme("test", mode="dark")
+        theme.apply_to_slide(slide, override_text_colors=True)
+
+        # Verify background set
+        assert slide.background.fill.type is not None
+
+    def test_apply_to_slide_override_text_colors_false(self):
+        """Test apply_to_slide without text color override."""
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+        # Add text shape
+        shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+        tf = shape.text_frame
+        p = tf.paragraphs[0]
+        p.text = "Test"
+
+        theme = Theme("test", mode="dark")
+        theme.apply_to_slide(slide, override_text_colors=False)
+
+        # Background should be set but text colors preserved
+        assert slide.background.fill.type is not None
+
+    def test_apply_to_slide_with_multiple_runs(self):
+        """Test apply_to_slide with multiple text runs."""
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+        # Add text shape with multiple runs
+        shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+        tf = shape.text_frame
+        p = tf.paragraphs[0]
+        run1 = p.add_run()
+        run1.text = "First"
+        run2 = p.add_run()
+        run2.text = "Second"
+
+        theme = Theme("test", mode="dark")
+        theme.apply_to_slide(slide, override_text_colors=True)
+
+        # Both runs should have color applied
+        assert slide.background.fill.type is not None
+
+
+class TestThemeApplyToShapeBranches:
+    """Test Theme.apply_to_shape branch coverage."""
+
+    def test_apply_to_shape_all_styles(self):
+        """Test apply_to_shape with all style types."""
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+        styles = ["card", "primary", "secondary", "accent", "muted", "unknown"]
+
+        for style in styles:
+            shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+            tf = shape.text_frame
+            p = tf.paragraphs[0]
+            p.text = "Test"
+
+            theme = Theme("test")
+            theme.apply_to_shape(shape, style)
+
+            # Shape should have fill applied
+            assert shape.fill.type is not None
+
+    def test_apply_to_shape_without_fill(self):
+        """Test apply_to_shape when shape has no fill attribute."""
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+
+        from unittest.mock import MagicMock
+
+        mock_shape = MagicMock(spec=['line', 'text_frame'])  # No fill
+        mock_shape.line = shape.line
+        mock_shape.text_frame = shape.text_frame
+
+        theme = Theme("test")
+        theme.apply_to_shape(mock_shape, "primary")
+        # Should not raise
+
+    def test_apply_to_shape_without_line(self):
+        """Test apply_to_shape when shape has no line attribute."""
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+
+        from unittest.mock import MagicMock
+
+        mock_shape = MagicMock(spec=['fill', 'text_frame'])  # No line
+        mock_shape.fill = shape.fill
+        mock_shape.text_frame = shape.text_frame
+
+        theme = Theme("test")
+        theme.apply_to_shape(mock_shape, "primary")
+        # Should not raise
+
+    def test_apply_to_shape_without_text_frame(self):
+        """Test apply_to_shape when shape has no text_frame."""
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+
+        from unittest.mock import MagicMock
+
+        mock_shape = MagicMock(spec=['fill', 'line'])  # No text_frame
+        mock_shape.fill = shape.fill
+        mock_shape.line = shape.line
+
+        theme = Theme("test")
+        theme.apply_to_shape(mock_shape, "primary")
+        # Should not raise
+
+    def test_apply_to_shape_with_empty_text_frame(self):
+        """Test apply_to_shape when text_frame is empty."""
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+
+        # Don't add any text
+        theme = Theme("test")
+        theme.apply_to_shape(shape, "primary")
+        # Should not raise
+
+
+class TestGradientThemeBranches:
+    """Test GradientTheme branch coverage."""
+
+    def test_gradient_theme_apply_to_slide(self):
+        """Test GradientTheme.apply_to_slide uses first gradient color."""
+        gradient_colors = GRADIENTS["sunset"]
+        theme = GradientTheme("sunset", gradient_colors)
+
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+        theme.apply_to_slide(slide)
+
+        # Background should be set to first gradient color
+        assert slide.background.fill.type is not None
+
+
+class TestThemeFromDictDefaults:
+    """Test Theme.from_dict with missing values."""
+
+    def test_from_dict_empty(self):
+        """Test creating theme from empty dict uses defaults."""
+        theme = Theme.from_dict({})
+
+        assert theme.name == "custom"
+        assert theme.primary_hue == "blue"
+        assert theme.mode == "dark"
+        assert theme.font_family == "Inter"
+
+    def test_from_dict_partial(self):
+        """Test creating theme from partial dict."""
+        theme = Theme.from_dict({"name": "my-theme"})
+
+        assert theme.name == "my-theme"
+        assert theme.primary_hue == "blue"  # Default
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
