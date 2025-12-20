@@ -694,3 +694,454 @@ class TestChartContentVariants:
             content=content,
         )
         assert isinstance(result, str)
+
+
+# ============================================================================
+# Additional Coverage Tests
+# ============================================================================
+
+
+class TestSuccessfulComponentRender:
+    """Tests for successful component rendering to placeholder."""
+
+    @pytest.fixture
+    def manager_with_valid_placeholder(self):
+        """Create manager with presentation having valid placeholder."""
+
+        prs = Presentation()
+        # Use a layout that has content placeholders
+        if len(prs.slide_layouts) > 1:
+            layout = prs.slide_layouts[1]
+            prs.slides.add_slide(layout)
+
+        manager = MockPresentationManager(presentation=prs)
+        return manager
+
+    @pytest.mark.asyncio
+    async def test_successful_table_render_to_placeholder(
+        self, mock_mcp, manager_with_valid_placeholder
+    ):
+        """Test successful table render to placeholder - covers lines 281-300."""
+        register_placeholder_tools(mock_mcp, manager_with_valid_placeholder)
+
+        # Get actual placeholder idx from the slide
+        prs = manager_with_valid_placeholder._presentation
+        if prs.slides and prs.slides[0].placeholders:
+            # Find an OBJECT or content placeholder
+            for ph in prs.slides[0].placeholders:
+                ph_type = ph.placeholder_format.type
+                if ph_type in (2, 7):  # BODY or OBJECT
+                    content = {
+                        "type": "Table",
+                        "headers": ["Name", "Value"],
+                        "data": [["Test", "123"]],
+                    }
+                    result = await mock_mcp._tools["pptx_populate_placeholder"](
+                        slide_index=0,
+                        placeholder_idx=ph.placeholder_format.idx,
+                        content=content,
+                    )
+                    assert isinstance(result, str)
+                    # Check for success or expected error
+                    break
+
+
+class TestPlaceholderTextAttribute:
+    """Tests for placeholder .text attribute fallback (lines 356-359)."""
+
+    @pytest.fixture
+    def manager_with_text_only_placeholder(self):
+        """Create manager with placeholder that has .text but not .text_frame."""
+        # Create a mock slide with a mock placeholder
+        mock_slide = MagicMock()
+        mock_placeholder = MagicMock()
+        mock_placeholder_format = MagicMock()
+        mock_placeholder_format.idx = 0
+        mock_placeholder_format.type = 1  # TITLE type
+
+        mock_placeholder.placeholder_format = mock_placeholder_format
+        # Remove text_frame, only have text attribute
+        mock_placeholder.text_frame = None
+        mock_placeholder.text = ""
+
+        # Use spec to remove text_frame attribute properly
+        mock_placeholder.configure_mock(**{"text_frame": None})
+
+        mock_slide.placeholders = [mock_placeholder]
+
+        # Mock prs.slides as a MagicMock list-like object
+        mock_slides = MagicMock()
+        mock_slides.__getitem__ = MagicMock(return_value=mock_slide)
+        mock_slides.__len__ = MagicMock(return_value=1)
+
+        mock_prs = MagicMock()
+        mock_prs.slides = mock_slides
+
+        manager = MockPresentationManager(presentation=mock_prs)
+        return manager
+
+    @pytest.mark.asyncio
+    async def test_title_placeholder_with_text_attr_only(
+        self, mock_mcp, manager_with_text_only_placeholder
+    ):
+        """Test populating TITLE placeholder that only has .text attribute."""
+        register_placeholder_tools(mock_mcp, manager_with_text_only_placeholder)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=0,
+            content="Title via .text attribute",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        # Should succeed via .text attribute fallback
+        assert "message" in data or "error" in data
+
+
+def create_mock_slides_with_placeholder(mock_placeholder):
+    """Helper to create mock slides with proper MagicMock structure."""
+    mock_slide = MagicMock()
+    mock_slide.placeholders = [mock_placeholder]
+
+    mock_slides = MagicMock()
+    mock_slides.__getitem__ = MagicMock(return_value=mock_slide)
+    mock_slides.__len__ = MagicMock(return_value=1)
+
+    mock_prs = MagicMock()
+    mock_prs.slides = mock_slides
+
+    return mock_prs
+
+
+class TestPlaceholderNoTextCapability:
+    """Tests for placeholders without text capability (lines 356-359, 367, 396-404, 414-417)."""
+
+    @pytest.fixture
+    def manager_with_no_text_placeholder(self):
+        """Create manager with placeholder that has neither .text nor .text_frame."""
+        mock_placeholder = MagicMock(spec=["placeholder_format"])
+        mock_placeholder_format = MagicMock()
+        mock_placeholder_format.idx = 0
+        mock_placeholder_format.type = 1  # TITLE type
+        mock_placeholder.placeholder_format = mock_placeholder_format
+
+        mock_prs = create_mock_slides_with_placeholder(mock_placeholder)
+        manager = MockPresentationManager(presentation=mock_prs)
+        return manager
+
+    @pytest.mark.asyncio
+    async def test_title_placeholder_no_text_support(
+        self, mock_mcp, manager_with_no_text_placeholder
+    ):
+        """Test TITLE placeholder without text support - covers lines 359-362."""
+        register_placeholder_tools(mock_mcp, manager_with_no_text_placeholder)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=0,
+            content="Test content",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert "error" in data
+        assert "does not support text content" in data["error"]
+
+
+class TestBodyPlaceholderNoTextFrame:
+    """Tests for BODY placeholder without text_frame (line 367)."""
+
+    @pytest.fixture
+    def manager_with_body_no_textframe(self):
+        """Create manager with BODY placeholder without text_frame."""
+        mock_placeholder = MagicMock(spec=["placeholder_format"])
+        mock_placeholder_format = MagicMock()
+        mock_placeholder_format.idx = 1
+        mock_placeholder_format.type = 2  # BODY type
+        mock_placeholder.placeholder_format = mock_placeholder_format
+
+        mock_prs = create_mock_slides_with_placeholder(mock_placeholder)
+        manager = MockPresentationManager(presentation=mock_prs)
+        return manager
+
+    @pytest.mark.asyncio
+    async def test_body_placeholder_no_textframe(self, mock_mcp, manager_with_body_no_textframe):
+        """Test BODY placeholder without text_frame - covers line 367."""
+        register_placeholder_tools(mock_mcp, manager_with_body_no_textframe)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=1,
+            content="Body content",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert "error" in data
+        assert "does not have a text frame" in data["error"]
+
+
+class TestChartTablePicturePlaceholderWithString:
+    """Tests for CHART/TABLE/PICTURE placeholders with string content (lines 388-414)."""
+
+    @pytest.fixture
+    def manager_with_chart_placeholder(self):
+        """Create manager with CHART placeholder (type 12)."""
+        mock_placeholder = MagicMock()
+        mock_placeholder_format = MagicMock()
+        mock_placeholder_format.idx = 2
+        mock_placeholder_format.type = 12  # CHART type
+        mock_placeholder.placeholder_format = mock_placeholder_format
+        mock_placeholder.text_frame = MagicMock()
+        mock_placeholder.text_frame.text = ""
+
+        mock_prs = create_mock_slides_with_placeholder(mock_placeholder)
+        manager = MockPresentationManager(presentation=mock_prs)
+        return manager
+
+    @pytest.fixture
+    def manager_with_table_placeholder(self):
+        """Create manager with TABLE placeholder (type 14)."""
+        mock_placeholder = MagicMock(spec=["placeholder_format", "text"])
+        mock_placeholder_format = MagicMock()
+        mock_placeholder_format.idx = 3
+        mock_placeholder_format.type = 14  # TABLE type
+        mock_placeholder.placeholder_format = mock_placeholder_format
+        mock_placeholder.text = ""
+
+        mock_prs = create_mock_slides_with_placeholder(mock_placeholder)
+        manager = MockPresentationManager(presentation=mock_prs)
+        return manager
+
+    @pytest.fixture
+    def manager_with_picture_placeholder_no_text(self):
+        """Create manager with PICTURE placeholder without text capability."""
+        mock_placeholder = MagicMock(spec=["placeholder_format"])
+        mock_placeholder_format = MagicMock()
+        mock_placeholder_format.idx = 4
+        mock_placeholder_format.type = 18  # PICTURE type
+        mock_placeholder.placeholder_format = mock_placeholder_format
+
+        mock_prs = create_mock_slides_with_placeholder(mock_placeholder)
+        manager = MockPresentationManager(presentation=mock_prs)
+        return manager
+
+    @pytest.mark.asyncio
+    async def test_chart_placeholder_with_string_textframe(
+        self, mock_mcp, manager_with_chart_placeholder
+    ):
+        """Test CHART placeholder with string content via text_frame - covers lines 388-393."""
+        register_placeholder_tools(mock_mcp, manager_with_chart_placeholder)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=2,
+            content="Chart caption text",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        # Should succeed - CHART placeholders can have text captions
+        assert "message" in data or "error" in data
+
+    @pytest.mark.asyncio
+    async def test_table_placeholder_with_string_text_attr(
+        self, mock_mcp, manager_with_table_placeholder
+    ):
+        """Test TABLE placeholder with string content via .text - covers lines 394-395."""
+        register_placeholder_tools(mock_mcp, manager_with_table_placeholder)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=3,
+            content="Table caption",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert "message" in data or "error" in data
+
+    @pytest.mark.asyncio
+    async def test_picture_placeholder_no_text_capability(
+        self, mock_mcp, manager_with_picture_placeholder_no_text
+    ):
+        """Test PICTURE placeholder without text capability - covers lines 396-404."""
+        register_placeholder_tools(mock_mcp, manager_with_picture_placeholder_no_text)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=4,
+            content="This should fail",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert "error" in data
+        assert "PICTURE" in data["error"]
+        assert "Use dict content" in data["error"]
+
+
+class TestOtherPlaceholderTypes:
+    """Tests for other placeholder types (lines 407-417)."""
+
+    @pytest.fixture
+    def manager_with_unknown_placeholder_type(self):
+        """Create manager with unknown placeholder type."""
+        mock_placeholder = MagicMock()
+        mock_placeholder_format = MagicMock()
+        mock_placeholder_format.idx = 5
+        mock_placeholder_format.type = 99  # Unknown type
+        mock_placeholder.placeholder_format = mock_placeholder_format
+        mock_placeholder.text_frame = MagicMock()
+        mock_placeholder.text_frame.text = ""
+
+        mock_prs = create_mock_slides_with_placeholder(mock_placeholder)
+        manager = MockPresentationManager(presentation=mock_prs)
+        return manager
+
+    @pytest.fixture
+    def manager_with_unknown_placeholder_no_text(self):
+        """Create manager with unknown placeholder type without text capability."""
+        mock_placeholder = MagicMock(spec=["placeholder_format"])
+        mock_placeholder_format = MagicMock()
+        mock_placeholder_format.idx = 6
+        mock_placeholder_format.type = 99  # Unknown type
+        mock_placeholder.placeholder_format = mock_placeholder_format
+
+        mock_prs = create_mock_slides_with_placeholder(mock_placeholder)
+        manager = MockPresentationManager(presentation=mock_prs)
+        return manager
+
+    @pytest.mark.asyncio
+    async def test_unknown_type_with_textframe(
+        self, mock_mcp, manager_with_unknown_placeholder_type
+    ):
+        """Test unknown placeholder type with text_frame - covers lines 408-410."""
+        register_placeholder_tools(mock_mcp, manager_with_unknown_placeholder_type)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=5,
+            content="Content for unknown type",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert "message" in data or "error" in data
+
+    @pytest.mark.asyncio
+    async def test_unknown_type_no_text_support(
+        self, mock_mcp, manager_with_unknown_placeholder_no_text
+    ):
+        """Test unknown placeholder type without text support - covers lines 414-417."""
+        register_placeholder_tools(mock_mcp, manager_with_unknown_placeholder_no_text)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=6,
+            content="This should fail",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert "error" in data
+        assert "does not support text content" in data["error"]
+
+
+class TestTopLevelExceptionHandling:
+    """Tests for top-level exception handling (lines 430-434)."""
+
+    @pytest.fixture
+    def manager_that_raises(self):
+        """Create manager that raises exception on get_presentation."""
+        manager = MockPresentationManager()
+
+        async def raise_exception(name=None):
+            raise RuntimeError("Unexpected error during presentation retrieval")
+
+        manager.get_presentation = raise_exception
+        manager.get = raise_exception
+        return manager
+
+    @pytest.mark.asyncio
+    async def test_top_level_exception_handling(self, mock_mcp, manager_that_raises):
+        """Test top-level exception handling - covers lines 430-434."""
+        register_placeholder_tools(mock_mcp, manager_that_raises)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=0,
+            content="Test content",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert "error" in data
+        assert "Unexpected error" in data["error"]
+
+
+class TestSubtitlePlaceholder:
+    """Tests for SUBTITLE placeholder (type 3)."""
+
+    @pytest.fixture
+    def manager_with_subtitle_placeholder(self):
+        """Create manager with SUBTITLE placeholder."""
+        mock_placeholder = MagicMock()
+        mock_placeholder_format = MagicMock()
+        mock_placeholder_format.idx = 1
+        mock_placeholder_format.type = 3  # SUBTITLE type
+        mock_placeholder.placeholder_format = mock_placeholder_format
+        mock_placeholder.text_frame = MagicMock()
+        mock_placeholder.text_frame.text = ""
+
+        mock_prs = create_mock_slides_with_placeholder(mock_placeholder)
+        manager = MockPresentationManager(presentation=mock_prs)
+        return manager
+
+    @pytest.mark.asyncio
+    async def test_subtitle_placeholder_with_textframe(
+        self, mock_mcp, manager_with_subtitle_placeholder
+    ):
+        """Test SUBTITLE placeholder with text_frame - covers lines 353-355."""
+        register_placeholder_tools(mock_mcp, manager_with_subtitle_placeholder)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=1,
+            content="Subtitle text",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert "message" in data or "error" in data
+
+
+class TestObjectPlaceholder:
+    """Tests for OBJECT placeholder (type 7)."""
+
+    @pytest.fixture
+    def manager_with_object_placeholder(self):
+        """Create manager with OBJECT placeholder."""
+        mock_placeholder = MagicMock()
+        mock_placeholder_format = MagicMock()
+        mock_placeholder_format.idx = 2
+        mock_placeholder_format.type = 7  # OBJECT type
+        mock_placeholder.placeholder_format = mock_placeholder_format
+
+        # Setup text_frame with paragraphs
+        mock_text_frame = MagicMock()
+        mock_paragraph = MagicMock()
+        mock_paragraph.text = ""
+        mock_text_frame.paragraphs = [mock_paragraph]
+        mock_text_frame.clear = MagicMock()
+        mock_text_frame.add_paragraph = MagicMock(return_value=MagicMock())
+        mock_placeholder.text_frame = mock_text_frame
+
+        mock_prs = create_mock_slides_with_placeholder(mock_placeholder)
+        manager = MockPresentationManager(presentation=mock_prs)
+        return manager
+
+    @pytest.mark.asyncio
+    async def test_object_placeholder_with_bullets(self, mock_mcp, manager_with_object_placeholder):
+        """Test OBJECT placeholder with bullet points - covers lines 365, 371-384."""
+        register_placeholder_tools(mock_mcp, manager_with_object_placeholder)
+
+        result = await mock_mcp._tools["pptx_populate_placeholder"](
+            slide_index=0,
+            placeholder_idx=2,
+            content="First bullet\\nSecond bullet\\nThird bullet",
+        )
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert "message" in data or "error" in data

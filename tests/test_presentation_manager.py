@@ -1223,7 +1223,12 @@ class TestCreateWithTemplate:
         mock_template_manager.get_template_data = AsyncMock(return_value=None)  # Not builtin
 
         with patch("chuk_mcp_pptx.templates.TemplateManager", return_value=mock_template_manager):
-            with patch.object(manager, "_load_template_from_store", new_callable=AsyncMock, return_value=template_data):
+            with patch.object(
+                manager,
+                "_load_template_from_store",
+                new_callable=AsyncMock,
+                return_value=template_data,
+            ):
                 metadata = await manager.create(name="from_store_template", template_name="custom")
 
         assert metadata.name == "from_store_template"
@@ -1238,7 +1243,9 @@ class TestCreateWithTemplate:
         mock_template_manager.get_template_data = AsyncMock(return_value=None)
 
         with patch("chuk_mcp_pptx.templates.TemplateManager", return_value=mock_template_manager):
-            with patch.object(manager, "_load_template_from_store", new_callable=AsyncMock, return_value=None):
+            with patch.object(
+                manager, "_load_template_from_store", new_callable=AsyncMock, return_value=None
+            ):
                 metadata = await manager.create(name="blank_fallback", template_name="nonexistent")
 
         assert metadata.name == "blank_fallback"
@@ -1542,7 +1549,9 @@ class TestExportImportAdvanced:
         assert exported is not None
 
         # Import as template
-        result = await manager.import_base64(data=exported, name="template_import", as_template=True)
+        result = await manager.import_base64(
+            data=exported, name="template_import", as_template=True
+        )
         assert result is True
         assert "template_import" in manager._presentations
         # Should NOT set as current
@@ -1565,7 +1574,6 @@ class TestImportTemplate:
     async def test_import_template_success(self) -> None:
         """Test successful template import."""
         from pptx import Presentation as PptxPresentation
-        import io
         import tempfile
         import os
 

@@ -40,9 +40,7 @@ class TestConnectorCoverage:
         mock_placeholder._element = mock_element
         mock_element.getparent.return_value = MagicMock()
 
-        connector = Connector(
-            start_x=0, start_y=0, end_x=1, end_y=1, line_color="primary.DEFAULT"
-        )
+        connector = Connector(start_x=0, start_y=0, end_x=1, end_y=1, line_color="primary.DEFAULT")
         shape = connector.render(slide, placeholder=mock_placeholder)
         assert shape is not None
 
@@ -123,9 +121,7 @@ class TestConnectorCoverage:
         """Test connector with default (no) color."""
         from chuk_mcp_pptx.components.core.connector import Connector
 
-        connector = Connector(
-            start_x=1.0, start_y=2.0, end_x=5.0, end_y=4.0, line_color=None
-        )
+        connector = Connector(start_x=1.0, start_y=2.0, end_x=5.0, end_y=4.0, line_color=None)
         shape = connector.render(slide)
         assert shape is not None
 
@@ -315,9 +311,7 @@ class TestGridCoverage:
         from chuk_mcp_pptx.components.core.grid import Grid
 
         grid = Grid(columns=3, rows=2, gap="md")
-        positions = grid.get_cell_positions(
-            slide, left=0.5, top=2.0, width=9.0, height=4.0
-        )
+        positions = grid.get_cell_positions(slide, left=0.5, top=2.0, width=9.0, height=4.0)
 
         assert len(positions) == 6  # 3 columns x 2 rows
         for pos in positions:
@@ -413,9 +407,7 @@ class TestTextCoverage:
         mock_frame.paragraphs[0].font = MagicMock()
 
         text = TextBox(text="Hello World")
-        shape = text.render(
-            slide, left=1, top=1, width=4, height=1, placeholder=mock_placeholder
-        )
+        shape = text.render(slide, left=1, top=1, width=4, height=1, placeholder=mock_placeholder)
         assert shape is not None
 
     def test_textbox_various_alignments(self, slide) -> None:
@@ -536,9 +528,7 @@ class TestVideoCoverage:
         """Test Video component initialization."""
         from chuk_mcp_pptx.components.core.video import Video
 
-        video = Video(
-            video_source="demo.mp4", poster_image="poster.jpg", autoplay=True, loop=True
-        )
+        video = Video(video_source="demo.mp4", poster_image="poster.jpg", autoplay=True, loop=True)
         assert video.video_source == "demo.mp4"
         assert video.poster_image == "poster.jpg"
         assert video.autoplay is True
@@ -620,7 +610,7 @@ class TestVideoCoverage:
     async def test_video_render_with_url(self, slide) -> None:
         """Test Video render with URL source (doesn't validate URL)."""
         from chuk_mcp_pptx.components.core.video import Video
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import MagicMock
 
         video = Video(video_source="https://example.com/video.mp4")
 
@@ -670,9 +660,7 @@ class TestVideoCoverage:
         fake_image_data = base64.b64encode(b"fake image data").decode()
         poster_base64 = f"data:image/png;base64,{fake_image_data}"
 
-        video = Video(
-            video_source="https://example.com/video.mp4", poster_image=poster_base64
-        )
+        video = Video(video_source="https://example.com/video.mp4", poster_image=poster_base64)
 
         # Mock slide.shapes.add_movie
         mock_movie = MagicMock()
@@ -687,9 +675,7 @@ class TestVideoCoverage:
         from chuk_mcp_pptx.components.core.video import Video
         from unittest.mock import MagicMock
 
-        video = Video(
-            video_source="https://example.com/video.mp4", autoplay=True, loop=True
-        )
+        video = Video(video_source="https://example.com/video.mp4", autoplay=True, loop=True)
 
         # Mock slide.shapes.add_movie
         mock_movie = MagicMock()

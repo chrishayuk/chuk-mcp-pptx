@@ -867,7 +867,7 @@ class TestExtractColorFromScheme:
         mock_prs.slide_masters = [mock_master]
 
         # clrScheme with only accent1
-        mock_clr_scheme = MagicMock(spec=['accent1'])  # Only has accent1
+        mock_clr_scheme = MagicMock(spec=["accent1"])  # Only has accent1
         mock_clr_scheme.accent1.srgbClr.val = "FF0000"
         mock_master.part.theme_part.theme_element.themeElements.clrScheme = mock_clr_scheme
         mock_master.shapes = []
@@ -936,7 +936,7 @@ class TestExtractPlaceholderStylesExceptions:
         mock_fill.fore_color.rgb = None  # Will fail indexing
         mock_placeholder.fill = mock_fill
 
-        styles = extract_placeholder_styles(mock_placeholder)
+        extract_placeholder_styles(mock_placeholder)
         # background_color should not be present due to exception
 
     def test_extract_main_exception_handler(self):
@@ -1006,7 +1006,7 @@ class TestResolveDesignSystemTheme:
         if prs.slide_layouts:
             slide = prs.slides.add_slide(prs.slide_layouts[6])
 
-            mock_theme = MagicMock(spec=['typography'])  # No colors
+            mock_theme = MagicMock(spec=["typography"])  # No colors
             mock_theme.typography = {"font_family": "Arial", "font_size": 16}
 
             result = resolve_design_system(slide, theme=mock_theme)
@@ -1018,7 +1018,7 @@ class TestResolveDesignSystemTheme:
         if prs.slide_layouts:
             slide = prs.slides.add_slide(prs.slide_layouts[6])
 
-            mock_theme = MagicMock(spec=['colors'])  # No typography
+            mock_theme = MagicMock(spec=["colors"])  # No typography
             mock_theme.colors = {"primary": "#FF0000", "secondary": "#00FF00"}
 
             result = resolve_design_system(slide, theme=mock_theme)
@@ -1062,7 +1062,7 @@ class TestApplyDesignSystemBranches:
             slide = prs.slides.add_slide(prs.slide_layouts[6])
             shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
 
-            mock_shape = MagicMock(spec=['line', 'text_frame'])  # No fill
+            mock_shape = MagicMock(spec=["line", "text_frame"])  # No fill
             mock_shape.line = shape.line
             mock_shape.text_frame = None
 
@@ -1077,7 +1077,7 @@ class TestApplyDesignSystemBranches:
             slide = prs.slides.add_slide(prs.slide_layouts[6])
             shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
 
-            mock_shape = MagicMock(spec=['fill', 'text_frame'])  # No line
+            mock_shape = MagicMock(spec=["fill", "text_frame"])  # No line
             mock_shape.fill = shape.fill
             mock_shape.text_frame = None
 

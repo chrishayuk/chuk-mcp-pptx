@@ -172,7 +172,7 @@ def register_analyze_tools(mcp, manager, template_manager):
             await pptx_analyze_template_variants(template_name="brand_proposal")
         """
         try:
-            from ..template_extraction import analyze_layout_variants
+            from .extraction import analyze_layout_variants
 
             # First check if it's a builtin template
             template_data = await template_manager.get_template_data(template_name)

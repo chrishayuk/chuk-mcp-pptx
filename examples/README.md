@@ -2,6 +2,37 @@
 
 This directory contains working examples and debugging scripts for the chuk-mcp-pptx server.
 
+## Golden Path Examples
+
+These examples demonstrate the **optimal workflow** for generating professional presentations. Use these as reference for demos, videos, and LLM agent development.
+
+### Golden Path: Pitch Deck (`golden_path_pitch_deck.py`)
+
+The canonical example showing the ideal template-first workflow for an 8-slide startup pitch deck.
+
+```bash
+uv run python examples/golden_path_pitch_deck.py
+```
+
+**Key concepts demonstrated:**
+- Template analysis before building slides
+- Using layout variety (not repeating the same layout)
+- Placeholder population with text and structured content
+- Verification with `pptx_list_slide_components`
+
+**Output:** `examples/output_pitch_deck.pptx` (8 slides)
+
+### Golden Path Prompts (`GOLDEN_PATH_PROMPTS.md`)
+
+Documentation with three canonical demo prompts and expected tool-call sequences:
+1. **Startup Pitch Deck** (8 slides) - Full workflow example
+2. **Quarterly Business Review** (10 slides) - Charts and tables
+3. **Technical Tutorial** (6 slides) - Code examples and diagrams
+
+Also includes common mistakes to avoid and a layout selection guide.
+
+---
+
 ## Working Examples
 
 ### 1. Artifact Storage Integration (`artifact_storage_example.py`)

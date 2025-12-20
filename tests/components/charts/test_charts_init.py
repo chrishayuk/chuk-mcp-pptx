@@ -7,8 +7,7 @@ We need to test both successful imports and the ImportError fallback paths.
 
 import pytest
 import sys
-import importlib
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 class TestChartsInit:
@@ -121,19 +120,19 @@ class TestChartsImportFallbacks:
 
         try:
             # Remove cached modules to force re-import
-            modules_to_remove = [k for k in sys.modules.keys()
-                               if k.startswith(charts_init_mod)]
+            modules_to_remove = [k for k in sys.modules.keys() if k.startswith(charts_init_mod)]
             for mod in modules_to_remove:
                 del sys.modules[mod]
 
             # Mock the scatter_bubble module to raise ImportError
-            with patch.dict('sys.modules', {scatter_mod: None}):
+            with patch.dict("sys.modules", {scatter_mod: None}):
                 # This should trigger the except block
                 # However, we can't easily test this without modifying the code
                 pass
 
             # Verify the fallback attributes exist
             from chuk_mcp_pptx.components import charts
+
             assert hasattr(charts, "ScatterChart")
             assert hasattr(charts, "BubbleChart")
             assert hasattr(charts, "Matrix3DChart")
@@ -179,10 +178,19 @@ class TestChartsImportErrorCoverage:
 
         # The module should always export these names, even if they are None
         required_attrs = [
-            "ScatterChart", "BubbleChart", "Matrix3DChart",
-            "RadarChart", "ComboChart", "GaugeChart",
-            "FunnelChart", "GanttChart", "HeatmapChart",
-            "Chart", "LegacyBarChart", "LegacyLineChart", "LegacyPieChart"
+            "ScatterChart",
+            "BubbleChart",
+            "Matrix3DChart",
+            "RadarChart",
+            "ComboChart",
+            "GaugeChart",
+            "FunnelChart",
+            "GanttChart",
+            "HeatmapChart",
+            "Chart",
+            "LegacyBarChart",
+            "LegacyLineChart",
+            "LegacyPieChart",
         ]
 
         for attr in required_attrs:
@@ -195,19 +203,37 @@ class TestChartsImportErrorCoverage:
         """Verify import errors are handled gracefully."""
         # Test that accessing chart classes doesn't raise errors
         from chuk_mcp_pptx.components.charts import (
-            ScatterChart, BubbleChart, Matrix3DChart,
-            RadarChart, ComboChart, GaugeChart,
-            FunnelChart, GanttChart, HeatmapChart,
-            Chart, LegacyBarChart, LegacyLineChart, LegacyPieChart
+            ScatterChart,
+            BubbleChart,
+            Matrix3DChart,
+            RadarChart,
+            ComboChart,
+            GaugeChart,
+            FunnelChart,
+            GanttChart,
+            HeatmapChart,
+            Chart,
+            LegacyBarChart,
+            LegacyLineChart,
+            LegacyPieChart,
         )
 
         # All imports should succeed without raising exceptions
         # Values are either classes or None
         charts_list = [
-            ScatterChart, BubbleChart, Matrix3DChart,
-            RadarChart, ComboChart, GaugeChart,
-            FunnelChart, GanttChart, HeatmapChart,
-            Chart, LegacyBarChart, LegacyLineChart, LegacyPieChart
+            ScatterChart,
+            BubbleChart,
+            Matrix3DChart,
+            RadarChart,
+            ComboChart,
+            GaugeChart,
+            FunnelChart,
+            GanttChart,
+            HeatmapChart,
+            Chart,
+            LegacyBarChart,
+            LegacyLineChart,
+            LegacyPieChart,
         ]
 
         for chart in charts_list:
@@ -220,6 +246,7 @@ class TestChartsModuleReload:
     def test_charts_module_is_importable(self):
         """Test that charts module can be imported."""
         from chuk_mcp_pptx.components import charts
+
         assert charts is not None
 
     def test_charts_all_list_completeness(self):
@@ -231,11 +258,13 @@ class TestChartsModuleReload:
     def test_charts_base_always_available(self):
         """Test base classes are always available."""
         from chuk_mcp_pptx.components.charts import ChartComponent
+
         assert ChartComponent is not None
 
     def test_column_bar_always_available(self):
         """Test column/bar classes are always available."""
         from chuk_mcp_pptx.components.charts import ColumnChart, BarChart, WaterfallChart
+
         assert ColumnChart is not None
         assert BarChart is not None
         assert WaterfallChart is not None
@@ -243,12 +272,14 @@ class TestChartsModuleReload:
     def test_pie_doughnut_always_available(self):
         """Test pie/doughnut classes are always available."""
         from chuk_mcp_pptx.components.charts import PieChart, DoughnutChart
+
         assert PieChart is not None
         assert DoughnutChart is not None
 
     def test_line_area_always_available(self):
         """Test line/area classes are always available."""
         from chuk_mcp_pptx.components.charts import LineChart, AreaChart, SparklineChart
+
         assert LineChart is not None
         assert AreaChart is not None
         assert SparklineChart is not None

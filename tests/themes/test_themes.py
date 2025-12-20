@@ -592,7 +592,7 @@ class TestThemeApplyToShapeBranches:
 
         from unittest.mock import MagicMock
 
-        mock_shape = MagicMock(spec=['line', 'text_frame'])  # No fill
+        mock_shape = MagicMock(spec=["line", "text_frame"])  # No fill
         mock_shape.line = shape.line
         mock_shape.text_frame = shape.text_frame
 
@@ -608,7 +608,7 @@ class TestThemeApplyToShapeBranches:
 
         from unittest.mock import MagicMock
 
-        mock_shape = MagicMock(spec=['fill', 'text_frame'])  # No line
+        mock_shape = MagicMock(spec=["fill", "text_frame"])  # No line
         mock_shape.fill = shape.fill
         mock_shape.text_frame = shape.text_frame
 
@@ -624,7 +624,7 @@ class TestThemeApplyToShapeBranches:
 
         from unittest.mock import MagicMock
 
-        mock_shape = MagicMock(spec=['fill', 'line'])  # No text_frame
+        mock_shape = MagicMock(spec=["fill", "line"])  # No text_frame
         mock_shape.fill = shape.fill
         mock_shape.line = shape.line
 

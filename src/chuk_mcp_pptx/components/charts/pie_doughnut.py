@@ -193,10 +193,74 @@ class PieChart(ChartComponent):
         chart_data.add_series("Values", self.values)
         return chart_data
 
+    def _expand_plot_area(self, chart):
+        """
+        Expand the plot area to make the pie chart larger.
+
+        By default, PowerPoint makes pie charts quite small within the chart bounds.
+        This method modifies the chart XML to set a manual layout that uses more
+        of the available space.
+        """
+        try:
+            from pptx.oxml.ns import qn
+            from lxml import etree
+
+            chart_part = chart.part
+            chart_element = chart_part._element
+
+            # Find plotArea
+            nsmap = {"c": "http://schemas.openxmlformats.org/drawingml/2006/chart"}
+            plot_area = chart_element.find(".//c:plotArea", nsmap)
+
+            if plot_area is None:
+                return
+
+            # Check if layout already exists
+            existing_layout = plot_area.find("c:layout", nsmap)
+            if existing_layout is not None:
+                plot_area.remove(existing_layout)
+
+            # Create layout element with manual positioning
+            layout = etree.Element(qn("c:layout"))
+            manual_layout = etree.SubElement(layout, qn("c:manualLayout"))
+
+            # Layout target - inner means the plot area itself
+            layout_target = etree.SubElement(manual_layout, qn("c:layoutTarget"))
+            layout_target.set("val", "inner")
+
+            # Position mode - edge means relative to edges
+            x_mode = etree.SubElement(manual_layout, qn("c:xMode"))
+            x_mode.set("val", "edge")
+            y_mode = etree.SubElement(manual_layout, qn("c:yMode"))
+            y_mode.set("val", "edge")
+
+            # Position and size (values are 0-1 relative to chart area)
+            # Maximize plot area - pie will scale to fit
+            x = etree.SubElement(manual_layout, qn("c:x"))
+            x.set("val", "-0.05")  # Slight negative to push pie left
+            y = etree.SubElement(manual_layout, qn("c:y"))
+            y.set("val", "0.0")  # Start at top
+            w = etree.SubElement(manual_layout, qn("c:w"))
+            w.set("val", "0.70")  # 70% width for pie area
+            h = etree.SubElement(manual_layout, qn("c:h"))
+            h.set("val", "1.0")  # 100% height - use all vertical space
+
+            # Insert layout as first child of plotArea
+            plot_area.insert(0, layout)
+
+        except Exception as e:
+            # Don't fail if XML manipulation doesn't work
+            import logging
+
+            logging.getLogger(__name__).warning(f"Could not expand plot area: {e}")
+
     def render(self, slide, placeholder=None, **kwargs):
-        """Render pie chart with theme styling."""
+        """Render pie chart with theme styling and expanded plot area."""
         chart_shape = super().render(slide, placeholder=placeholder, **kwargs)
         chart = chart_shape.chart  # Access the chart object from the shape
+
+        # Expand the plot area via XML manipulation to make pie larger
+        self._expand_plot_area(chart)
 
         # Get theme colors
         chart_colors = self.tokens.get("chart", [])

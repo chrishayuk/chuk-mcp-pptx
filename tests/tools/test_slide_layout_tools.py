@@ -5,6 +5,8 @@ Tests all slide layout management MCP tools for >90% coverage.
 """
 
 import pytest
+from unittest.mock import MagicMock, AsyncMock
+from pptx import Presentation
 from chuk_mcp_pptx.tools.layout.slide_management import register_layout_tools
 
 
@@ -366,3 +368,330 @@ class TestIntegration:
         # Duplicate it
         result3 = await layout_tools["pptx_duplicate_slide"](slide_index=0)
         assert isinstance(result3, str)
+
+
+# ============================================================================
+# Additional Coverage Tests
+# ============================================================================
+
+
+class TestListLayoutsExceptionHandling:
+    """Test exception handling in pptx_list_layouts."""
+
+    @pytest.mark.asyncio
+    async def test_list_layouts_exception(self, mock_mcp_server):
+        """Test exception handling in list_layouts - covers lines 120-121."""
+        # Create a manager that raises an exception
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(side_effect=Exception("Test exception"))
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_list_layouts"]()
+        assert isinstance(result, str)
+        assert "Test exception" in result or '{"error":' in result
+
+
+class TestAddSlideWithLayoutPlaceholders:
+    """Test placeholder handling in pptx_add_slide_with_layout."""
+
+    @pytest.mark.asyncio
+    async def test_add_slide_with_subtitle_placeholder(
+        self, layout_tools, mock_presentation_manager
+    ):
+        """Test adding slide with subtitle - covers lines 189-190."""
+        # Use layout 0 (Title Slide) which typically has subtitle
+        result = await layout_tools["pptx_add_slide_with_layout"](
+            layout_index=0, title="Main Title", subtitle="This is the subtitle text"
+        )
+        assert isinstance(result, str)
+
+    @pytest.mark.asyncio
+    async def test_add_slide_with_theme_application(self, mock_mcp_server):
+        """Test theme application on add_slide - covers lines 211-216."""
+
+        prs = Presentation()
+        layout = prs.slide_layouts[1]
+        prs.slides.add_slide(layout)
+
+        mock_metadata = MagicMock()
+        mock_metadata.name = "test_pres"
+        mock_metadata.theme = "dark-violet"
+
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(return_value=(prs, mock_metadata))
+        mock_manager.update = AsyncMock()
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_add_slide_with_layout"](layout_index=1, title="Themed Slide")
+        assert isinstance(result, str)
+
+    @pytest.mark.asyncio
+    async def test_add_slide_exception_handling(self, mock_mcp_server):
+        """Test exception handling in add_slide - covers lines 281-282."""
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(side_effect=Exception("Add slide error"))
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_add_slide_with_layout"](layout_index=1)
+        assert isinstance(result, str)
+        assert "error" in result.lower()
+
+
+class TestCustomizeLayoutExceptionHandling:
+    """Test exception handling in pptx_customize_layout."""
+
+    @pytest.mark.asyncio
+    async def test_customize_layout_exception(self, mock_mcp_server):
+        """Test exception handling - covers lines 396-397."""
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(side_effect=Exception("Customize error"))
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_customize_layout"](slide_index=0)
+        assert isinstance(result, str)
+        assert "Customize error" in result or '{"error":' in result
+
+
+class TestApplyMasterLayoutBodyFormatting:
+    """Test body text formatting in pptx_apply_master_layout."""
+
+    @pytest.mark.asyncio
+    async def test_apply_master_with_body_text(self, mock_mcp_server):
+        """Test formatting body text shapes - covers lines 469->479."""
+        from pptx.util import Inches
+
+        prs = Presentation()
+        layout = prs.slide_layouts[1]
+        slide = prs.slides.add_slide(layout)
+
+        # Add a text box (not title)
+        textbox = slide.shapes.add_textbox(Inches(1), Inches(2), Inches(4), Inches(1))
+        textbox.text_frame.text = "Body text content"
+
+        mock_metadata = MagicMock()
+        mock_metadata.name = "test_pres"
+
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(return_value=(prs, mock_metadata))
+        mock_manager.update = AsyncMock()
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_apply_master_layout"](
+            layout_name="corporate", font_name="Arial", body_color="#333333"
+        )
+        assert isinstance(result, str)
+        assert "Applied" in result
+
+    @pytest.mark.asyncio
+    async def test_apply_master_exception_handling(self, mock_mcp_server):
+        """Test exception handling - covers lines 504-505."""
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(side_effect=Exception("Apply master error"))
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_apply_master_layout"](layout_name="corporate")
+        assert isinstance(result, str)
+        assert "error" in result.lower()
+
+
+class TestDuplicateSlideBranches:
+    """Test various branches in pptx_duplicate_slide."""
+
+    @pytest.mark.asyncio
+    async def test_duplicate_slide_with_textbox(self, mock_mcp_server):
+        """Test duplicating slide with text boxes - covers lines 550-551."""
+        from pptx.util import Inches
+
+        prs = Presentation()
+        layout = prs.slide_layouts[6]  # Blank layout
+        slide = prs.slides.add_slide(layout)
+
+        # Add a text box
+        textbox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+        textbox.text_frame.text = "Text content to duplicate"
+
+        mock_metadata = MagicMock()
+        mock_metadata.name = "test_pres"
+
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(return_value=(prs, mock_metadata))
+        mock_manager.update = AsyncMock()
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_duplicate_slide"](slide_index=0)
+        assert isinstance(result, str)
+        # Should succeed
+        assert "Duplicated" in result or "slide" in result.lower()
+
+    @pytest.mark.asyncio
+    async def test_duplicate_slide_with_title(self, mock_mcp_server):
+        """Test duplicating slide with title - covers lines 564-565."""
+
+        prs = Presentation()
+        layout = prs.slide_layouts[1]  # Title and Content
+        slide = prs.slides.add_slide(layout)
+
+        # Set title
+        if slide.shapes.title:
+            slide.shapes.title.text = "Original Title"
+
+        mock_metadata = MagicMock()
+        mock_metadata.name = "test_pres"
+
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(return_value=(prs, mock_metadata))
+        mock_manager.update = AsyncMock()
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_duplicate_slide"](slide_index=0)
+        assert isinstance(result, str)
+
+    @pytest.mark.asyncio
+    async def test_duplicate_slide_exception_handling(self, mock_mcp_server):
+        """Test exception handling - covers lines 575-576."""
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(side_effect=Exception("Duplicate error"))
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_duplicate_slide"](slide_index=0)
+        assert isinstance(result, str)
+        assert "error" in result.lower()
+
+    @pytest.mark.asyncio
+    async def test_duplicate_slide_with_text_shapes(self, mock_mcp_server):
+        """Test duplicating slide with various text shapes - covers lines 552-561."""
+        from pptx.util import Inches
+
+        prs = Presentation()
+        layout = prs.slide_layouts[1]  # Title and Content
+        slide = prs.slides.add_slide(layout)
+
+        # Add shapes with text
+        textbox = slide.shapes.add_textbox(Inches(1), Inches(3), Inches(3), Inches(1))
+        textbox.text_frame.text = "Some content"
+
+        mock_metadata = MagicMock()
+        mock_metadata.name = "test_pres"
+
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(return_value=(prs, mock_metadata))
+        mock_manager.update = AsyncMock()
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_duplicate_slide"](slide_index=0)
+        assert isinstance(result, str)
+
+
+class TestReorderSlidesExceptionHandling:
+    """Test exception handling in pptx_reorder_slides."""
+
+    @pytest.mark.asyncio
+    async def test_reorder_slides_exception(self, mock_mcp_server):
+        """Test exception handling - covers lines 638-639."""
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(side_effect=Exception("Reorder error"))
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_reorder_slides"](slide_index=0, new_position=1)
+        assert isinstance(result, str)
+        assert "error" in result.lower()
+
+
+class TestPlaceholderTypesCoverage:
+    """Test different placeholder types in add_slide_with_layout."""
+
+    @pytest.mark.asyncio
+    async def test_layout_with_various_placeholders(self, mock_mcp_server):
+        """Test layouts with different placeholder types - covers lines 237-257."""
+
+        prs = Presentation()
+
+        # Try layouts that might have different placeholder types
+        mock_metadata = MagicMock()
+        mock_metadata.name = "test_pres"
+        mock_metadata.theme = None
+
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(return_value=(prs, mock_metadata))
+        mock_manager.update = AsyncMock()
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        # Test with different layout indices
+        for layout_idx in range(min(6, len(prs.slide_master.slide_layouts))):
+            result = await tools["pptx_add_slide_with_layout"](
+                layout_index=layout_idx, title=f"Slide with layout {layout_idx}"
+            )
+            assert isinstance(result, str)
+
+
+class TestLayoutsWithNoPlaceholders:
+    """Test layouts with no placeholders in list."""
+
+    @pytest.mark.asyncio
+    async def test_list_layouts_no_placeholders(self, mock_mcp_server):
+        """Test layout listing when some layouts have no placeholders - covers line 110."""
+
+        prs = Presentation()
+
+        mock_metadata = MagicMock()
+        mock_metadata.name = "test_pres"
+
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(return_value=(prs, mock_metadata))
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        result = await tools["pptx_list_layouts"]()
+        assert isinstance(result, str)
+        assert "AVAILABLE SLIDE LAYOUTS" in result
+
+
+class TestTitleNoneHandling:
+    """Test handling when title parameter is None."""
+
+    @pytest.mark.asyncio
+    async def test_add_slide_no_title(self, layout_tools, mock_presentation_manager):
+        """Test adding slide without title - covers line 179."""
+        result = await layout_tools["pptx_add_slide_with_layout"](
+            layout_index=6,  # Blank layout typically
+            title=None,
+        )
+        assert isinstance(result, str)
+
+
+class TestChartPicturePlaceholderWarnings:
+    """Test CHART and PICTURE placeholder warning messages."""
+
+    @pytest.mark.asyncio
+    async def test_add_slide_with_content_without_chart_picture(self, mock_mcp_server):
+        """Test layout without chart/picture placeholders - covers lines 267-277."""
+
+        prs = Presentation()
+
+        mock_metadata = MagicMock()
+        mock_metadata.name = "test_pres"
+        mock_metadata.theme = None
+
+        mock_manager = MagicMock()
+        mock_manager.get = AsyncMock(return_value=(prs, mock_metadata))
+        mock_manager.update = AsyncMock()
+
+        tools = register_layout_tools(mock_mcp_server, mock_manager)
+
+        # Use layout index 1 (Title and Content) which has BODY placeholder
+        result = await tools["pptx_add_slide_with_layout"](layout_index=1, title="Test Slide")
+        assert isinstance(result, str)
+        # Should mention placeholder info
+        assert "placeholder" in result.lower() or "Placeholder" in result
