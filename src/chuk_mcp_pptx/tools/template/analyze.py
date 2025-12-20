@@ -8,7 +8,7 @@ All responses use Pydantic models for type safety.
 import io
 import logging
 from pptx import Presentation
-from .models import LayoutInfo, TemplateInfo
+from .models import LayoutInfo, LayoutPlaceholderInfo, TemplateInfo
 
 logger = logging.getLogger(__name__)
 
@@ -117,13 +117,13 @@ def register_analyze_tools(mcp, manager, template_manager):
             layouts = []
             if prs.slide_layouts:
                 for idx, layout in enumerate(prs.slide_layouts):
-                    placeholders = []
+                    placeholders: list[LayoutPlaceholderInfo] = []
                     for placeholder in layout.placeholders:
-                        ph_info = {
-                            "idx": placeholder.placeholder_format.idx,
-                            "type": str(placeholder.placeholder_format.type),
-                            "name": placeholder.name,
-                        }
+                        ph_info = LayoutPlaceholderInfo(
+                            idx=placeholder.placeholder_format.idx,
+                            type=str(placeholder.placeholder_format.type),
+                            name=placeholder.name,
+                        )
                         placeholders.append(ph_info)
 
                     layout_info = LayoutInfo(
@@ -172,7 +172,7 @@ def register_analyze_tools(mcp, manager, template_manager):
             await pptx_analyze_template_variants(template_name="brand_proposal")
         """
         try:
-            from ..template_extraction import analyze_layout_variants
+            from .extraction import analyze_layout_variants
 
             # First check if it's a builtin template
             template_data = await template_manager.get_template_data(template_name)

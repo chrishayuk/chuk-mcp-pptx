@@ -777,3 +777,324 @@ class TestIntegration:
             assert ds.font_size == 24
             assert "font_size" in ds.overrides
             assert ds.overrides["font_size"] == "explicit"
+
+
+class TestExtractColorFromScheme:
+    """Tests for color scheme extraction branches."""
+
+    def test_extract_color_returns_none_for_unknown_type(self):
+        """Test that extract_color_from_scheme returns None for unknown color types."""
+        mock_slide = MagicMock()
+        mock_prs = MagicMock()
+        mock_slide.part.package.presentation_part.presentation = mock_prs
+
+        mock_master = MagicMock()
+        mock_prs.slide_masters = [mock_master]
+
+        # Create color scheme with accent1 that has neither srgbClr nor sysClr
+        mock_clr_scheme = MagicMock()
+        mock_accent = MagicMock(spec=[])  # Empty spec - no srgbClr or sysClr
+        mock_clr_scheme.accent1 = mock_accent
+        mock_clr_scheme.accent2 = mock_accent
+        mock_clr_scheme.lt1 = mock_accent
+        mock_clr_scheme.dk1 = mock_accent
+
+        mock_master.part.theme_part.theme_element.themeElements.clrScheme = mock_clr_scheme
+        mock_master.shapes = []
+
+        result = extract_template_design_system(mock_slide)
+        # Should still return a design system with default colors
+        assert result is not None
+
+    def test_extract_no_theme_elements_attribute(self):
+        """Test extraction when themeElements attribute doesn't exist."""
+        mock_slide = MagicMock()
+        mock_prs = MagicMock()
+        mock_slide.part.package.presentation_part.presentation = mock_prs
+
+        mock_master = MagicMock()
+        mock_prs.slide_masters = [mock_master]
+
+        # theme_element exists but has no themeElements
+        mock_theme_elem = MagicMock(spec=[])  # No themeElements
+        mock_master.part.theme_part.theme_element = mock_theme_elem
+        mock_master.shapes = []
+
+        result = extract_template_design_system(mock_slide)
+        assert result is not None
+
+    def test_extract_no_clr_scheme_attribute(self):
+        """Test extraction when clrScheme attribute doesn't exist."""
+        mock_slide = MagicMock()
+        mock_prs = MagicMock()
+        mock_slide.part.package.presentation_part.presentation = mock_prs
+
+        mock_master = MagicMock()
+        mock_prs.slide_masters = [mock_master]
+
+        # themeElements exists but has no clrScheme
+        mock_theme_elements = MagicMock(spec=[])  # No clrScheme
+        mock_master.part.theme_part.theme_element.themeElements = mock_theme_elements
+        mock_master.shapes = []
+
+        result = extract_template_design_system(mock_slide)
+        assert result is not None
+
+    def test_extract_no_accent1_attribute(self):
+        """Test extraction when accent1 doesn't exist in color scheme."""
+        mock_slide = MagicMock()
+        mock_prs = MagicMock()
+        mock_slide.part.package.presentation_part.presentation = mock_prs
+
+        mock_master = MagicMock()
+        mock_prs.slide_masters = [mock_master]
+
+        # clrScheme exists but has no accent1, accent2, lt1, dk1
+        mock_clr_scheme = MagicMock(spec=[])
+        mock_master.part.theme_part.theme_element.themeElements.clrScheme = mock_clr_scheme
+        mock_master.shapes = []
+
+        result = extract_template_design_system(mock_slide)
+        assert result is not None
+
+    def test_extract_with_partial_accent_colors(self):
+        """Test extraction with only some accent colors present."""
+        mock_slide = MagicMock()
+        mock_prs = MagicMock()
+        mock_slide.part.package.presentation_part.presentation = mock_prs
+
+        mock_master = MagicMock()
+        mock_prs.slide_masters = [mock_master]
+
+        # clrScheme with only accent1
+        mock_clr_scheme = MagicMock(spec=["accent1"])  # Only has accent1
+        mock_clr_scheme.accent1.srgbClr.val = "FF0000"
+        mock_master.part.theme_part.theme_element.themeElements.clrScheme = mock_clr_scheme
+        mock_master.shapes = []
+
+        result = extract_template_design_system(mock_slide)
+        assert result is not None
+        assert result.primary_color == "#FF0000"
+
+    def test_extract_without_slide_master_or_part(self):
+        """Test extraction when master doesn't have slide_master or part attribute."""
+        mock_slide = MagicMock()
+        mock_prs = MagicMock()
+        mock_slide.part.package.presentation_part.presentation = mock_prs
+
+        mock_master = MagicMock(spec=[])  # No slide_master or part
+        mock_prs.slide_masters = [mock_master]
+
+        result = extract_template_design_system(mock_slide)
+        # Should return template design system even without theme extraction
+        assert result is not None
+
+    def test_extract_main_exception_handler(self):
+        """Test that main exception handler catches errors."""
+        mock_slide = MagicMock()
+        # Make the initial access raise an exception
+        type(mock_slide).part = property(
+            lambda self: (_ for _ in ()).throw(Exception("Access error"))
+        )
+
+        result = extract_template_design_system(mock_slide)
+        assert result is None
+
+
+class TestExtractPlaceholderStylesExceptions:
+    """Tests for placeholder style extraction exception handling."""
+
+    def test_extract_text_color_exception(self):
+        """Test extraction handles text color RGB access exception."""
+        mock_placeholder = MagicMock()
+        mock_run = MagicMock()
+        mock_run.font.name = "Arial"
+        mock_run.font.size.pt = 14
+        mock_run.font.bold = False
+        mock_run.font.italic = False
+
+        # Make color.rgb property raise exception
+        mock_color = MagicMock()
+        mock_color.rgb = None  # Will fail indexing
+        mock_run.font.color = mock_color
+
+        mock_para = MagicMock(runs=[mock_run])
+        mock_placeholder.text_frame.paragraphs = [mock_para]
+        mock_placeholder.fill = None
+
+        styles = extract_placeholder_styles(mock_placeholder)
+        assert "font_family" in styles
+        # text_color should not be present due to exception
+
+    def test_extract_fill_color_exception(self):
+        """Test extraction handles fill color RGB access exception."""
+        mock_placeholder = MagicMock()
+        mock_placeholder.text_frame.paragraphs = []
+
+        # Make fore_color.rgb access fail
+        mock_fill = MagicMock()
+        mock_fill.fore_color.rgb = None  # Will fail indexing
+        mock_placeholder.fill = mock_fill
+
+        extract_placeholder_styles(mock_placeholder)
+        # background_color should not be present due to exception
+
+    def test_extract_main_exception_handler(self):
+        """Test that main exception handler catches errors."""
+        mock_placeholder = MagicMock()
+        # Make text_frame access raise exception
+        type(mock_placeholder).text_frame = property(
+            lambda self: (_ for _ in ()).throw(Exception("Access error"))
+        )
+
+        styles = extract_placeholder_styles(mock_placeholder)
+        assert styles == {}
+
+
+class TestResolveDesignSystemPlaceholder:
+    """Tests for resolve_design_system with placeholder styles."""
+
+    def test_resolve_applies_placeholder_styles(self):
+        """Test that placeholder styles are applied."""
+        prs = Presentation()
+        if prs.slide_layouts:
+            slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+            # Create mock placeholder with styles
+            mock_placeholder = MagicMock()
+            mock_run = MagicMock()
+            mock_run.font.name = "Georgia"
+            mock_run.font.size.pt = 20
+            mock_run.font.bold = True
+            mock_run.font.italic = False
+            mock_run.font.color.rgb = (100, 100, 100)
+
+            mock_para = MagicMock(runs=[mock_run])
+            mock_placeholder.text_frame.paragraphs = [mock_para]
+            mock_placeholder.fill = None
+
+            result = resolve_design_system(slide, placeholder=mock_placeholder)
+
+            assert result.font_family == "Georgia"
+            assert result.font_size == 20
+            assert result.font_bold is True
+            assert "font_family" in result.overrides
+            assert result.overrides["font_family"] == "placeholder"
+
+    def test_resolve_placeholder_without_styles(self):
+        """Test resolution with placeholder that has no extractable styles."""
+        prs = Presentation()
+        if prs.slide_layouts:
+            slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+            # Empty placeholder
+            mock_placeholder = MagicMock()
+            mock_placeholder.text_frame.paragraphs = []
+            mock_placeholder.fill = None
+
+            result = resolve_design_system(slide, placeholder=mock_placeholder)
+            # Should use defaults since no styles were extracted
+            assert isinstance(result, ResolvedDesignSystem)
+
+
+class TestResolveDesignSystemTheme:
+    """Tests for resolve_design_system with theme."""
+
+    def test_resolve_with_theme_missing_colors(self):
+        """Test resolution with theme that has no colors attribute."""
+        prs = Presentation()
+        if prs.slide_layouts:
+            slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+            mock_theme = MagicMock(spec=["typography"])  # No colors
+            mock_theme.typography = {"font_family": "Arial", "font_size": 16}
+
+            result = resolve_design_system(slide, theme=mock_theme)
+            assert result.font_family == "Arial"
+
+    def test_resolve_with_theme_missing_typography(self):
+        """Test resolution with theme that has no typography attribute."""
+        prs = Presentation()
+        if prs.slide_layouts:
+            slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+            mock_theme = MagicMock(spec=["colors"])  # No typography
+            mock_theme.colors = {"primary": "#FF0000", "secondary": "#00FF00"}
+
+            result = resolve_design_system(slide, theme=mock_theme)
+            assert result.primary_color == "#FF0000"
+
+    def test_resolve_with_theme_partial_colors(self):
+        """Test resolution with theme that has partial color values."""
+        prs = Presentation()
+        if prs.slide_layouts:
+            slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+            mock_theme = MagicMock()
+            mock_theme.colors = {"primary": "#123456"}  # Only primary
+            mock_theme.typography = {}
+
+            result = resolve_design_system(slide, theme=mock_theme)
+            assert result.primary_color == "#123456"
+            # Other colors should remain default
+
+    def test_resolve_with_theme_partial_typography(self):
+        """Test resolution with theme that has partial typography values."""
+        prs = Presentation()
+        if prs.slide_layouts:
+            slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+            mock_theme = MagicMock()
+            mock_theme.colors = {}
+            mock_theme.typography = {"font_family": "Georgia"}  # Only font_family
+
+            result = resolve_design_system(slide, theme=mock_theme)
+            assert result.font_family == "Georgia"
+
+
+class TestApplyDesignSystemBranches:
+    """Tests for apply_design_system_to_shape branches."""
+
+    def test_apply_to_shape_without_fill(self):
+        """Test applying to shape without fill attribute."""
+        prs = Presentation()
+        if prs.slide_layouts:
+            slide = prs.slides.add_slide(prs.slide_layouts[6])
+            shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+
+            mock_shape = MagicMock(spec=["line", "text_frame"])  # No fill
+            mock_shape.line = shape.line
+            mock_shape.text_frame = None
+
+            ds = ResolvedDesignSystem()
+            apply_design_system_to_shape(mock_shape, ds)
+            # Should not raise
+
+    def test_apply_to_shape_without_line(self):
+        """Test applying to shape without line attribute."""
+        prs = Presentation()
+        if prs.slide_layouts:
+            slide = prs.slides.add_slide(prs.slide_layouts[6])
+            shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+
+            mock_shape = MagicMock(spec=["fill", "text_frame"])  # No line
+            mock_shape.fill = shape.fill
+            mock_shape.text_frame = None
+
+            ds = ResolvedDesignSystem()
+            apply_design_system_to_shape(mock_shape, ds)
+            # Should not raise
+
+    def test_apply_to_shape_with_empty_text_frame(self):
+        """Test applying to shape with empty text_frame."""
+        prs = Presentation()
+        if prs.slide_layouts:
+            slide = prs.slides.add_slide(prs.slide_layouts[6])
+            shape = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1))
+
+            # Clear paragraphs
+            shape.text_frame.paragraphs[0].clear()
+
+            ds = ResolvedDesignSystem()
+            apply_design_system_to_shape(shape, ds)
+            # Should not raise

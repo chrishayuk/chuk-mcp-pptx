@@ -200,9 +200,16 @@ class TestImage:
             # Create a simple test image
             img = PILImage.new("RGB", (100, 100), color="red")
             img.save(f.name)
-            yield f.name
-            # Cleanup
-            os.unlink(f.name)
+            temp_path = f.name
+        # File is now closed, yield the path
+        yield temp_path
+        # Cleanup - handle Windows file locking issues
+        try:
+            os.unlink(temp_path)
+        except PermissionError:
+            # On Windows, file may still be locked by pptx/PIL
+            # Let the OS clean up temp files later
+            pass
 
     def test_init(self, temp_image):
         """Test Image initialization."""

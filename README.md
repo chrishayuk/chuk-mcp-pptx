@@ -11,7 +11,7 @@ A powerful, LLM-friendly PowerPoint design system with MCP server integration. B
 - **Component Registry** - LLM-friendly schemas and discovery
 - **Design Tokens** - Consistent colors, typography, spacing
 - **MCP Integration** - Full Model Context Protocol support
-- **Fully Tested** - 1950+ tests with comprehensive coverage
+- **Fully Tested** - 2395+ tests with comprehensive coverage
 - **Cloud Ready** - Deploy to Fly.io with Tigris S3 and Redis
 
 ## Project Structure
@@ -46,8 +46,8 @@ chuk-mcp-pptx/
 │   ├── async_server.py      # Async MCP server
 │   └── server.py            # Server entry point
 ├── docs/                    # Documentation
-├── examples/                # Examples and demos
-├── tests/                   # 1950+ comprehensive tests
+├── examples/                # Examples and demos (see Golden Path)
+├── tests/                   # 2395+ comprehensive tests
 └── outputs/                 # Generated presentations
 ```
 
@@ -497,6 +497,34 @@ table.render(slide, left=1, top=5.5, width=8, height=1.5)
 prs.save("output.pptx")
 ```
 
+## Golden Path Examples
+
+The `examples/` directory contains canonical demonstrations of the optimal workflow:
+
+### Golden Path Pitch Deck
+
+```bash
+uv run python examples/golden_path_pitch_deck.py
+```
+
+Creates an 8-slide pitch deck demonstrating:
+- Template-first workflow with `brand_proposal` template
+- Chart components (Column, Line, Pie, Bar)
+- Table components with variants
+- Proper placeholder population
+- Theme application
+
+**Output:** `examples/output_pitch_deck.pptx`
+
+### Golden Path Prompts
+
+See `examples/GOLDEN_PATH_PROMPTS.md` for three canonical demo prompts:
+1. **Startup Pitch Deck** (8 slides) - Full workflow example
+2. **Quarterly Business Review** (10 slides) - Charts and tables
+3. **Technical Tutorial** (6 slides) - Code examples and diagrams
+
+These prompts show the expected MCP tool-call sequences for common presentation types.
+
 ## Documentation
 
 
@@ -505,7 +533,7 @@ prs.save("output.pptx")
 ### Run All Tests
 
 ```bash
-# All 1950+ tests
+# All 2395+ tests
 uv run pytest tests/ -v
 
 # Or use make
@@ -525,7 +553,7 @@ uv run pytest tests/layout/ -v                   # Layout tests
 uv run pytest tests/themes/ -v                   # Theme tests
 ```
 
-**Total: 1950+ tests, all passing**
+**Total: 2395+ tests, all passing**
 
 ## Dependencies
 

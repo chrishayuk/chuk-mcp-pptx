@@ -32,6 +32,7 @@ class ChartComponent(ComposableComponent):
     - Variant system support
     - Error handling
     - Composition support
+    - Smart aspect ratio handling for square charts (pie/doughnut)
 
     Usage:
         # Extend this class for specific chart types
@@ -54,6 +55,14 @@ class ChartComponent(ComposableComponent):
     DEFAULT_HEIGHT = 3.0  # Fits comfortably below title area
     DEFAULT_LEFT = 1.0
     DEFAULT_TOP = 2.0
+
+    # Chart types that prefer square aspect ratio (pie, doughnut)
+    SQUARE_CHART_TYPES = {
+        XL_CHART_TYPE.PIE,
+        XL_CHART_TYPE.PIE_EXPLODED,
+        XL_CHART_TYPE.DOUGHNUT,
+        XL_CHART_TYPE.DOUGHNUT_EXPLODED,
+    }
 
     def __init__(
         self,
@@ -144,6 +153,31 @@ class ChartComponent(ComposableComponent):
         """
         raise NotImplementedError("Subclasses must implement _prepare_chart_data")
 
+    def _optimize_bounds_for_square_chart(
+        self,
+        left: float,
+        top: float,
+        width: float,
+        height: float,
+    ) -> Tuple[float, float, float, float]:
+        """
+        Optimize bounds for square charts (pie/doughnut).
+
+        Note: Pie chart sizing is now handled via XML plot area manipulation
+        in the PieChart class, so we don't need to constrain bounds here.
+
+        Args:
+            left: Original left position in inches
+            top: Original top position in inches
+            width: Available width in inches
+            height: Available height in inches
+
+        Returns:
+            Original bounds unchanged
+        """
+        # Pie/doughnut chart sizing is handled via _expand_plot_area() in PieChart
+        return left, top, width, height
+
     def render(
         self,
         slide,
@@ -186,6 +220,9 @@ class ChartComponent(ComposableComponent):
         top = top if top is not None else self.DEFAULT_TOP
         width = width if width is not None else self.DEFAULT_WIDTH
         height = height if height is not None else self.DEFAULT_HEIGHT
+
+        # Optimize bounds for square charts (pie/doughnut)
+        left, top, width, height = self._optimize_bounds_for_square_chart(left, top, width, height)
 
         # Validate data
         is_valid, error = self.validate_data()

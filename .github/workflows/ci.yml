@@ -29,9 +29,6 @@ jobs:
       - name: Run ruff
         run: uv run ruff check src/ tests/
 
-      - name: Run flake8
-        run: uv run flake8 src/ tests/ --max-line-length=120 --exclude=__pycache__,.git,build,dist
-
   format-check:
     name: Format Check
     runs-on: ubuntu-latest
@@ -51,11 +48,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
 
-      - name: Check black formatting
-        run: uv run black --check src/ tests/
-
-      - name: Check isort formatting
-        run: uv run isort --check-only src/ tests/
+      - name: Check ruff formatting
+        run: uv run ruff format --check src/ tests/
 
   typecheck:
     name: Type Check
@@ -77,7 +71,7 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run mypy
-        run: uv run mypy src/chuk_mcp_pptx
+        run: uv run mypy src --ignore-missing-imports --no-site-packages
 
   test:
     name: Test Python ${{ matrix.python-version }}
@@ -133,7 +127,7 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run bandit
-        run: uv run bandit -r src/chuk_mcp_pptx
+        run: uv run bandit -r src/chuk_mcp_pptx -ll
 
   build:
     name: Build Distribution

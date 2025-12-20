@@ -694,6 +694,47 @@ class TestMacOSWindow:
         content_area = window.render(slide, left=1.0, top=1.0)
         assert isinstance(content_area, dict)
 
+    def test_init_with_toolbar(self) -> None:
+        """Test initializing with toolbar."""
+        from chuk_mcp_pptx.components.containers import MacOSWindow
+
+        window = MacOSWindow(show_toolbar=True)
+        assert window.show_toolbar is True
+
+    def test_init_with_app_icon(self) -> None:
+        """Test initializing with app icon."""
+        from chuk_mcp_pptx.components.containers import MacOSWindow
+
+        window = MacOSWindow(title="Messages", app_icon="💬")
+        assert window.app_icon == "💬"
+
+    def test_render_with_toolbar(self, slide) -> None:
+        """Test rendering with toolbar enabled."""
+        from chuk_mcp_pptx.components.containers import MacOSWindow
+
+        window = MacOSWindow(show_toolbar=True, title="Finder")
+        content_area = window.render(slide, left=1.0, top=1.0, width=7.0, height=5.0)
+        assert isinstance(content_area, dict)
+        # Content top should be lower due to toolbar
+        assert content_area["top"] > 1.0 + 0.45  # titlebar_height + some
+
+    def test_render_with_toolbar_dark_theme(self, slide) -> None:
+        """Test rendering with toolbar in dark theme."""
+        from chuk_mcp_pptx.components.containers import MacOSWindow
+
+        theme = {"colors": {"background": {"DEFAULT": [30, 30, 30]}}}
+        window = MacOSWindow(show_toolbar=True, title="Finder", theme=theme)
+        content_area = window.render(slide, left=1.0, top=1.0, width=7.0, height=5.0)
+        assert isinstance(content_area, dict)
+
+    def test_render_with_app_icon(self, slide) -> None:
+        """Test rendering with app icon."""
+        from chuk_mcp_pptx.components.containers import MacOSWindow
+
+        window = MacOSWindow(title="Messages", app_icon="💬")
+        content_area = window.render(slide, left=1.0, top=1.0)
+        assert isinstance(content_area, dict)
+
 
 class TestWindowsWindow:
     """Tests for Windows window component."""
@@ -815,6 +856,56 @@ class TestWindowsWindow:
 
         theme = {"colors": {"background": {"DEFAULT": [30, 30, 30]}}}
         window = WindowsWindow(theme=theme)
+        content_area = window.render(slide, left=1.0, top=1.0)
+        assert isinstance(content_area, dict)
+
+    def test_init_with_menubar(self) -> None:
+        """Test initializing with menubar."""
+        from chuk_mcp_pptx.components.containers import WindowsWindow
+
+        window = WindowsWindow(show_menubar=True)
+        assert window.show_menubar is True
+
+    def test_init_with_app_icon(self) -> None:
+        """Test initializing with app icon."""
+        from chuk_mcp_pptx.components.containers import WindowsWindow
+
+        window = WindowsWindow(title="Microsoft Teams", app_icon="👥")
+        assert window.app_icon == "👥"
+
+    def test_render_with_menubar(self, slide) -> None:
+        """Test rendering with menubar enabled."""
+        from chuk_mcp_pptx.components.containers import WindowsWindow
+
+        window = WindowsWindow(show_menubar=True, title="Notepad")
+        content_area = window.render(slide, left=1.0, top=1.0, width=7.0, height=5.0)
+        assert isinstance(content_area, dict)
+        # Content top should be lower due to menubar
+        assert content_area["top"] > 1.0 + 0.4  # titlebar_height + menubar
+
+    def test_render_with_menubar_light_theme(self, slide) -> None:
+        """Test rendering with menubar in light theme."""
+        from chuk_mcp_pptx.components.containers import WindowsWindow
+
+        theme = {"colors": {"background": {"DEFAULT": [255, 255, 255]}}}
+        window = WindowsWindow(show_menubar=True, title="Explorer", theme=theme)
+        content_area = window.render(slide, left=1.0, top=1.0, width=7.0, height=5.0)
+        assert isinstance(content_area, dict)
+
+    def test_render_with_menubar_dark_theme(self, slide) -> None:
+        """Test rendering with menubar in dark theme."""
+        from chuk_mcp_pptx.components.containers import WindowsWindow
+
+        theme = {"colors": {"background": {"DEFAULT": [30, 30, 30]}}}
+        window = WindowsWindow(show_menubar=True, title="Explorer", theme=theme)
+        content_area = window.render(slide, left=1.0, top=1.0, width=7.0, height=5.0)
+        assert isinstance(content_area, dict)
+
+    def test_render_with_app_icon(self, slide) -> None:
+        """Test rendering with app icon."""
+        from chuk_mcp_pptx.components.containers import WindowsWindow
+
+        window = WindowsWindow(title="Microsoft Teams", app_icon="👥")
         content_area = window.render(slide, left=1.0, top=1.0)
         assert isinstance(content_area, dict)
 

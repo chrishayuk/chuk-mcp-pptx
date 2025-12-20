@@ -698,6 +698,43 @@ class TestFacebookMessengerBubble:
         color = msg._get_text_color()
         assert color is not None
 
+    def test_render_received_with_avatar(self, slide) -> None:
+        """Test rendering a received message with avatar."""
+        from chuk_mcp_pptx.components.chat import FacebookMessengerBubble
+
+        msg = FacebookMessengerBubble(
+            text="Hey! How are you?", variant="received", avatar_text="JS"
+        )
+        shapes = msg.render(slide, left=1.0, top=2.0, width=7.0)
+        assert isinstance(shapes, list)
+        # Should include avatar shape
+        assert len(shapes) >= 2
+
+    def test_render_received_without_avatar(self, slide) -> None:
+        """Test rendering a received message without avatar."""
+        from chuk_mcp_pptx.components.chat import FacebookMessengerBubble
+
+        msg = FacebookMessengerBubble(text="Just the message", variant="received")
+        shapes = msg.render(slide, left=1.0, top=2.0, width=7.0)
+        assert isinstance(shapes, list)
+
+    def test_calculate_bubble_height(self) -> None:
+        """Test calculating bubble height."""
+        from chuk_mcp_pptx.components.chat import FacebookMessengerBubble
+
+        msg = FacebookMessengerBubble(text="Short text", variant="sent")
+        height = msg._calculate_bubble_height(5.0)
+        assert height > 0
+
+    def test_calculate_bubble_height_long_text(self) -> None:
+        """Test calculating bubble height for long text."""
+        from chuk_mcp_pptx.components.chat import FacebookMessengerBubble
+
+        long_text = "This is a very long message that should span multiple lines in the bubble."
+        msg = FacebookMessengerBubble(text=long_text, variant="sent")
+        height = msg._calculate_bubble_height(5.0)
+        assert height > 0
+
 
 class TestFacebookMessengerConversation:
     """Tests for Facebook Messenger conversation component."""
@@ -727,6 +764,19 @@ class TestFacebookMessengerConversation:
         messages = [
             {"text": "Hello!", "variant": "sent"},
             {"text": "Hi!", "variant": "received"},
+        ]
+        conv = FacebookMessengerConversation(messages=messages)
+        shapes = conv.render(slide, left=1.0, top=1.5, width=7.0)
+        assert isinstance(shapes, list)
+
+    def test_render_with_avatars(self, slide) -> None:
+        """Test rendering a conversation with avatars."""
+        from chuk_mcp_pptx.components.chat import FacebookMessengerConversation
+
+        messages = [
+            {"text": "Hey!", "variant": "received", "avatar_text": "JS"},
+            {"text": "Hi there!", "variant": "sent"},
+            {"text": "What's up?", "variant": "received", "avatar_text": "JS"},
         ]
         conv = FacebookMessengerConversation(messages=messages)
         shapes = conv.render(slide, left=1.0, top=1.5, width=7.0)
@@ -774,6 +824,60 @@ class TestAIMBubble:
         shapes = msg.render(slide, left=1.0, top=2.0, width=7.0)
         assert isinstance(shapes, list)
 
+    def test_render_with_timestamp(self, slide) -> None:
+        """Test rendering a message with timestamp."""
+        from chuk_mcp_pptx.components.chat import AIMBubble
+
+        msg = AIMBubble(
+            text="Hey what's up?",
+            variant="sent",
+            screen_name="xXCoolDude2003Xx",
+            timestamp="5:30 PM",
+        )
+        shapes = msg.render(slide, left=1.0, top=2.0, width=7.0)
+        assert isinstance(shapes, list)
+        # Should have more shapes when timestamp is present
+        assert len(shapes) >= 2
+
+    def test_calculate_message_height_with_timestamp(self) -> None:
+        """Test calculating message height with timestamp."""
+        from chuk_mcp_pptx.components.chat import AIMBubble
+
+        msg_no_ts = AIMBubble(text="Hello!", screen_name="user", variant="sent")
+        msg_with_ts = AIMBubble(
+            text="Hello!", screen_name="user", variant="sent", timestamp="10:30 AM"
+        )
+
+        height_no_ts = msg_no_ts._calculate_message_height(6.0)
+        height_with_ts = msg_with_ts._calculate_message_height(6.0)
+
+        # Height should be greater with timestamp
+        assert height_with_ts > height_no_ts
+
+    def test_get_screen_name_color_sent(self) -> None:
+        """Test getting screen name color for sent message."""
+        from chuk_mcp_pptx.components.chat import AIMBubble
+
+        msg = AIMBubble(text="Test", screen_name="user", variant="sent")
+        color = msg._get_screen_name_color()
+        assert color is not None
+
+    def test_get_screen_name_color_received(self) -> None:
+        """Test getting screen name color for received message."""
+        from chuk_mcp_pptx.components.chat import AIMBubble
+
+        msg = AIMBubble(text="Test", screen_name="buddy", variant="received")
+        color = msg._get_screen_name_color()
+        assert color is not None
+
+    def test_get_text_color(self) -> None:
+        """Test getting text color."""
+        from chuk_mcp_pptx.components.chat import AIMBubble
+
+        msg = AIMBubble(text="Test", screen_name="user", variant="sent")
+        color = msg._get_text_color()
+        assert color is not None
+
 
 class TestAIMConversation:
     """Tests for AIM conversation component."""
@@ -803,6 +907,28 @@ class TestAIMConversation:
         messages = [
             {"text": "Hello!", "variant": "sent", "screen_name": "user1"},
             {"text": "Hi!", "variant": "received", "screen_name": "user2"},
+        ]
+        conv = AIMConversation(messages=messages)
+        shapes = conv.render(slide, left=1.0, top=1.5, width=7.0)
+        assert isinstance(shapes, list)
+
+    def test_render_with_timestamps(self, slide) -> None:
+        """Test rendering a conversation with timestamps."""
+        from chuk_mcp_pptx.components.chat import AIMConversation
+
+        messages = [
+            {
+                "text": "Hey! Want to hang out later?",
+                "screen_name": "sk8rgrl2004",
+                "variant": "received",
+                "timestamp": "5:30 PM",
+            },
+            {
+                "text": "Yeah! Let's go to the mall",
+                "screen_name": "xXCoolDude2003Xx",
+                "variant": "sent",
+                "timestamp": "5:31 PM",
+            },
         ]
         conv = AIMConversation(messages=messages)
         shapes = conv.render(slide, left=1.0, top=1.5, width=7.0)
