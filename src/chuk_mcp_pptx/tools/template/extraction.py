@@ -6,9 +6,11 @@ Allows converting any template into reusable design system assets.
 """
 
 import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from pydantic import BaseModel, Field
-from pptx import Presentation
+
+if TYPE_CHECKING:
+    from pptx.presentation import Presentation
 
 logger = logging.getLogger(__name__)
 
@@ -428,7 +430,7 @@ async def extract_design_system_from_template(manager, template_name: str) -> Ex
     )
 
 
-def analyze_layout_variants(prs: Presentation) -> LayoutAnalysis:
+def analyze_layout_variants(prs: "Presentation") -> LayoutAnalysis:
     """
     Analyze layouts and detect variants.
 

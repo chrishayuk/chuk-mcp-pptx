@@ -177,10 +177,10 @@ def register_universal_component_api(mcp, manager):
                     id=comp.component_id,
                     type=comp.component_type,
                     position=ComponentPosition(
-                        left=comp.left,
-                        top=comp.top,
-                        width=comp.width,
-                        height=comp.height,
+                        left=comp.left or 0.0,
+                        top=comp.top or 0.0,
+                        width=comp.width or 0.0,
+                        height=comp.height or 0.0,
                     ),
                     target=ComponentTarget(
                         type=target_type,
