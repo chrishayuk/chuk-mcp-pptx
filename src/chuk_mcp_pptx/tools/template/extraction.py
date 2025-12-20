@@ -478,16 +478,16 @@ def analyze_layout_variants(prs: "Presentation") -> LayoutAnalysis:
         )
 
     # Group by base name
-    groups_by_name = defaultdict(list)
-    for layout in all_layouts:
+    groups_by_name: dict[str, list[LayoutVariant]] = defaultdict(list)
+    for layout_variant in all_layouts:
         # Extract base name (remove trailing numbers)
-        match = re.search(r"^(.+?)\s+\d+$", layout.name)
-        base_name = match.group(1) if match else layout.name
-        groups_by_name[base_name].append(layout)
+        match = re.search(r"^(.+?)\s+\d+$", layout_variant.name)
+        base_name = match.group(1) if match else layout_variant.name
+        groups_by_name[base_name].append(layout_variant)
 
     # Create layout groups
-    layout_groups = []
-    ungrouped_layouts = []
+    layout_groups: list[LayoutGroup] = []
+    ungrouped_layouts: list[LayoutVariant] = []
 
     for base_name, layouts_in_group in groups_by_name.items():
         if len(layouts_in_group) > 1:

@@ -266,6 +266,7 @@ def register_universal_component_api(mcp, manager):
                                 type="empty_placeholder",
                                 message=f"Placeholder {idx} ({type_name}: {shape.name}) is empty and needs content",
                                 placeholder_idx=idx,
+                                component_id=None,
                             )
                         )
 
@@ -328,6 +329,7 @@ def register_universal_component_api(mcp, manager):
                                 ValidationWarning(
                                     type="missing_image",
                                     message=f"Image failed to load: {error_message or 'Unknown error'}",
+                                    placeholder_idx=None,
                                     component_id=comp_id,
                                 )
                             )

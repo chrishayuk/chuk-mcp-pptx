@@ -40,7 +40,7 @@ jobs:
 
     - name: Run type checking
       run: |
-        uv run mypy src --ignore-missing-imports
+        uv run mypy src --ignore-missing-imports --no-site-packages
 
     - name: Run tests with coverage
       run: |
