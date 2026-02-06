@@ -1,10 +1,13 @@
 [project]
 name = "chuk-mcp-pptx"
-version = "0.4"
+version = "0.4.1"
 description = "PowerPoint MCP Server - A shadcn-inspired design system for presentations"
-authors = [{ name = "Chris Hay" }]
 readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+]
 dependencies = [
     "mcp>=0.9.1",
     "python-pptx>=1.0.2",
@@ -108,3 +111,6 @@ ignore_errors = true
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint.per-file-ignores]
+"diagnostics/*.py" = ["E402"]  # Allow imports after sys.path modifications in diagnostic scripts
