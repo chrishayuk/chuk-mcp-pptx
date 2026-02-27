@@ -453,16 +453,16 @@ async def pptx_delete_slide(slide_index: int, presentation: str | None = None) -
         # Validate slide index
         if slide_index < 0 or slide_index >= len(prs.slides):
             return ErrorResponse(
-                error=f"Invalid slide index {slide_index}. Presentation has {len(prs.slides)} slides (indices 0-{len(prs.slides)-1})"
+                error=f"Invalid slide index {slide_index}. Presentation has {len(prs.slides)} slides (indices 0-{len(prs.slides) - 1})"
             ).model_dump_json()
 
         # Get the rId for the slide to delete from the slide ID list
         rId = prs.slides._sldIdLst[slide_index].rId
-        
+
         # Remove the relationship between presentation and slide
         # This properly handles both regular and template-based presentations
         prs.part.drop_rel(rId)
-        
+
         # Remove the slide from the XML slide ID list
         del prs.slides._sldIdLst[slide_index]
 
