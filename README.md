@@ -137,6 +137,7 @@ The server provides MCP tools organized into logical groups:
 ### Semantic Tools
 - `pptx_add_title_slide` - Add title slide (deprecated, use templates)
 - `pptx_add_slide` - Add content slide (deprecated, use templates)
+- `pptx_delete_slide` - Delete slide from presentation
 
 ### File Operations
 - `pptx_save` - Save presentation to disk

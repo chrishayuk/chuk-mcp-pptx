@@ -423,6 +423,64 @@ async def pptx_add_slide(title: str, content: list[str], presentation: str | Non
 
 
 @mcp.tool  # type: ignore[arg-type]
+async def pptx_delete_slide(slide_index: int, presentation: str | None = None) -> str:
+    """
+    Delete a slide from the presentation.
+
+    Removes the specified slide from the presentation by its index.
+    All subsequent slides will shift down by one index position.
+    Works with both regular and template-based presentations.
+
+    Args:
+        slide_index: Zero-based index of the slide to delete (0 = first slide)
+        presentation: Name of presentation to delete slide from (uses current if not specified)
+
+    Returns:
+        JSON string with SuccessResponse model
+
+    Example:
+        # Delete the third slide from a specific presentation
+        await pptx_delete_slide(slide_index=2, presentation="my_deck")
+    """
+    try:
+        # Use get() instead of get_presentation() to support template-based presentations
+        result = await manager.get(presentation)
+        if not result:
+            return ErrorResponse(error=ErrorMessages.NO_PRESENTATION).model_dump_json()
+
+        prs, metadata = result
+
+        # Validate slide index
+        if slide_index < 0 or slide_index >= len(prs.slides):
+            return ErrorResponse(
+                error=f"Invalid slide index {slide_index}. Presentation has {len(prs.slides)} slides (indices 0-{len(prs.slides) - 1})"
+            ).model_dump_json()
+
+        # Get the rId for the slide to delete from the slide ID list
+        rId = prs.slides._sldIdLst[slide_index].rId
+
+        # Remove the relationship between presentation and slide
+        # This properly handles both regular and template-based presentations
+        prs.part.drop_rel(rId)
+
+        # Remove the slide from the XML slide ID list
+        del prs.slides._sldIdLst[slide_index]
+
+        # Update in VFS
+        await manager.update(presentation)
+
+        pres_name = presentation or manager.get_current_name() or "presentation"
+        new_slide_count = len(prs.slides)
+
+        return SuccessResponse(
+            message=f"Deleted slide {slide_index} from presentation '{pres_name}'. Presentation now has {new_slide_count} slide(s)."
+        ).model_dump_json()
+    except Exception as e:
+        logger.error(f"Failed to delete slide: {e}")
+        return ErrorResponse(error=str(e)).model_dump_json()
+
+
+@mcp.tool  # type: ignore[arg-type]
 async def pptx_save(path: str, presentation: str | None = None) -> str:
     """
     Save the presentation to a PowerPoint file and artifact store.
