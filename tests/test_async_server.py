@@ -294,6 +294,146 @@ class TestPptxAddSlide:
         manager.clear_all()
 
 
+class TestPptxDeleteSlide:
+    """Tests for pptx_delete_slide tool."""
+
+    @pytest.mark.asyncio
+    async def test_delete_slide_basic(self) -> None:
+        """Test deleting a slide from a regular presentation."""
+        from chuk_mcp_pptx.async_server import (
+            pptx_create,
+            pptx_add_title_slide,
+            pptx_delete_slide,
+            manager,
+        )
+
+        manager.clear_all()
+        await pptx_create(name="test_delete")
+
+        # Add multiple slides
+        await pptx_add_title_slide(title="Slide 1")
+        await pptx_add_title_slide(title="Slide 2")
+        await pptx_add_title_slide(title="Slide 3")
+
+        # Verify we have 3 slides
+        prs = await manager.get_presentation("test_delete")
+        assert prs is not None
+        assert len(prs.slides) == 3
+
+        # Delete the middle slide
+        result = await pptx_delete_slide(slide_index=1)
+        data = json.loads(result)
+
+        assert "error" not in data
+        assert "Deleted slide 1" in data["message"]
+        assert "2 slide(s)" in data["message"]
+
+        # Verify slide count
+        prs = await manager.get_presentation("test_delete")
+        assert len(prs.slides) == 2
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_delete_slide_invalid_index(self) -> None:
+        """Test deleting with invalid slide index."""
+        from chuk_mcp_pptx.async_server import (
+            pptx_create,
+            pptx_add_title_slide,
+            pptx_delete_slide,
+            manager,
+        )
+
+        manager.clear_all()
+        await pptx_create(name="test_invalid")
+        await pptx_add_title_slide(title="Only Slide")
+
+        # Try to delete non-existent slide
+        result = await pptx_delete_slide(slide_index=5)
+        data = json.loads(result)
+
+        assert "error" in data
+        assert "Invalid slide index" in data["error"]
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_delete_slide_negative_index(self) -> None:
+        """Test deleting with negative slide index."""
+        from chuk_mcp_pptx.async_server import (
+            pptx_create,
+            pptx_add_title_slide,
+            pptx_delete_slide,
+            manager,
+        )
+
+        manager.clear_all()
+        await pptx_create(name="test_negative")
+        await pptx_add_title_slide(title="Slide")
+
+        # Try negative index
+        result = await pptx_delete_slide(slide_index=-1)
+        data = json.loads(result)
+
+        assert "error" in data
+        assert "Invalid slide index" in data["error"]
+
+        manager.clear_all()
+
+    @pytest.mark.asyncio
+    async def test_delete_slide_no_presentation(self) -> None:
+        """Test deleting slide when no presentation exists."""
+        from chuk_mcp_pptx.async_server import pptx_delete_slide, manager
+
+        manager.clear_all()
+
+        result = await pptx_delete_slide(slide_index=0)
+        data = json.loads(result)
+
+        assert "error" in data
+
+    @pytest.mark.asyncio
+    async def test_delete_slide_template_based(self) -> None:
+        """Test deleting slide from template-based presentation."""
+        from chuk_mcp_pptx.async_server import (
+            pptx_create,
+            pptx_add_slide_with_layout,
+            pptx_delete_slide,
+            manager,
+        )
+
+        manager.clear_all()
+
+        # Create presentation from template (if available)
+        # This tests the fix for template-based presentations
+        await pptx_create(name="template_test", template_name="brand_proposal")
+
+        # Add slides using layout-based approach (proper way for templates)
+        # Layout 0 is typically the title slide layout
+        await pptx_add_slide_with_layout(layout_index=0, presentation="template_test")
+        await pptx_add_slide_with_layout(layout_index=1, presentation="template_test")
+        await pptx_add_slide_with_layout(layout_index=2, presentation="template_test")
+
+        # Verify slides were added
+        prs = await manager.get_presentation("template_test")
+        assert prs is not None
+        initial_count = len(prs.slides)
+        assert initial_count >= 3
+
+        # Delete a slide from template-based presentation
+        result = await pptx_delete_slide(slide_index=1, presentation="template_test")
+        data = json.loads(result)
+
+        assert "error" not in data
+        assert "Deleted slide 1" in data["message"]
+
+        # Verify slide was deleted
+        prs = await manager.get_presentation("template_test")
+        assert len(prs.slides) == initial_count - 1
+
+        manager.clear_all()
+
+
 class TestPptxSave:
     """Tests for pptx_save tool."""
 
